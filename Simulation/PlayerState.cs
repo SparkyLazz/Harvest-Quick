@@ -1,15 +1,17 @@
-using Godot;
-using System;
-
-public partial class PlayerState : Node
+public class PlayerState(FarmGrid grid, int startX, int startY)
 {
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
+	public int X { get; private set; } = startX;
+	public int Y { get; private set; } = startY;
+	private readonly FarmGrid _grid = grid;
+	//Possible User can spawn in Non-Eligible Grid (-5, 999)
+	public bool TryMove(Direction direction)
 	{
-	}
-
-	// Called every frame. 'delta' is the elapsed time since the previous frame.
-	public override void _Process(double delta)
-	{
+		var (dx, dy) = direction.ToOffset();
+		var targetX = X + dx;
+		var targetY = Y + dy;
+		if (!_grid.CanMoveTo(targetX, targetY)) return false;
+		X =  targetX;
+		Y =  targetY;
+		return true;
 	}
 }
