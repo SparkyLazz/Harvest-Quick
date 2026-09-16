@@ -5,6 +5,8 @@ public class PlayerState(FarmGrid grid, int startX, int startY)
 	public int X { get; private set; } = startX;
 	public int Y { get; private set; } = startY;
 	public Direction Facing { get; private set; } = Direction.Down;
+	
+	public Vector2I Position => new(X, Y);
 	private readonly FarmGrid _grid = grid;
 
 	//Turning is deliberately independent of moving. At the edge of the field

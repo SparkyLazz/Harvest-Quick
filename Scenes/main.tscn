@@ -1,0 +1,186 @@
+[gd_scene format=4 uid="uid://dtnh8ief3i6i0"]
+
+[ext_resource type="Script" uid="uid://66vv60osq3fm" path="res://Game/Main.cs" id="1_jjgbg"]
+[ext_resource type="TileSet" uid="uid://dbpsc3dkxgp0c" path="res://Assets/Tilemap/Terrains.tres" id="2_bo1nx"]
+[ext_resource type="Texture2D" uid="uid://dcijwquteta4q" path="res://Assets/characters/males/male_01/idle/male_01_idle_32x32.png" id="3_idle"]
+[ext_resource type="Texture2D" uid="uid://xxyl0s2rejnl" path="res://Assets/characters/males/male_01/walk/male_01_walk_32x32_3frames.png" id="4_walk"]
+[ext_resource type="Texture2D" uid="uid://xksy635xtg4r" path="res://Assets/ui/cursor_16x16.png" id="5_cursor"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_down"]
+atlas = ExtResource("3_idle")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_left"]
+atlas = ExtResource("3_idle")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_right"]
+atlas = ExtResource("3_idle")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_up"]
+atlas = ExtResource("3_idle")
+region = Rect2(0, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_down_0"]
+atlas = ExtResource("4_walk")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_down_1"]
+atlas = ExtResource("4_walk")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_down_2"]
+atlas = ExtResource("4_walk")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_left_0"]
+atlas = ExtResource("4_walk")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_left_1"]
+atlas = ExtResource("4_walk")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_left_2"]
+atlas = ExtResource("4_walk")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_right_0"]
+atlas = ExtResource("4_walk")
+region = Rect2(0, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_right_1"]
+atlas = ExtResource("4_walk")
+region = Rect2(32, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_right_2"]
+atlas = ExtResource("4_walk")
+region = Rect2(64, 64, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_up_0"]
+atlas = ExtResource("4_walk")
+region = Rect2(0, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_up_1"]
+atlas = ExtResource("4_walk")
+region = Rect2(32, 96, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_walk_up_2"]
+atlas = ExtResource("4_walk")
+region = Rect2(64, 96, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_down")
+}],
+"loop": 0,
+"name": &"idle_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_left")
+}],
+"loop": 0,
+"name": &"idle_left",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_right")
+}],
+"loop": 0,
+"name": &"idle_right",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_idle_up")
+}],
+"loop": 0,
+"name": &"idle_up",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_down_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_down_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_down_2")
+}],
+"loop": 1,
+"name": &"walk_down",
+"speed": 25.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_left_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_left_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_left_2")
+}],
+"loop": 1,
+"name": &"walk_left",
+"speed": 25.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_right_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_right_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_right_2")
+}],
+"loop": 1,
+"name": &"walk_right",
+"speed": 25.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_up_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_up_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_walk_up_2")
+}],
+"loop": 1,
+"name": &"walk_up",
+"speed": 25.0
+}]
+
+[node name="Main" type="Node2D" unique_id=506943102 node_paths=PackedStringArray("GroundLayer", "ObjectLayer", "PlayerSprite", "Cursor")]
+script = ExtResource("1_jjgbg")
+GroundLayer = NodePath("Ground Layer")
+ObjectLayer = NodePath("Object Layer")
+PlayerSprite = NodePath("Player")
+Cursor = NodePath("Cursor")
+
+[node name="Ground Layer" type="TileMapLayer" parent="." unique_id=1250373032]
+tile_map_data = PackedByteArray("AAD9////AAABAAQAAAD+////AAABAAQAAAD//wAAAAABAAQAAAAAAAAAAAABAAQAAAABAAEAAAABAAQAAAACAAEAAAABAAQAAAACAAIAAAABAAQAAAACAAMAAAABAAQAAAD9/wAAAAABAAQAAAD9/wEAAAABAAQAAAD9/wIAAAABAAQAAAD9/wMAAAABAAQAAAD+/wAAAAABAAQAAAD+/wEAAAABAAQAAAD+/wIAAAABAAQAAAD+/wMAAAABAAQAAAD/////AAABAAQAAAD//wEAAAABAAQAAAD//wIAAAABAAQAAAD//wMAAAABAAQAAAAAAP//AAABAAQAAAAAAAEAAAABAAQAAAAAAAIAAAABAAQAAAAAAAMAAAABAAQAAAABAP//AAABAAQAAAABAAAAAAABAAQAAAABAAIAAAABAAQAAAABAAMAAAABAAQAAAACAP//AAABAAQAAAACAAAAAAABAAQAAAADAP//AAABAAQAAAADAAAAAAABAAQAAAADAAEAAAABAAQAAAADAAIAAAABAAQAAAADAAMAAAABAAQAAAAEAP//AAABAAQAAAAEAAAAAAABAAQAAAAEAAEAAAABAAQAAAAEAAIAAAABAAQAAAAEAAMAAAABAAQAAAA=")
+tile_set = ExtResource("2_bo1nx")
+
+[node name="Object Layer" type="TileMapLayer" parent="." unique_id=713005726]
+tile_map_data = PackedByteArray("AAD//wAAAwABAAQAAAD//wEAAwABAAQAAAAAAAAAAwABAAQAAAAAAAEAAwABAAQAAAABAAAAAwABAAQAAAABAAEAAwABAAQAAAA=")
+tile_set = ExtResource("2_bo1nx")
+
+[node name="Cursor" type="Sprite2D" parent="." unique_id=602184773]
+texture = ExtResource("5_cursor")
+
+[node name="Player" type="AnimatedSprite2D" parent="." unique_id=417290551]
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle_right"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=888104064]
