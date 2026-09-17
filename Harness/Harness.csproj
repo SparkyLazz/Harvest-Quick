@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A console app, on purpose. The whole point of keeping Simulation/ free of
+       nodes and rendering is that a run can be played without any of them, and
+       this is the thing that proves it. It plays
+       thousands of runs without Godot ever starting.
+
+       It compiles Simulation/ rather than referencing the game assembly, so a
+       harness run cannot be stale with respect to the code it is measuring. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>harness</AssemblyName>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="../Simulation/**/*.cs" />
+  </ItemGroup>
+
+  <!-- Simulation/ uses exactly one type from Godot, Vector2I, which is an
+       ordinary managed struct with no engine behind it. That is the only reason
+       this reference is needed and the only reason it works without the editor.
+
+       It points at the copy Godot puts beside the game build rather than a
+       NuGet package, because the Godot SDK resolves GodotSharp from the editor
+       installation and the version has to match the one the game compiles
+       against. Build the game once and this is there. If Simulation/ ever grows
+       its own small grid-coordinate struct, this reference goes away and the
+       harness stops depending on Godot at all. -->
+  <ItemGroup>
+    <Reference Include="GodotSharp">
+      <HintPath>../.godot/mono/temp/bin/Debug/GodotSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="WarnIfGodotSharpMissing" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('../.godot/mono/temp/bin/Debug/GodotSharp.dll')"
+           Text="GodotSharp.dll not found. Build the game once (dotnet build at the repo root) so Godot puts it in .godot/mono/temp/bin/Debug/, then run the harness again." />
+  </Target>
+
+</Project>

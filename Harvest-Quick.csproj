@@ -3,4 +3,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
   </PropertyGroup>
+
+  <!-- The harness is its own console app and compiles Simulation/ itself. Left
+       in, Godot.NET.Sdk would glob its files into the game assembly and ship a
+       Main() with the game. Harness/.gdignore keeps the editor out of the same
+       folder. -->
+  <ItemGroup>
+    <Compile Remove="Harness/**/*.cs" />
+  </ItemGroup>
 </Project>

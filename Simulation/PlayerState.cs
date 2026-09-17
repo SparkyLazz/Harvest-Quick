@@ -38,6 +38,16 @@ public class PlayerState(FarmGrid grid, int startX, int startY)
 		}
 	}
 
+	//The three aiming wrappers that used to sit here are gone. They were the
+	//right shape when working a tile was free, and every one of them became a
+	//way to swing a hoe, bury a seed or pick a crop without paying for it the
+	//moment effort and money were introduced. RunState.TryTill(), TryPlant() and
+	//TryHarvest() do the aiming now, on top of the priced versions that take a
+	//tile, so there is no longer a cheaper door into the same room.
+	//
+	//What is left here is what the player genuinely owns: where it stands, where
+	//it looks, and whether a step is allowed.
+
 	//Unowned tiles come back as ordinary tiles. null means outside the array,
 	//which is the cursor's cue to hide itself.
 	public Tile GetFacingTile()

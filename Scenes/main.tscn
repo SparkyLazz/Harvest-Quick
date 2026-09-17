@@ -1,80 +1,84 @@
 [gd_scene format=4 uid="uid://dtnh8ief3i6i0"]
 
-[ext_resource type="Script" uid="uid://66vv60osq3fm" path="res://Game/Main.cs" id="1_jjgbg"]
-[ext_resource type="TileSet" uid="uid://dbpsc3dkxgp0c" path="res://Assets/Tilemap/Terrains.tres" id="2_bo1nx"]
-[ext_resource type="Texture2D" uid="uid://dcijwquteta4q" path="res://Assets/characters/males/male_01/idle/male_01_idle_32x32.png" id="3_idle"]
-[ext_resource type="Texture2D" uid="uid://xxyl0s2rejnl" path="res://Assets/characters/males/male_01/walk/male_01_walk_32x32_3frames.png" id="4_walk"]
-[ext_resource type="Texture2D" uid="uid://xksy635xtg4r" path="res://Assets/ui/cursor_16x16.png" id="5_cursor"]
+[ext_resource type="Script" uid="uid://66vv60osq3fm" path="res://Game/Main.cs" id="1_main"]
+[ext_resource type="TileSet" uid="uid://sh030y7bt7hv" path="res://Assets/Tilemap/Tilemap.tres" id="2_ynf5e"]
+[ext_resource type="Texture2D" uid="uid://b207g1tr03a34" path="res://Assets/Sprout Lands - Sprites - premium pack/Characters/Basic Charakter Spritesheet.png" id="3_char"]
+[ext_resource type="Texture2D" uid="uid://bt8on2of61kh4" path="res://Assets/UI/cursor.png" id="4_cursor"]
+[ext_resource type="Script" uid="uid://r4vo3sqhcy4u" path="res://Game/CropLayer.cs" id="5_crop"]
+[ext_resource type="Texture2D" uid="uid://bwq2er5km4nc3" path="res://Assets/UI/panel.png" id="6_panel"]
+[ext_resource type="Texture2D" uid="uid://bfl7pys3uhhvx" path="res://Assets/Sprout Lands - UI Pack - Basic pack/Sprite sheets/Icons/All Icons.png" id="7_icons"]
+[ext_resource type="Texture2D" uid="uid://bnc166r33p6rb" path="res://Assets/Sprout Lands - UI Pack - Basic pack/Sprite sheets/Icons/special icons/Special Icons.png" id="8_special"]
+[ext_resource type="FontFile" uid="uid://bc2ma52tlebwe" path="res://Assets/Sprout Lands - UI Pack - Basic pack/fonts/pixelFont-7-8x14-sproutLands.ttf" id="9_font"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_down"]
-atlas = ExtResource("3_idle")
-region = Rect2(0, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="down_0"]
+atlas = ExtResource("3_char")
+region = Rect2(0, 0, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_left"]
-atlas = ExtResource("3_idle")
-region = Rect2(0, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="left_0"]
+atlas = ExtResource("3_char")
+region = Rect2(0, 96, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_right"]
-atlas = ExtResource("3_idle")
-region = Rect2(0, 64, 32, 32)
+[sub_resource type="AtlasTexture" id="right_0"]
+atlas = ExtResource("3_char")
+region = Rect2(0, 144, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_idle_up"]
-atlas = ExtResource("3_idle")
-region = Rect2(0, 96, 32, 32)
+[sub_resource type="AtlasTexture" id="up_0"]
+atlas = ExtResource("3_char")
+region = Rect2(0, 48, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_down_0"]
-atlas = ExtResource("4_walk")
-region = Rect2(0, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="down_1"]
+atlas = ExtResource("3_char")
+region = Rect2(48, 0, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_down_1"]
-atlas = ExtResource("4_walk")
-region = Rect2(32, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="down_2"]
+atlas = ExtResource("3_char")
+region = Rect2(96, 0, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_down_2"]
-atlas = ExtResource("4_walk")
-region = Rect2(64, 0, 32, 32)
+[sub_resource type="AtlasTexture" id="down_3"]
+atlas = ExtResource("3_char")
+region = Rect2(144, 0, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_left_0"]
-atlas = ExtResource("4_walk")
-region = Rect2(0, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="left_1"]
+atlas = ExtResource("3_char")
+region = Rect2(48, 96, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_left_1"]
-atlas = ExtResource("4_walk")
-region = Rect2(32, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="left_2"]
+atlas = ExtResource("3_char")
+region = Rect2(96, 96, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_left_2"]
-atlas = ExtResource("4_walk")
-region = Rect2(64, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="left_3"]
+atlas = ExtResource("3_char")
+region = Rect2(144, 96, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_right_0"]
-atlas = ExtResource("4_walk")
-region = Rect2(0, 64, 32, 32)
+[sub_resource type="AtlasTexture" id="right_1"]
+atlas = ExtResource("3_char")
+region = Rect2(48, 144, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_right_1"]
-atlas = ExtResource("4_walk")
-region = Rect2(32, 64, 32, 32)
+[sub_resource type="AtlasTexture" id="right_2"]
+atlas = ExtResource("3_char")
+region = Rect2(96, 144, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_right_2"]
-atlas = ExtResource("4_walk")
-region = Rect2(64, 64, 32, 32)
+[sub_resource type="AtlasTexture" id="right_3"]
+atlas = ExtResource("3_char")
+region = Rect2(144, 144, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_up_0"]
-atlas = ExtResource("4_walk")
-region = Rect2(0, 96, 32, 32)
+[sub_resource type="AtlasTexture" id="up_1"]
+atlas = ExtResource("3_char")
+region = Rect2(48, 48, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_up_1"]
-atlas = ExtResource("4_walk")
-region = Rect2(32, 96, 32, 32)
+[sub_resource type="AtlasTexture" id="up_2"]
+atlas = ExtResource("3_char")
+region = Rect2(96, 48, 48, 48)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_walk_up_2"]
-atlas = ExtResource("4_walk")
-region = Rect2(64, 96, 32, 32)
+[sub_resource type="AtlasTexture" id="up_3"]
+atlas = ExtResource("3_char")
+region = Rect2(144, 48, 48, 48)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_player"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_down")
+"texture": SubResource("down_0")
 }],
 "loop": 0,
 "name": &"idle_down",
@@ -82,7 +86,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_left")
+"texture": SubResource("left_0")
 }],
 "loop": 0,
 "name": &"idle_left",
@@ -90,7 +94,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_right")
+"texture": SubResource("right_0")
 }],
 "loop": 0,
 "name": &"idle_right",
@@ -98,7 +102,7 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_idle_up")
+"texture": SubResource("up_0")
 }],
 "loop": 0,
 "name": &"idle_up",
@@ -106,81 +110,256 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_down_0")
+"texture": SubResource("down_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_down_1")
+"texture": SubResource("down_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_down_2")
+"texture": SubResource("down_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("down_3")
 }],
 "loop": 1,
 "name": &"walk_down",
-"speed": 25.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_left_0")
+"texture": SubResource("left_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_left_1")
+"texture": SubResource("left_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_left_2")
+"texture": SubResource("left_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("left_3")
 }],
 "loop": 1,
 "name": &"walk_left",
-"speed": 25.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_right_0")
+"texture": SubResource("right_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_right_1")
+"texture": SubResource("right_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_right_2")
+"texture": SubResource("right_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("right_3")
 }],
 "loop": 1,
 "name": &"walk_right",
-"speed": 25.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_up_0")
+"texture": SubResource("up_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_up_1")
+"texture": SubResource("up_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_walk_up_2")
+"texture": SubResource("up_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("up_3")
 }],
 "loop": 1,
 "name": &"walk_up",
-"speed": 25.0
+"speed": 10.0
 }]
 
-[node name="Main" type="Node2D" unique_id=506943102 node_paths=PackedStringArray("GroundLayer", "ObjectLayer", "PlayerSprite", "Cursor")]
-script = ExtResource("1_jjgbg")
+[sub_resource type="AtlasTexture" id="icon_gold"]
+atlas = ExtResource("7_icons")
+region = Rect2(16, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="icon_bag"]
+atlas = ExtResource("7_icons")
+region = Rect2(32, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="icon_energy"]
+atlas = ExtResource("8_special")
+region = Rect2(96, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="icon_debt"]
+atlas = ExtResource("7_icons")
+region = Rect2(0, 16, 16, 16)
+
+[node name="Main" type="Node2D" unique_id=652870538 node_paths=PackedStringArray("WaterLayer", "GroundLayer", "DarkerLayer", "GrassLayer", "BushLayer", "FenceLayer", "ObjectLayer", "CropLayer", "PlayerSprite", "Cursor", "Camera", "DateLabel", "GoldLabel", "BagLabel", "EnergyLabel", "DebtLabel")]
+script = ExtResource("1_main")
+WaterLayer = NodePath("Water Layer")
 GroundLayer = NodePath("Ground Layer")
+DarkerLayer = NodePath("Darker Layer")
+GrassLayer = NodePath("Grass Layer")
+BushLayer = NodePath("Bush Layer")
+FenceLayer = NodePath("Fence Layer")
 ObjectLayer = NodePath("Object Layer")
+CropLayer = NodePath("Crop Layer")
 PlayerSprite = NodePath("Player")
 Cursor = NodePath("Cursor")
+Camera = NodePath("Player/Camera2D")
+DateLabel = NodePath("HUD/Panel/Readout/DateRow/Date")
+GoldLabel = NodePath("HUD/Panel/Readout/GoldRow/Gold")
+BagLabel = NodePath("HUD/Panel/Readout/BagRow/Bag")
+EnergyLabel = NodePath("HUD/Panel/Readout/EnergyRow/Energy")
+DebtLabel = NodePath("HUD/Panel/Readout/DebtRow/Debt")
 
-[node name="Ground Layer" type="TileMapLayer" parent="." unique_id=1250373032]
-tile_map_data = PackedByteArray("AAD9////AAABAAQAAAD+////AAABAAQAAAD//wAAAAABAAQAAAAAAAAAAAABAAQAAAABAAEAAAABAAQAAAACAAEAAAABAAQAAAACAAIAAAABAAQAAAACAAMAAAABAAQAAAD9/wAAAAABAAQAAAD9/wEAAAABAAQAAAD9/wIAAAABAAQAAAD9/wMAAAABAAQAAAD+/wAAAAABAAQAAAD+/wEAAAABAAQAAAD+/wIAAAABAAQAAAD+/wMAAAABAAQAAAD/////AAABAAQAAAD//wEAAAABAAQAAAD//wIAAAABAAQAAAD//wMAAAABAAQAAAAAAP//AAABAAQAAAAAAAEAAAABAAQAAAAAAAIAAAABAAQAAAAAAAMAAAABAAQAAAABAP//AAABAAQAAAABAAAAAAABAAQAAAABAAIAAAABAAQAAAABAAMAAAABAAQAAAACAP//AAABAAQAAAACAAAAAAABAAQAAAADAP//AAABAAQAAAADAAAAAAABAAQAAAADAAEAAAABAAQAAAADAAIAAAABAAQAAAADAAMAAAABAAQAAAAEAP//AAABAAQAAAAEAAAAAAABAAQAAAAEAAEAAAABAAQAAAAEAAIAAAABAAQAAAAEAAMAAAABAAQAAAA=")
-tile_set = ExtResource("2_bo1nx")
+[node name="Water Layer" type="TileMapLayer" parent="." unique_id=1843344623]
+tile_set = ExtResource("2_ynf5e")
 
-[node name="Object Layer" type="TileMapLayer" parent="." unique_id=713005726]
-tile_map_data = PackedByteArray("AAD//wAAAwABAAQAAAD//wEAAwABAAQAAAAAAAAAAwABAAQAAAAAAAEAAwABAAQAAAABAAAAAwABAAQAAAABAAEAAwABAAQAAAA=")
-tile_set = ExtResource("2_bo1nx")
+[node name="Ground Layer" type="TileMapLayer" parent="." unique_id=1596390144]
+tile_map_data = PackedByteArray("AAADAAMAAAABAAEAAAADAAIAAAABAAEAAAACAAMAAAABAAEAAAACAAIAAAABAAEAAAABAAMAAAABAAEAAAABAAIAAAABAAEAAAAAAAMAAAABAAEAAAAAAAIAAAABAAEAAAD//wMAAAABAAEAAAD//wIAAAABAAEAAAD+/wMAAAABAAEAAAD+/wIAAAABAAEAAAABAAUAAAABAAEAAAABAAQAAAABAAEAAAACAAUAAAABAAEAAAACAAQAAAABAAEAAAADAAYAAAABAAEAAAADAAUAAAABAAEAAAADAAQAAAABAAEAAAACAAYAAAABAAEAAAABAAEAAAABAAEAAAABAAAAAAABAAEAAAACAAEAAAABAAEAAAACAAAAAAABAAEAAAAAAAEAAAABAAEAAAD//wEAAAABAAEAAAD+/wEAAAABAAEAAAAKAAgAAAACAAIAAAAKAAcAAAACAAEAAAAKAAYAAAACAAEAAAAKAAUAAAACAAEAAAAKAAQAAAACAAEAAAAKAAMAAAACAAEAAAAKAAIAAAACAAEAAAAKAAEAAAACAAEAAAAKAAAAAAACAAEAAAAKAP//AAACAAAAAAAJAAgAAAABAAIAAAAJAAcAAAABAAEAAAAJAAYAAAABAAEAAAAJAAUAAAABAAEAAAAJAAQAAAABAAEAAAAJAAMAAAABAAEAAAAJAAIAAAABAAEAAAAJAAEAAAABAAEAAAAJAAAAAAABAAEAAAAJAP//AAABAAAAAAAIAAgAAAABAAIAAAAIAAcAAAABAAEAAAAIAAYAAAABAAEAAAAIAAUAAAABAAEAAAAIAAQAAAABAAEAAAAIAAMAAAABAAEAAAAIAAIAAAABAAEAAAAIAAEAAAABAAEAAAAIAAAAAAABAAEAAAAIAP//AAABAAAAAAAHAAgAAAABAAIAAAAHAAcAAAABAAEAAAAHAAYAAAABAAEAAAAHAAUAAAABAAEAAAAHAAQAAAABAAEAAAAHAAMAAAABAAEAAAAHAAIAAAABAAEAAAAHAAEAAAABAAEAAAAHAAAAAAABAAEAAAAHAP//AAABAAAAAAAGAAgAAAABAAIAAAAGAAcAAAABAAEAAAAGAAYAAAABAAEAAAAGAAUAAAABAAEAAAAGAAQAAAABAAEAAAAGAAMAAAABAAEAAAAGAAIAAAABAAEAAAAGAAEAAAABAAEAAAAGAAAAAAABAAEAAAAGAP//AAABAAAAAAAFAAgAAAABAAIAAAAFAAcAAAABAAEAAAAFAAYAAAABAAEAAAAFAAUAAAABAAEAAAAFAAQAAAABAAEAAAAFAAMAAAABAAEAAAAFAAIAAAABAAEAAAAFAAEAAAABAAEAAAAFAAAAAAABAAEAAAAFAP//AAABAAAAAAAEAAgAAAABAAIAAAAEAAcAAAABAAEAAAAEAAYAAAABAAEAAAAEAAUAAAABAAEAAAAEAAQAAAABAAEAAAAEAAMAAAABAAEAAAAEAAIAAAABAAEAAAAEAAEAAAABAAEAAAAEAAAAAAABAAEAAAAEAP//AAABAAAAAAADAAgAAAABAAIAAAADAAcAAAABAAEAAAADAAEAAAABAAEAAAADAAAAAAABAAEAAAADAP//AAABAAAAAAACAAgAAAAFAAEAAAACAAcAAAABAAEAAAACAP//AAABAAAAAAABAAgAAAABAAEAAAABAAcAAAABAAEAAAABAAYAAAABAAEAAAABAP//AAABAAAAAAAAAAgAAAABAAEAAAAAAAcAAAABAAEAAAAAAAYAAAABAAEAAAAAAAUAAAABAAEAAAAAAAQAAAABAAEAAAAAAAAAAAABAAEAAAAAAP//AAABAAAAAAD//wgAAAABAAEAAAD//wcAAAABAAEAAAD//wYAAAABAAEAAAD//wUAAAABAAEAAAD//wQAAAABAAEAAAD//wAAAAABAAEAAAD/////AAABAAAAAAD+/wgAAAABAAEAAAD+/wcAAAABAAEAAAD+/wYAAAABAAEAAAD+/wUAAAABAAEAAAD+/wQAAAABAAEAAAD+/wAAAAABAAEAAAD+////AAABAAAAAAD9/wgAAAABAAEAAAD9/wcAAAABAAEAAAD9/wYAAAABAAEAAAD9/wUAAAABAAEAAAD9/wQAAAABAAEAAAD9/wMAAAABAAEAAAD9/wIAAAABAAEAAAD9/wEAAAABAAEAAAD9/wAAAAABAAEAAAD9////AAABAAAAAAD8/wgAAAAGAAEAAAD8/wcAAAABAAEAAAD8/wYAAAABAAEAAAD8/wUAAAABAAEAAAD8/wQAAAABAAEAAAD8/wMAAAABAAEAAAD8/wIAAAABAAEAAAD8/wEAAAABAAEAAAD8/wAAAAABAAEAAAD8////AAABAAAAAAD7/wgAAAABAAIAAAD7/wcAAAABAAEAAAD7/wYAAAABAAEAAAD7/wUAAAABAAEAAAD7/wQAAAABAAEAAAD7/wMAAAABAAEAAAD7/wIAAAABAAEAAAD7/wEAAAABAAEAAAD7/wAAAAABAAEAAAD7////AAABAAAAAAD6/wgAAAABAAIAAAD6/wcAAAABAAEAAAD6/wYAAAABAAEAAAD6/wUAAAABAAEAAAD6/wQAAAABAAEAAAD6/wMAAAABAAEAAAD6/wIAAAABAAEAAAD6/wEAAAABAAEAAAD6/wAAAAABAAEAAAD6////AAABAAAAAAD5/wgAAAABAAIAAAD5/wcAAAABAAEAAAD5/wYAAAABAAEAAAD5/wUAAAABAAEAAAD5/wQAAAABAAEAAAD5/wMAAAABAAEAAAD5/wIAAAABAAEAAAD5/wEAAAABAAEAAAD5/wAAAAAGAAIAAAD5////AAAAAAAAAAACAAsAAAACAAIAAAACAAoAAAACAAEAAAACAAkAAAACAAEAAAABAAsAAAABAAIAAAABAAoAAAABAAEAAAABAAkAAAABAAEAAAAAAAsAAAABAAIAAAAAAAoAAAABAAEAAAAAAAkAAAABAAEAAAD//wsAAAAAAAIAAAD//woAAAAAAAEAAAD//wkAAAAGAAEAAAD+/wkAAAABAAIAAAD9/wkAAAABAAIAAAD8/wkAAAAAAAIAAAD4/wgAAAABAAIAAAD4/wcAAAABAAEAAAD3/wgAAAABAAIAAAD3/wcAAAAGAAIAAAD2/wgAAAAAAAIAAAD2/wcAAAAAAAAAAAD4/wYAAAABAAEAAAD4/wUAAAABAAEAAAD3/wYAAAAAAAEAAAD3/wUAAAAAAAEAAAD4/wQAAAABAAEAAAD4/wMAAAABAAEAAAD3/wQAAAAAAAEAAAD3/wMAAAAAAAEAAAD4/wIAAAABAAEAAAD4/wEAAAABAAEAAAD4/wAAAAABAAAAAAD3/wIAAAAAAAEAAAD3/wEAAAAAAAEAAAD3/wAAAAAAAAAAAAA=")
+tile_set = ExtResource("2_ynf5e")
 
-[node name="Cursor" type="Sprite2D" parent="." unique_id=602184773]
-texture = ExtResource("5_cursor")
+[node name="Darker Layer" type="TileMapLayer" parent="." unique_id=1215897221]
+tile_set = ExtResource("2_ynf5e")
 
-[node name="Player" type="AnimatedSprite2D" parent="." unique_id=417290551]
+[node name="Grass Layer" type="TileMapLayer" parent="." unique_id=524495595]
+tile_map_data = PackedByteArray("AAD6/wAAAQABAAEAAAD6////AQABAAAAAAD5/wAAAQAGAAIAAAD5////AQAAAAAAAAD4/wAAAQABAAAAAAD3/wAAAQAAAAAAAAD6/wgAAQABAAIAAAD6/wcAAQABAAEAAAD6/wYAAQABAAEAAAD6/wUAAQABAAEAAAD6/wQAAQABAAEAAAD6/wMAAQABAAEAAAD6/wIAAQABAAEAAAD6/wEAAQABAAEAAAD5/wgAAQABAAIAAAD5/wcAAQABAAEAAAD5/wYAAQABAAEAAAD5/wUAAQABAAEAAAD5/wQAAQABAAEAAAD5/wMAAQABAAEAAAD5/wIAAQABAAEAAAD5/wEAAQABAAEAAAD4/wgAAQABAAIAAAD4/wcAAQABAAEAAAD4/wYAAQABAAEAAAD4/wUAAQABAAEAAAD4/wQAAQABAAEAAAD4/wMAAQABAAEAAAD4/wIAAQABAAEAAAD4/wEAAQABAAEAAAD3/wgAAQABAAIAAAD3/wcAAQAGAAIAAAD3/wYAAQAAAAEAAAD3/wUAAQAAAAEAAAD3/wQAAQAAAAEAAAD3/wMAAQAAAAEAAAD3/wIAAQAAAAEAAAD3/wEAAQAAAAEAAAD2/wgAAQAAAAIAAAD2/wcAAQAAAAAAAAAKAAgAAQACAAIAAAAKAAcAAQACAAEAAAAKAAYAAQACAAEAAAAKAAUAAQACAAEAAAAKAAQAAQACAAEAAAAKAAMAAQACAAEAAAAKAAIAAQACAAEAAAAKAAEAAQACAAEAAAAKAAAAAQACAAEAAAAKAP//AQACAAAAAAAJAAgAAQABAAIAAAAJAAcAAQABAAEAAAAJAAYAAQABAAEAAAAJAAUAAQABAAEAAAAJAAQAAQABAAEAAAAJAAMAAQABAAEAAAAJAAIAAQABAAEAAAAJAAEAAQABAAEAAAAJAAAAAQABAAEAAAAJAP//AQABAAAAAAAIAAgAAQABAAIAAAAIAAcAAQABAAEAAAAIAAYAAQABAAEAAAAIAAUAAQABAAEAAAAIAAQAAQABAAEAAAAIAAMAAQABAAEAAAAIAAIAAQABAAEAAAAIAAEAAQABAAEAAAAIAAAAAQABAAEAAAAIAP//AQABAAAAAAAHAAgAAQABAAIAAAAHAAcAAQABAAEAAAAHAAYAAQABAAEAAAAHAAUAAQABAAEAAAAHAAQAAQABAAEAAAAHAAMAAQABAAEAAAAHAAIAAQABAAEAAAAHAAEAAQABAAEAAAAHAAAAAQABAAEAAAAHAP//AQABAAAAAAAGAAgAAQABAAIAAAAGAAcAAQABAAEAAAAGAAYAAQABAAEAAAAGAAUAAQABAAEAAAAGAAQAAQABAAEAAAAGAAMAAQABAAEAAAAGAAIAAQABAAEAAAAGAAEAAQABAAEAAAAGAAAAAQABAAEAAAAGAP//AQABAAAAAAAFAAgAAQABAAIAAAAFAAcAAQABAAEAAAAFAAYAAQABAAEAAAAFAAUAAQABAAEAAAAFAAQAAQABAAEAAAAFAAMAAQABAAEAAAAFAAIAAQABAAEAAAAFAAEAAQABAAEAAAAFAAAAAQABAAEAAAAFAP//AQABAAAAAAAEAAgAAQABAAIAAAAEAAcAAQABAAEAAAAEAAYAAQABAAEAAAAEAAUAAQABAAEAAAAEAAQAAQABAAEAAAAEAAMAAQABAAEAAAAEAAIAAQABAAEAAAAEAAEAAQABAAEAAAAEAAAAAQABAAEAAAAEAP//AQABAAAAAAADAAgAAQABAAIAAAADAAcAAQABAAEAAAADAAYAAQABAAEAAAADAAUAAQABAAEAAAADAAQAAQABAAEAAAADAAMAAQABAAEAAAADAAIAAQABAAEAAAADAAEAAQABAAEAAAADAAAAAQABAAEAAAADAP//AQABAAAAAAACAAgAAQAFAAEAAAACAAcAAQABAAEAAAACAAYAAQABAAEAAAACAAUAAQABAAEAAAACAAQAAQABAAEAAAACAAMAAQABAAEAAAACAAIAAQABAAEAAAACAAEAAQABAAEAAAACAAAAAQABAAEAAAACAP//AQABAAAAAAABAAgAAQABAAEAAAABAAcAAQABAAEAAAABAAYAAQABAAEAAAABAAUAAQABAAEAAAABAAQAAQABAAEAAAABAAMAAQABAAEAAAABAAIAAQABAAEAAAABAAEAAQABAAEAAAABAAAAAQABAAEAAAABAP//AQABAAAAAAAAAAgAAQABAAEAAAAAAAcAAQABAAEAAAAAAAYAAQABAAEAAAAAAAUAAQABAAEAAAAAAAQAAQABAAEAAAAAAAMAAQABAAEAAAAAAAIAAQABAAEAAAAAAAEAAQABAAEAAAAAAAAAAQABAAEAAAAAAP//AQABAAAAAAD//wgAAQABAAEAAAD//wcAAQABAAEAAAD//wYAAQABAAEAAAD//wUAAQABAAEAAAD//wQAAQABAAEAAAD//wMAAQABAAEAAAD//wIAAQABAAEAAAD//wEAAQABAAEAAAD//wAAAQABAAEAAAD/////AQABAAAAAAD+/wgAAQABAAEAAAD+/wcAAQABAAEAAAD+/wYAAQABAAEAAAD+/wUAAQABAAEAAAD+/wQAAQABAAEAAAD+/wMAAQABAAEAAAD+/wIAAQABAAEAAAD+/wEAAQABAAEAAAD+/wAAAQABAAEAAAD+////AQABAAAAAAD9/wgAAQABAAEAAAD9/wcAAQABAAEAAAD9/wYAAQABAAEAAAD9/wUAAQABAAEAAAD9/wQAAQABAAEAAAD9/wMAAQABAAEAAAD9/wIAAQABAAEAAAD9/wEAAQABAAEAAAD9/wAAAQABAAEAAAD9////AQABAAAAAAD8/wgAAQAGAAEAAAD8/wcAAQABAAEAAAD8/wYAAQABAAEAAAD8/wUAAQABAAEAAAD8/wQAAQABAAEAAAD8/wMAAQABAAEAAAD8/wIAAQABAAEAAAD8/wEAAQABAAEAAAD8/wAAAQABAAEAAAD8////AQABAAAAAAD7/wgAAQABAAIAAAD7/wcAAQABAAEAAAD7/wYAAQABAAEAAAD7/wUAAQABAAEAAAD7/wQAAQABAAEAAAD7/wMAAQABAAEAAAD7/wIAAQABAAEAAAD7/wEAAQABAAEAAAD7/wAAAQABAAEAAAD7////AQABAAAAAAACAAkAAQACAAEAAAABAAkAAQABAAEAAAAAAAkAAQABAAEAAAD//wkAAQAGAAEAAAD+/wkAAQABAAIAAAD9/wkAAQABAAIAAAD8/wkAAQAAAAIAAAACAAsAAQACAAIAAAACAAoAAQACAAEAAAABAAsAAQABAAIAAAABAAoAAQABAAEAAAAAAAsAAQABAAIAAAAAAAoAAQABAAEAAAD//wsAAQAAAAIAAAD//woAAQAAAAEAAAA=")
+tile_set = ExtResource("2_ynf5e")
+
+[node name="Bush Layer" type="TileMapLayer" parent="." unique_id=617981234]
+tile_set = ExtResource("2_ynf5e")
+
+[node name="Fence Layer" type="TileMapLayer" parent="."]
+tile_set = ExtResource("2_ynf5e")
+
+[node name="Object Layer" type="TileMapLayer" parent="." unique_id=145834276]
+tile_set = ExtResource("2_ynf5e")
+
+[node name="Crop Layer" type="Node2D" parent="." unique_id=484340549]
+script = ExtResource("5_crop")
+
+[node name="Cursor" type="Sprite2D" parent="." unique_id=1713398089]
+texture = ExtResource("4_cursor")
+
+[node name="Player" type="AnimatedSprite2D" parent="." unique_id=317175575]
 sprite_frames = SubResource("SpriteFrames_player")
-animation = &"idle_right"
+animation = &"idle_down"
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=888104064]
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=1507366845]
+zoom = Vector2(3, 3)
+limit_left = 0
+limit_top = 0
+limit_right = 1600
+limit_bottom = 1600
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=2080944687]
+visible = false
+
+[node name="Panel" type="NinePatchRect" parent="HUD" unique_id=1015492710]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 556.0
+offset_bottom = 148.0
+texture = ExtResource("6_panel")
+patch_margin_left = 16
+patch_margin_top = 16
+patch_margin_right = 16
+patch_margin_bottom = 16
+
+[node name="Readout" type="VBoxContainer" parent="HUD/Panel" unique_id=1012448388]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = 10.0
+offset_right = -14.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 2
+
+[node name="DateRow" type="HBoxContainer" parent="HUD/Panel/Readout" unique_id=1664255646]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Spacer" type="Control" parent="HUD/Panel/Readout/DateRow" unique_id=1924080188]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+
+[node name="Date" type="Label" parent="HUD/Panel/Readout/DateRow" unique_id=1168750281]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.21, 0.16, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 16
+text = "Bulan 1   Hari 1"
+
+[node name="GoldRow" type="HBoxContainer" parent="HUD/Panel/Readout" unique_id=68102101]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Icon" type="TextureRect" parent="HUD/Panel/Readout/GoldRow" unique_id=1216550841]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+texture = SubResource("icon_gold")
+stretch_mode = 3
+
+[node name="Gold" type="Label" parent="HUD/Panel/Readout/GoldRow" unique_id=498709711]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.21, 0.16, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 16
+text = "100"
+
+[node name="BagRow" type="HBoxContainer" parent="HUD/Panel/Readout" unique_id=608424418]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Icon" type="TextureRect" parent="HUD/Panel/Readout/BagRow" unique_id=733910504]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+texture = SubResource("icon_bag")
+stretch_mode = 3
+
+[node name="Bag" type="Label" parent="HUD/Panel/Readout/BagRow" unique_id=539540148]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.21, 0.16, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 16
+text = "0"
+
+[node name="EnergyRow" type="HBoxContainer" parent="HUD/Panel/Readout" unique_id=1298261020]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Icon" type="TextureRect" parent="HUD/Panel/Readout/EnergyRow" unique_id=1871169992]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+texture = SubResource("icon_energy")
+stretch_mode = 3
+
+[node name="Energy" type="Label" parent="HUD/Panel/Readout/EnergyRow" unique_id=1273132784]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.21, 0.16, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 16
+text = "18/18   Cangkul 3"
+
+[node name="DebtRow" type="HBoxContainer" parent="HUD/Panel/Readout" unique_id=1942006216]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Icon" type="TextureRect" parent="HUD/Panel/Readout/DebtRow" unique_id=522376129]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+texture = SubResource("icon_debt")
+stretch_mode = 3
+
+[node name="Debt" type="Label" parent="HUD/Panel/Readout/DebtRow" unique_id=267393030]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.21, 0.16, 1)
+theme_override_fonts/font = ExtResource("9_font")
+theme_override_font_sizes/font_size = 13
+text = ">h6:10<  h10:50  h14:150  h18:320  h21:580  h24:930  h27:1390  h30:1960"
