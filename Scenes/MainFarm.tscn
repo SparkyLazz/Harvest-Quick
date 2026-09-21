@@ -2,6 +2,7 @@
 
 [ext_resource type="TileSet" uid="uid://c7ho1exh1aakl" path="res://Tilemaps/Terrains.tres" id="1_wy1g6"]
 [ext_resource type="PackedScene" path="res://Scenes/Player.tscn" id="2_player"]
+[ext_resource type="Script" uid="uid://gy6igq887wxi" path="res://Scripts/World/DayNightCycle.gd" id="3_daynight"]
 
 [node name="Main Farm" type="Node2D" unique_id=1930876094]
 
@@ -27,3 +28,7 @@ tile_set = ExtResource("1_wy1g6")
 
 [node name="Player" parent="." unique_id=1787371386 instance=ExtResource("2_player")]
 position = Vector2(72, -104)
+
+[node name="DayNightCycle" type="CanvasModulate" parent="." unique_id=1348820711]
+script = ExtResource("3_daynight")
+day_duration = 10.0
