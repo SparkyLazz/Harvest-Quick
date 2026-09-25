@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://baqlvjf7wsri0"
-path="res://.godot/imported/Bitmask references 2.png-ed7c9930d8933748500ca60dfae546eb.ctex"
+uid="uid://bn5jc1rgql7uf"
+path="res://.godot/imported/Icon_Clear_Night.png-a813e903f8176f1a801d0ec453e3a765.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Terrains/Bitmask references 2.png"
-dest_files=["res://.godot/imported/Bitmask references 2.png-ed7c9930d8933748500ca60dfae546eb.ctex"]
+source_file="res://Assets/UI/Weather/Icon_Clear_Night.png"
+dest_files=["res://.godot/imported/Icon_Clear_Night.png-a813e903f8176f1a801d0ec453e3a765.ctex"]
 
 [params]
 

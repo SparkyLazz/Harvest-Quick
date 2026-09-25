@@ -3,6 +3,8 @@
 [ext_resource type="TileSet" uid="uid://c7ho1exh1aakl" path="res://Tilemaps/Terrains.tres" id="1_wy1g6"]
 [ext_resource type="PackedScene" path="res://Scenes/Player.tscn" id="2_player"]
 [ext_resource type="Script" uid="uid://gy6igq887wxi" path="res://Scripts/World/DayNightCycle.gd" id="3_daynight"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/WeatherPanel.tscn" id="4_weather"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/Hotbar.tscn" id="5_hotbar"]
 
 [node name="Main Farm" type="Node2D" unique_id=1930876094]
 
@@ -32,3 +34,7 @@ position = Vector2(72, -104)
 [node name="DayNightCycle" type="CanvasModulate" parent="." unique_id=1348820711]
 script = ExtResource("3_daynight")
 day_duration = 10.0
+
+[node name="WeatherPanel" parent="." unique_id=46018 instance=ExtResource("4_weather")]
+
+[node name="Hotbar" parent="." instance=ExtResource("5_hotbar")]

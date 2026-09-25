@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cs2bstlx0d18l"
-path="res://.godot/imported/Bitmask references 1.png-6c78689cc8d50c33615f40747b3fcc3a.ctex"
+uid="uid://y8edwwvwueox"
+path="res://.godot/imported/Mercury_1.png-4938c831dbdf88451432e05a9b61dd39.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Terrains/Bitmask references 1.png"
-dest_files=["res://.godot/imported/Bitmask references 1.png-6c78689cc8d50c33615f40747b3fcc3a.ctex"]
+source_file="res://Assets/UI/Weather/Mercury_1.png"
+dest_files=["res://.godot/imported/Mercury_1.png-4938c831dbdf88451432e05a9b61dd39.ctex"]
 
 [params]
 

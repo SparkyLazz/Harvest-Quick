@@ -1,0 +1,80 @@
+[gd_scene load_steps=23 format=4]
+
+[ext_resource type="Script" path="res://Scripts/UI/WeatherPanel.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Disc.png" id="2_disc"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Arrow_0_Up.png" id="3_up"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Arrow_1_UpMid.png" id="4_upmid"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Arrow_2_Level.png" id="5_level"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Arrow_3_DownMid.png" id="6_downmid"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Arrow_4_Down.png" id="7_down"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Frame.png" id="8_frame"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Icon_Clear_Morning.png" id="9_morning"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Icon_Clear_Noon.png" id="10_noon"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Icon_Clear_Night.png" id="11_night"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_Empty.png" id="21_mempty"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Thermometer.png" id="22_therm"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_0.png" id="12_m0"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_1.png" id="13_m1"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_2.png" id="14_m2"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_3.png" id="15_m3"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_4.png" id="16_m4"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_5.png" id="17_m5"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_6.png" id="18_m6"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_7.png" id="19_m7"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_8.png" id="20_m8"]
+
+[node name="WeatherPanel" type="CanvasLayer"]
+script = ExtResource("1_script")
+swing_textures = Array[Texture2D]([ExtResource("3_up"), ExtResource("4_upmid"), ExtResource("5_level"), ExtResource("6_downmid"), ExtResource("7_down")])
+swing_offsets = PackedVector2Array(55, 16, 55, 19, 55, 21, 55, 22, 55, 24)
+morning_icon = ExtResource("9_morning")
+noon_icon = ExtResource("10_noon")
+night_icon = ExtResource("11_night")
+mercury_textures = Array[Texture2D]([ExtResource("12_m0"), ExtResource("13_m1"), ExtResource("14_m2"), ExtResource("15_m3"), ExtResource("16_m4"), ExtResource("17_m5"), ExtResource("18_m6"), ExtResource("19_m7"), ExtResource("20_m8")])
+mercury_offsets = PackedVector2Array(6, 82, 6, 82, 6, 78, 6, 76, 6, 73, 6, 67, 6, 62, 6, 62, 6, 62)
+
+[node name="Panel" type="Node2D" parent="."]
+position = Vector2(16, 16)
+scale = Vector2(2, 2)
+
+[node name="IconWindow" type="Control" parent="Panel"]
+clip_contents = true
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 44.0
+offset_bottom = 44.0
+
+[node name="OutgoingIcon" type="Sprite2D" parent="Panel/IconWindow"]
+centered = false
+
+[node name="Icon" type="Sprite2D" parent="Panel/IconWindow"]
+centered = false
+
+[node name="Disc" type="Sprite2D" parent="Panel"]
+centered = false
+position = Vector2(53, 10)
+texture = ExtResource("2_disc")
+
+[node name="Arrow" type="Sprite2D" parent="Panel"]
+centered = false
+position = Vector2(55, 21)
+texture = ExtResource("5_level")
+
+[node name="MercuryBacking" type="Sprite2D" parent="Panel"]
+centered = false
+position = Vector2(6, 62)
+texture = ExtResource("21_mempty")
+
+[node name="Mercury" type="Sprite2D" parent="Panel"]
+centered = false
+position = Vector2(6, 82)
+texture = ExtResource("12_m0")
+
+[node name="Frame" type="Sprite2D" parent="Panel"]
+centered = false
+texture = ExtResource("8_frame")
+
+[node name="Thermometer" type="Sprite2D" parent="Panel"]
+centered = false
+position = Vector2(0, 56)
+texture = ExtResource("22_therm")

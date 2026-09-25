@@ -17,6 +17,15 @@ signal day_passed(day: int)
 signal became_day
 ## Emitted when the clock crosses [member sunset_hour].
 signal became_night
+## Emitted when the day moves into a new [enum Phase].
+signal phase_changed(phase: Phase)
+
+## Coarse three-way reading of the clock, used by the HUD dial.
+enum Phase {
+	MORNING, ## [member sunrise_hour] until [member noon_hour].
+	NOON, ## [member noon_hour] until [member sunset_hour].
+	NIGHT, ## [member sunset_hour] until [member sunrise_hour].
+}
 
 ## Real seconds for one in-game day. 600 = 10 minutes.
 @export var day_duration: float = 600.0
@@ -33,6 +42,8 @@ signal became_night
 @export_range(0.0, 24.0, 0.1) var sunrise_hour: float = 6.0
 ## Hour [signal became_night] fires on.
 @export_range(0.0, 24.0, 0.1) var sunset_hour: float = 20.0
+## Hour the morning half of the day gives way to the noon half.
+@export_range(0.0, 24.0, 0.1) var noon_hour: float = 12.0
 
 ## Position in the day: 0 = midnight, 0.25 = 06:00, 0.5 = noon, 0.75 = 18:00.
 var time_of_day: float = 0.0
@@ -41,6 +52,7 @@ var day: int = 1
 
 var _last_hour: int = -1
 var _was_night: bool = false
+var _last_phase: int = -1
 
 func _ready() -> void:
 	add_to_group("day_night")
@@ -64,6 +76,7 @@ func set_time(hour: float) -> void:
 	time_of_day = fposmod(hour, 24.0) / 24.0
 	_last_hour = get_hour()
 	_was_night = is_night()
+	_last_phase = get_phase()
 	_apply_tint()
 
 func get_hour() -> int:
@@ -71,6 +84,13 @@ func get_hour() -> int:
 
 func get_minute() -> int:
 	return int(time_of_day * 1440.0) % 60
+
+## Which third of the day the clock is in. Night wins over the
+## morning/noon split, so [member noon_hour] only ever divides daylight.
+func get_phase() -> Phase:
+	if is_night():
+		return Phase.NIGHT
+	return Phase.MORNING if time_of_day * 24.0 < noon_hour else Phase.NOON
 
 func is_night() -> bool:
 	var hour := time_of_day * 24.0
@@ -100,6 +120,11 @@ func _emit_transitions() -> void:
 			became_night.emit()
 		else:
 			became_day.emit()
+
+	var phase := get_phase()
+	if phase != _last_phase:
+		_last_phase = phase
+		phase_changed.emit(phase)
 
 ## Ramp from midnight blue through sunrise, daylight, sunset and back.
 ## The first and last colours match so the cycle loops seamlessly.

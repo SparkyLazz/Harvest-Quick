@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=4]
+
+[ext_resource type="Script" path="res://Scripts/UI/Hotbar.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Inventory/Bar.png" id="2_bar"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Inventory/Slot_Small.png" id="3_slot"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Inventory/Slot.png" id="5_slotsel"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Inventory/Slot_Cursor.png" id="4_cursor"]
+
+[node name="Hotbar" type="CanvasLayer"]
+script = ExtResource("1_script")
+slot_texture = ExtResource("3_slot")
+selected_slot_texture = ExtResource("5_slotsel")
+cursor_texture = ExtResource("4_cursor")
+
+[node name="Root" type="Node2D" parent="."]
+scale = Vector2(2, 2)
+
+[node name="Bar" type="NinePatchRect" parent="Root"]
+offset_right = 418.0
+offset_bottom = 52.0
+texture = ExtResource("2_bar")
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 3
+
+[node name="Cursor" type="TextureRect" parent="Root/Bar"]
+offset_right = 46.0
+offset_bottom = 48.0
+texture = ExtResource("4_cursor")
