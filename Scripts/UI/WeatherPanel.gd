@@ -60,11 +60,23 @@ extends CanvasLayer
 ## Rolls the starting icon in rather than having it already in place.
 @export var animate_on_start: bool = true
 
+## Month names, in the order [method date_string] steps through them.
+const MONTH_NAMES: PackedStringArray = [
+	"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+	"JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+]
+## Days in each month. February is kept at 28: the cycle counts days, not
+## years, so there is nothing to hang a leap year off.
+const MONTH_LENGTHS: PackedInt32Array = [
+	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+]
+
 @onready var _arrow: Sprite2D = $Panel/Arrow
 @onready var _mercury: Sprite2D = $Panel/Mercury
 @onready var _icon_window: Control = $Panel/IconWindow
 @onready var _icon: Sprite2D = $Panel/IconWindow/Icon
 @onready var _outgoing_icon: Sprite2D = $Panel/IconWindow/OutgoingIcon
+@onready var _date: Label = $Panel/Date
 
 var _cycle: DayNightCycle
 var _step: int = 0
@@ -84,9 +96,12 @@ func _ready() -> void:
 		push_warning("WeatherPanel: no DayNightCycle in the \"day_night\" group; the dial will not move.")
 		show_weather(noon_icon, animate_on_start)
 		snap_mercury(noon_level)
+		show_date(1)
 		return
 
 	_cycle.phase_changed.connect(_on_phase_changed)
+	_cycle.day_passed.connect(show_date)
+	show_date(_cycle.day)
 
 	# The dial starts already pointing at the right phase rather than
 	# swinging into place on the first frame of the game. The icon still
@@ -97,6 +112,24 @@ func _ready() -> void:
 	_show_step(_step)
 	snap_mercury(level_for_phase(phase))
 	show_weather(icon_for_phase(phase), animate_on_start)
+
+## Writes [param day] onto the plaque below the dial.
+func show_date(day: int) -> void:
+	_date.text = date_string(day)
+
+## Turns a day number into a "JAN.17" style reading. Day 1 is JAN.01, and
+## the calendar wraps after 365 days rather than counting years, since the
+## cycle only ever hands out a day number.
+##
+## Static, so anything else showing the date — the menu's profile panel —
+## reads it off the same calendar without needing a panel to ask.
+static func date_string(day: int) -> String:
+	var remaining := posmod(day - 1, 365)
+	var month := 0
+	while month < MONTH_LENGTHS.size() - 1 and remaining >= MONTH_LENGTHS[month]:
+		remaining -= MONTH_LENGTHS[month]
+		month += 1
+	return "%s.%02d" % [MONTH_NAMES[month], remaining + 1]
 
 ## Swings the arrow and rolls in the matching icon, so both halves of the
 ## panel move together on a phase change.

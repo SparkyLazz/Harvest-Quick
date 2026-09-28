@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=4]
+[gd_scene load_steps=24 format=4]
 
 [ext_resource type="Script" path="res://Scripts/UI/WeatherPanel.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Disc.png" id="2_disc"]
@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Icon_Clear_Night.png" id="11_night"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_Empty.png" id="21_mempty"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Thermometer.png" id="22_therm"]
+[ext_resource type="FontFile" path="res://Assets/UI/Fonts/pixelFont-4-7x7-sproutLands.ttf" id="23_font"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_0.png" id="12_m0"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_1.png" id="13_m1"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Weather/Mercury_2.png" id="14_m2"]
@@ -78,3 +79,15 @@ texture = ExtResource("8_frame")
 centered = false
 position = Vector2(0, 56)
 texture = ExtResource("22_therm")
+
+[node name="Date" type="Label" parent="Panel"]
+offset_left = 25.0
+offset_top = 61.0
+offset_right = 71.0
+offset_bottom = 73.0
+theme_override_colors/font_color = Color(0.565, 0.384, 0.365, 1)
+theme_override_fonts/font = ExtResource("23_font")
+theme_override_font_sizes/font_size = 9
+text = "JAN.01"
+horizontal_alignment = 1
+vertical_alignment = 1

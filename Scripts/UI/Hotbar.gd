@@ -18,9 +18,19 @@ extends CanvasLayer
 ##
 ## Slots are built in [method _ready] rather than authored in the scene, so
 ## the count stays a single number instead of nine nodes to keep in step.
+##
+## Each slot is an [ItemSlot] bound to the matching slot of
+## [PlayerInventory], which is the same array the backpack window shows:
+## the bar is that inventory's first row, not a copy of it. So a stack
+## dragged out of the window onto the bar needs no code here, and putting
+## something into slot 3 shows up on the bar whoever did it.
 
 ## Emitted when a different slot becomes the selected one.
 signal slot_selected(index: int)
+## Emitted when what the player is holding changes, either because the
+## selection moved or because the selected slot's contents did.
+## [param stack] is null when the slot is empty.
+signal held_item_changed(stack: ItemStack)
 
 @export_group("Layout")
 ## How many slots the bar holds.
@@ -98,7 +108,7 @@ signal slot_selected(index: int)
 @onready var _bar: NinePatchRect = $Root/Bar
 @onready var _cursor: TextureRect = $Root/Bar/Cursor
 
-var _slots: Array[TextureRect] = []
+var _slots: Array[ItemSlot] = []
 var _selected: int = 0
 var _tween: Tween
 
@@ -112,6 +122,18 @@ var selected: int:
 func _ready() -> void:
 	_rebuild()
 	get_viewport().size_changed.connect(_reposition)
+	PlayerInventory.inventory.slot_changed.connect(_on_inventory_slot_changed)
+	held_item_changed.emit(held_item())
+
+## The stack in the selected slot, or null if it is empty. This is what
+## the player is holding: the rest of the game asks the hotbar this rather
+## than reaching into the inventory itself.
+func held_item() -> ItemStack:
+	return PlayerInventory.inventory.stack_at(_selected)
+
+func _on_inventory_slot_changed(index: int) -> void:
+	if index == _selected:
+		held_item_changed.emit(held_item())
 
 ## Moves the cursor to [param index], wrapping at either end so scrolling
 ## past the last slot comes back round to the first.
@@ -135,6 +157,7 @@ func select(index: int) -> void:
 		_settle([_slots[previous], _slots[_selected], _cursor])
 
 	slot_selected.emit(_selected)
+	held_item_changed.emit(held_item())
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -143,13 +166,23 @@ func _unhandled_input(event: InputEvent) -> void:
 		if digit >= 0 and digit < mini(_slots.size(), 9):
 			select(digit)
 			get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed:
+	elif event is InputEventMouseButton and event.pressed and not _menu_is_open():
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			select(_selected + 1)
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			select(_selected - 1)
 			get_viewport().set_input_as_handled()
+
+## Whether something is open that the wheel belongs to instead.
+##
+## Godot deliberately leaves a wheel event unhandled after a control has
+## scrolled on it, so that a wheel can keep bubbling up through nested
+## scrolling panes. That is the right call for panes and the wrong one
+## here: without this check, scrolling a list inside the menu also winds
+## the hotbar along underneath it.
+func _menu_is_open() -> bool:
+	return not get_tree().get_nodes_in_group(GameMenu.OPEN_GROUP).is_empty()
 
 # --- Motion ------------------------------------------------------------
 
@@ -201,10 +234,12 @@ func _rebuild() -> void:
 
 	_selected = clampi(_selected, 0, slot_count - 1)
 	for i in slot_count:
-		var slot := TextureRect.new()
+		var slot := ItemSlot.new()
 		var is_selected := i == _selected
 		slot.texture = selected_slot_texture if is_selected else slot_texture
 		_fit(slot, Vector2.ZERO if is_selected else _unselected_size())
+		slot.bind(PlayerInventory.inventory, i)
+		slot.activated.connect(select)
 		_bar.add_child(slot)
 		# Ahead of the cursor in the tree would draw over it, so put every
 		# slot behind the cursor node that the scene already holds.

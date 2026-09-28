@@ -25,6 +25,7 @@ patch_margin_right = 8
 patch_margin_bottom = 3
 
 [node name="Cursor" type="TextureRect" parent="Root/Bar"]
+mouse_filter = 2
 offset_right = 46.0
 offset_bottom = 48.0
 texture = ExtResource("4_cursor")

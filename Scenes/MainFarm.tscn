@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://gy6igq887wxi" path="res://Scripts/World/DayNightCycle.gd" id="3_daynight"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/WeatherPanel.tscn" id="4_weather"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Hotbar.tscn" id="5_hotbar"]
+[ext_resource type="PackedScene" path="res://Scenes/UI/GameMenu.tscn" id="6_menu"]
 
 [node name="Main Farm" type="Node2D" unique_id=1930876094]
 
@@ -37,4 +38,6 @@ day_duration = 10.0
 
 [node name="WeatherPanel" parent="." unique_id=46018 instance=ExtResource("4_weather")]
 
-[node name="Hotbar" parent="." instance=ExtResource("5_hotbar")]
+[node name="Hotbar" parent="." unique_id=1229189479 instance=ExtResource("5_hotbar")]
+
+[node name="GameMenu" parent="." instance=ExtResource("6_menu")]
