@@ -15,12 +15,6 @@ run/main_scene="uid://dt1dndxepqsi6"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
-[autoload]
-
-ItemDb="*res://Scripts/Inventory/ItemDatabase.gd"
-PlayerInventory="*res://Scripts/Inventory/PlayerInventory.gd"
-PlayerProfile="*res://Scripts/World/PlayerProfile.gd"
-
 [display]
 
 window/stretch/mode="canvas_items"

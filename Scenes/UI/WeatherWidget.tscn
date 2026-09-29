@@ -1,0 +1,173 @@
+[gd_scene format=3 uid="uid://dodna2aopuxga"]
+
+[ext_resource type="Script" uid="uid://doyguyy80q7p2" path="res://Scripts/UI/WeatherWidget.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c071wkf5y76di" path="res://Assets/UI/Weathers/Weather_UI.png" id="2_ui"]
+[ext_resource type="Texture2D" uid="uid://2gmjssrwhwho" path="res://Assets/UI/Weathers/Weather_Icons_Big.png" id="3_icons"]
+[ext_resource type="Texture2D" uid="uid://cwmk4fsfjf1pw" path="res://Assets/UI/Weathers/Thermometer_UI_Seperated.png" id="4_thermo"]
+
+[sub_resource type="AtlasTexture" id="Atlas_back_prev"]
+resource_local_to_scene = true
+atlas = ExtResource("3_icons")
+region = Rect2(7, 295, 34, 34)
+
+[sub_resource type="AtlasTexture" id="Atlas_back"]
+resource_local_to_scene = true
+atlas = ExtResource("3_icons")
+region = Rect2(7, 295, 34, 34)
+
+[sub_resource type="AtlasTexture" id="Atlas_glyph_prev"]
+resource_local_to_scene = true
+atlas = ExtResource("3_icons")
+region = Rect2(7, 151, 34, 34)
+
+[sub_resource type="AtlasTexture" id="Atlas_glyph"]
+resource_local_to_scene = true
+atlas = ExtResource("3_icons")
+region = Rect2(7, 151, 34, 34)
+
+[sub_resource type="AtlasTexture" id="Atlas_wheel"]
+atlas = ExtResource("2_ui")
+region = Rect2(67, 103, 22, 34)
+
+[sub_resource type="AtlasTexture" id="Atlas_needle"]
+resource_local_to_scene = true
+atlas = ExtResource("2_ui")
+region = Rect2(337, 18, 15, 12)
+
+[sub_resource type="AtlasTexture" id="Atlas_stick"]
+atlas = ExtResource("4_thermo")
+region = Rect2(44, 9, 8, 28)
+
+[sub_resource type="AtlasTexture" id="Atlas_mercury"]
+resource_local_to_scene = true
+atlas = ExtResource("4_thermo")
+region = Rect2(108, 62, 8, 23)
+
+[sub_resource type="AtlasTexture" id="Atlas_frame_top"]
+atlas = ExtResource("2_ui")
+region = Rect2(119, 71, 92, 60)
+
+[sub_resource type="AtlasTexture" id="Atlas_frame_bottom"]
+atlas = ExtResource("2_ui")
+region = Rect2(119, 131, 79, 34)
+
+[node name="WeatherWidget" type="Control" unique_id=1006130857]
+texture_filter = 1
+custom_minimum_size = Vector2(92, 94)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 92.0
+offset_bottom = 94.0
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="IconWindow" type="Control" parent="." unique_id=1421072219]
+clip_contents = true
+anchors_preset = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 42.0
+offset_bottom = 42.0
+mouse_filter = 2
+
+[node name="BackPrev" type="TextureRect" parent="IconWindow" unique_id=566417482]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+texture = SubResource("Atlas_back_prev")
+
+[node name="Back" type="TextureRect" parent="IconWindow" unique_id=329921294]
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+texture = SubResource("Atlas_back")
+
+[node name="Bob" type="Control" parent="IconWindow" unique_id=1357765861]
+anchors_preset = 0
+offset_right = 34.0
+offset_bottom = 34.0
+mouse_filter = 2
+
+[node name="GlyphPrev" type="TextureRect" parent="IconWindow/Bob" unique_id=2058651122]
+modulate = Color(1, 1, 1, 0)
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+texture = SubResource("Atlas_glyph_prev")
+
+[node name="Glyph" type="TextureRect" parent="IconWindow/Bob" unique_id=1688882106]
+layout_mode = 0
+offset_right = 34.0
+offset_bottom = 34.0
+texture = SubResource("Atlas_glyph")
+
+[node name="DialWindow" type="Control" parent="." unique_id=264895525]
+clip_contents = true
+anchors_preset = 0
+offset_left = 50.0
+offset_top = 8.0
+offset_right = 72.0
+offset_bottom = 42.0
+mouse_filter = 2
+
+[node name="Wheel" type="TextureRect" parent="DialWindow" unique_id=1574208985]
+layout_mode = 0
+offset_right = 22.0
+offset_bottom = 34.0
+texture = SubResource("Atlas_wheel")
+
+[node name="Needle" type="TextureRect" parent="." unique_id=415428753]
+layout_mode = 0
+offset_left = 51.0
+offset_top = 17.0
+offset_right = 66.0
+offset_bottom = 29.0
+texture = SubResource("Atlas_needle")
+
+[node name="Thermometer" type="Control" parent="." unique_id=992725331]
+anchors_preset = 0
+offset_right = 92.0
+offset_bottom = 94.0
+mouse_filter = 2
+
+[node name="Stick" type="TextureRect" parent="Thermometer" unique_id=1675326057]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 58.0
+offset_right = 14.0
+offset_bottom = 86.0
+texture = SubResource("Atlas_stick")
+
+[node name="Mercury" type="TextureRect" parent="Thermometer" unique_id=1535368776]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 63.0
+offset_right = 14.0
+offset_bottom = 86.0
+texture = SubResource("Atlas_mercury")
+
+[node name="FrameTop" type="TextureRect" parent="." unique_id=1216321621]
+layout_mode = 0
+offset_right = 92.0
+offset_bottom = 60.0
+texture = SubResource("Atlas_frame_top")
+
+[node name="FrameBottom" type="TextureRect" parent="." unique_id=1213144872]
+layout_mode = 0
+offset_top = 60.0
+offset_right = 79.0
+offset_bottom = 94.0
+texture = SubResource("Atlas_frame_bottom")
+
+[node name="Date" type="Label" parent="." unique_id=236954260]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 51.0
+offset_right = 64.0
+offset_bottom = 73.0
+theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_font_sizes/font_size = 10
+text = "SPR.01"
+horizontal_alignment = 1
+vertical_alignment = 1
