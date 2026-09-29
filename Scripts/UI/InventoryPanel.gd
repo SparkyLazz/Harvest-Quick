@@ -35,16 +35,24 @@ var _tween: Tween
 ## Whether the window is meant to be up. Not the same as [member visible],
 ## which stays true through the closing animation.
 var _is_open: bool = false
+## The scale this window was placed at. The open and close animations work
+## relative to it, so whatever the scene set survives them — hardcoding
+## Vector2.ONE here silently flattens a window placed at 2x or 4x.
+var _base_scale: Vector2 = Vector2.ONE
 
 func _ready() -> void:
 	pivot_offset = size * 0.5
+	_base_scale = scale
 	if Engine.is_editor_hint():
 		return
+	var close := get_node_or_null("Close") as BaseButton
+	if close != null:
+		close.pressed.connect(self.close)
 	if closed_on_start:
 		_is_open = false
 		visible = false
 		modulate.a = 0.0
-		scale = Vector2.ONE * open_from
+		scale = _base_scale * open_from
 	else:
 		_is_open = true
 
@@ -88,11 +96,11 @@ func _animate(opening: bool) -> void:
 		_tween = null
 	if Engine.is_editor_hint() or open_time <= 0.0:
 		modulate.a = 1.0 if opening else 0.0
-		scale = Vector2.ONE if opening else Vector2.ONE * open_from
+		scale = _base_scale if opening else _base_scale * open_from
 		visible = opening
 		return
 	if opening:
-		scale = Vector2.ONE * open_from
+		scale = _base_scale * open_from
 		modulate.a = 0.0
 	_tween = create_tween()
 	_tween.set_parallel(true)
@@ -100,7 +108,8 @@ func _animate(opening: bool) -> void:
 	(_tween.tween_property(self, "modulate:a", 1.0 if opening else 0.0, open_time)
 		.set_trans(Tween.TRANS_SINE))
 	(_tween.tween_property(
-			self, "scale", Vector2.ONE if opening else Vector2.ONE * open_from, open_time)
+			self, "scale",
+			_base_scale if opening else _base_scale * open_from, open_time)
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT))
 	if not opening:
 		# Drop it out of the draw list only once it has finished shrinking.

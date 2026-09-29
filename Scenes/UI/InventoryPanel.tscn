@@ -1,11 +1,184 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=46 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/InventoryPanel.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/UI/Frames/character_backdrops.png" id="2_frames"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Inventorys/Inventory_Spritesheet.png" id="2_inv"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Emotes/Teemo_Emotes.png" id="3_teemo"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Buttons/Icon_Buttons.png" id="4_icons"]
+[ext_resource type="FontFile" path="res://Assets/UI/Fonts/pixelFont-4-7x7-sproutLands.ttf" id="5_font"]
+[ext_resource type="Script" path="res://Scripts/UI/ProfilePanel.gd" id="6_profile"]
+[ext_resource type="Script" path="res://Scripts/UI/PanelTabs.gd" id="7_tabs"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Sliders/Sliders.png" id="8_sliders"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Marks/Marks.png" id="9_marks"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Settings/Settings_Widgets.png" id="10_set"]
 
-[sub_resource type="AtlasTexture" id="Atlas_panel"]
-atlas = ExtResource("2_frames")
-region = Rect2(251, 92, 58, 57)
+[sub_resource type="ButtonGroup" id="Group_tabs"]
+
+[sub_resource type="AtlasTexture" id="Atlas_window"]
+atlas = ExtResource("2_inv")
+region = Rect2(323, 162, 42, 44)
+
+[sub_resource type="AtlasTexture" id="Atlas_page"]
+atlas = ExtResource("2_inv")
+region = Rect2(227, 162, 42, 44)
+
+[sub_resource type="AtlasTexture" id="Atlas_portrait"]
+atlas = ExtResource("2_inv")
+region = Rect2(275, 162, 42, 44)
+
+[sub_resource type="AtlasTexture" id="Atlas_cat"]
+resource_local_to_scene = true
+atlas = ExtResource("3_teemo")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_close_n"]
+atlas = ExtResource("4_icons")
+region = Rect2(128, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_close_p"]
+atlas = ExtResource("4_icons")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_track_h"]
+atlas = ExtResource("8_sliders")
+region = Rect2(133, 38, 38, 4)
+
+[sub_resource type="AtlasTexture" id="Atlas_grab_h"]
+atlas = ExtResource("8_sliders")
+region = Rect2(103, 4, 18, 8)
+
+[sub_resource type="AtlasTexture" id="Atlas_track_v"]
+atlas = ExtResource("8_sliders")
+region = Rect2(182, 5, 4, 38)
+
+[sub_resource type="AtlasTexture" id="Atlas_grab_v"]
+atlas = ExtResource("8_sliders")
+region = Rect2(133, 5, 7, 18)
+
+[sub_resource type="AtlasTexture" id="Atlas_toggle_off"]
+atlas = ExtResource("10_set")
+region = Rect2(2, 151, 28, 18)
+
+[sub_resource type="AtlasTexture" id="Atlas_toggle_hover"]
+atlas = ExtResource("10_set")
+region = Rect2(34, 151, 28, 18)
+
+[sub_resource type="AtlasTexture" id="Atlas_toggle_on"]
+atlas = ExtResource("10_set")
+region = Rect2(66, 151, 28, 18)
+
+[sub_resource type="AtlasTexture" id="Atlas_seg_off"]
+atlas = ExtResource("10_set")
+region = Rect2(22, 178, 5, 12)
+
+[sub_resource type="AtlasTexture" id="Atlas_seg_on"]
+atlas = ExtResource("10_set")
+region = Rect2(6, 178, 5, 12)
+
+[sub_resource type="AtlasTexture" id="Atlas_seg_grab"]
+atlas = ExtResource("10_set")
+region = Rect2(6, 178, 4, 12)
+
+[sub_resource type="StyleBoxTexture" id="SB_seg_track"]
+content_margin_left = 0.0
+content_margin_top = 6.0
+content_margin_right = 0.0
+content_margin_bottom = 6.0
+texture = SubResource("Atlas_seg_off")
+axis_stretch_horizontal = 1
+
+[sub_resource type="StyleBoxTexture" id="SB_seg_fill"]
+content_margin_left = 0.0
+content_margin_top = 6.0
+content_margin_right = 0.0
+content_margin_bottom = 6.0
+texture = SubResource("Atlas_seg_on")
+axis_stretch_horizontal = 1
+
+[sub_resource type="StyleBoxTexture" id="SB_scroll"]
+content_margin_left = 3.5
+content_margin_top = 2.0
+content_margin_right = 3.5
+content_margin_bottom = 2.0
+texture = SubResource("Atlas_track_v")
+texture_margin_top = 2.0
+texture_margin_bottom = 2.0
+
+[sub_resource type="StyleBoxTexture" id="SB_grabber"]
+content_margin_left = 3.5
+content_margin_top = 6.0
+content_margin_right = 3.5
+content_margin_bottom = 6.0
+texture = SubResource("Atlas_grab_v")
+texture_margin_top = 6.0
+texture_margin_bottom = 6.0
+
+[sub_resource type="Theme" id="Theme_settings"]
+HSlider/icons/grabber = SubResource("Atlas_seg_grab")
+HSlider/icons/grabber_highlight = SubResource("Atlas_seg_grab")
+HSlider/styles/grabber_area = SubResource("SB_seg_fill")
+HSlider/styles/grabber_area_highlight = SubResource("SB_seg_fill")
+HSlider/styles/slider = SubResource("SB_seg_track")
+VScrollBar/styles/grabber = SubResource("SB_grabber")
+VScrollBar/styles/grabber_highlight = SubResource("SB_grabber")
+VScrollBar/styles/grabber_pressed = SubResource("SB_grabber")
+VScrollBar/styles/scroll = SubResource("SB_scroll")
+
+[sub_resource type="AtlasTexture" id="Atlas_heart0"]
+resource_local_to_scene = true
+atlas = ExtResource("2_inv")
+region = Rect2(7, 25, 18, 16)
+
+[sub_resource type="AtlasTexture" id="Atlas_heart1"]
+resource_local_to_scene = true
+atlas = ExtResource("2_inv")
+region = Rect2(7, 25, 18, 16)
+
+[sub_resource type="AtlasTexture" id="Atlas_heart2"]
+resource_local_to_scene = true
+atlas = ExtResource("2_inv")
+region = Rect2(7, 25, 18, 16)
+
+[sub_resource type="AtlasTexture" id="Atlas_heart3"]
+resource_local_to_scene = true
+atlas = ExtResource("2_inv")
+region = Rect2(7, 25, 18, 16)
+
+[sub_resource type="AtlasTexture" id="Atlas_heart4"]
+resource_local_to_scene = true
+atlas = ExtResource("2_inv")
+region = Rect2(7, 25, 18, 16)
+
+[sub_resource type="AtlasTexture" id="Atlas_Settings_n"]
+atlas = ExtResource("4_icons")
+region = Rect2(0, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Settings_p"]
+atlas = ExtResource("4_icons")
+region = Rect2(32, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Encyclopedia_n"]
+atlas = ExtResource("4_icons")
+region = Rect2(64, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Encyclopedia_p"]
+atlas = ExtResource("4_icons")
+region = Rect2(96, 128, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Statistics_n"]
+atlas = ExtResource("4_icons")
+region = Rect2(0, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Statistics_p"]
+atlas = ExtResource("4_icons")
+region = Rect2(32, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Inventory_n"]
+atlas = ExtResource("4_icons")
+region = Rect2(64, 320, 32, 32)
+
+[sub_resource type="AtlasTexture" id="Atlas_Inventory_p"]
+atlas = ExtResource("4_icons")
+region = Rect2(96, 320, 32, 32)
 
 [node name="InventoryPanel" type="Control"]
 texture_filter = 1
@@ -15,13 +188,13 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -110.0
-offset_top = -70.0
-offset_right = 110.0
-offset_bottom = 70.0
+offset_left = -180.0
+offset_top = -100.0
+offset_right = 180.0
+offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
-pivot_offset = Vector2(110, 70)
+pivot_offset = Vector2(180.0, 100.0)
 mouse_filter = 2
 script = ExtResource("1_script")
 
@@ -33,8 +206,595 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = SubResource("Atlas_panel")
-patch_margin_left = 19
-patch_margin_top = 18
-patch_margin_right = 19
-patch_margin_bottom = 19
+texture = SubResource("Atlas_window")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 6
+
+[node name="Body" type="MarginContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 7
+theme_override_constants/margin_top = 7
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 9
+
+[node name="Split" type="HBoxContainer" parent="Panel/Body"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="LeftPanel" type="NinePatchRect" parent="Panel/Body/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+mouse_filter = 2
+texture = SubResource("Atlas_page")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 6
+
+[node name="Profile" type="Control" parent="Panel/Body/Split/LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_profile")
+
+[node name="Frame" type="NinePatchRect" parent="Panel/Body/Split/LeftPanel/Profile"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 46.0
+offset_bottom = 48.0
+mouse_filter = 2
+texture = SubResource("Atlas_portrait")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 6
+
+[node name="Cat" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Frame"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 36.0
+offset_bottom = 36.0
+mouse_filter = 2
+texture = SubResource("Atlas_cat")
+
+[node name="Lines" type="Control" parent="Panel/Body/Split/LeftPanel/Profile"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Line0" type="Label" parent="Panel/Body/Split/LeftPanel/Profile/Lines"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 6.0
+offset_right = 108.0
+offset_bottom = 18.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "RUI"
+vertical_alignment = 1
+clip_text = true
+
+[node name="Line1" type="Label" parent="Panel/Body/Split/LeftPanel/Profile/Lines"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 21.0
+offset_right = 108.0
+offset_bottom = 33.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "QUICK FARM"
+vertical_alignment = 1
+clip_text = true
+
+[node name="Line2" type="Label" parent="Panel/Body/Split/LeftPanel/Profile/Lines"]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 36.0
+offset_right = 108.0
+offset_bottom = 48.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "500 G"
+vertical_alignment = 1
+clip_text = true
+
+[node name="Hearts" type="Control" parent="Panel/Body/Split/LeftPanel/Profile"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Heart0" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Hearts"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 58.0
+offset_right = 26.0
+offset_bottom = 74.0
+mouse_filter = 2
+texture = SubResource("Atlas_heart0")
+
+[node name="Heart1" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Hearts"]
+layout_mode = 0
+offset_left = 28.0
+offset_top = 58.0
+offset_right = 46.0
+offset_bottom = 74.0
+mouse_filter = 2
+texture = SubResource("Atlas_heart1")
+
+[node name="Heart2" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Hearts"]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 58.0
+offset_right = 66.0
+offset_bottom = 74.0
+mouse_filter = 2
+texture = SubResource("Atlas_heart2")
+
+[node name="Heart3" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Hearts"]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 58.0
+offset_right = 86.0
+offset_bottom = 74.0
+mouse_filter = 2
+texture = SubResource("Atlas_heart3")
+
+[node name="Heart4" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Hearts"]
+layout_mode = 0
+offset_left = 88.0
+offset_top = 58.0
+offset_right = 106.0
+offset_bottom = 74.0
+mouse_filter = 2
+texture = SubResource("Atlas_heart4")
+
+[node name="Click" type="Button" parent="Panel/Body/Split/LeftPanel/Profile"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 6.0
+offset_right = 46.0
+offset_bottom = 48.0
+flat = true
+
+[node name="RightSide" type="Control" parent="Panel/Body/Split"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 2.0
+mouse_filter = 2
+script = ExtResource("7_tabs")
+
+[node name="Bar" type="HBoxContainer" parent="Panel/Body/Split/RightSide"]
+layout_mode = 0
+offset_left = 4.0
+offset_right = 150.0
+offset_bottom = 32.0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Settings" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("Group_tabs")
+texture_normal = SubResource("Atlas_Settings_n")
+texture_pressed = SubResource("Atlas_Settings_p")
+texture_hover = SubResource("Atlas_Settings_p")
+
+[node name="Encyclopedia" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("Group_tabs")
+texture_normal = SubResource("Atlas_Encyclopedia_n")
+texture_pressed = SubResource("Atlas_Encyclopedia_p")
+texture_hover = SubResource("Atlas_Encyclopedia_p")
+
+[node name="Statistics" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("Group_tabs")
+texture_normal = SubResource("Atlas_Statistics_n")
+texture_pressed = SubResource("Atlas_Statistics_p")
+texture_hover = SubResource("Atlas_Statistics_p")
+
+[node name="Inventory" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+toggle_mode = true
+button_group = SubResource("Group_tabs")
+texture_normal = SubResource("Atlas_Inventory_n")
+texture_pressed = SubResource("Atlas_Inventory_p")
+texture_hover = SubResource("Atlas_Inventory_p")
+
+[node name="Page" type="NinePatchRect" parent="Panel/Body/Split/RightSide"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_top = 24.0
+mouse_filter = 2
+texture = SubResource("Atlas_page")
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 6
+
+[node name="Pages" type="Control" parent="Panel/Body/Split/RightSide/Page"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 6.0
+offset_top = 6.0
+offset_right = -6.0
+offset_bottom = -6.0
+mouse_filter = 2
+
+[node name="Settings" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = SubResource("Theme_settings")
+
+[node name="Scroll" type="ScrollContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="List" type="VBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="Row0" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row0"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "MASTER"
+vertical_alignment = 1
+
+[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row0"]
+custom_minimum_size = Vector2(74, 12)
+layout_mode = 2
+size_flags_vertical = 4
+value = 80.0
+
+[node name="Row1" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row1"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "MUSIC"
+vertical_alignment = 1
+
+[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row1"]
+custom_minimum_size = Vector2(74, 12)
+layout_mode = 2
+size_flags_vertical = 4
+value = 60.0
+
+[node name="Row2" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row2"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "SFX"
+vertical_alignment = 1
+
+[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row2"]
+custom_minimum_size = Vector2(74, 12)
+layout_mode = 2
+size_flags_vertical = 4
+value = 70.0
+
+[node name="Row3" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row3"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "FULLSCREEN"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row3"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = false
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Row4" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row4"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "VSYNC"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row4"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = true
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Row5" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row5"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "SHOW FPS"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row5"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = false
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Row6" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row6"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "SCREEN SHAKE"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row6"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = true
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Row7" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row7"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "AUTOSAVE"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row7"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = true
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Row8" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row8"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "TOOLTIPS"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row8"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = true
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Row9" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row9"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "PIXEL SNAP"
+vertical_alignment = 1
+
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row9"]
+custom_minimum_size = Vector2(28, 18)
+layout_mode = 2
+size_flags_vertical = 4
+toggle_mode = true
+button_pressed = true
+texture_normal = SubResource("Atlas_toggle_off")
+texture_pressed = SubResource("Atlas_toggle_on")
+texture_hover = SubResource("Atlas_toggle_hover")
+
+[node name="Encyclopedia" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Placeholder" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Encyclopedia"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "ENCYCLOPEDIA"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Statistics" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Placeholder" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Statistics"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "STATISTICS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Inventory" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Placeholder" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Inventory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "INVENTORY"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Close" type="TextureButton" parent="."]
+layout_mode = 0
+offset_left = 334.0
+offset_top = -6.0
+offset_right = 366.0
+offset_bottom = 26.0
+texture_normal = SubResource("Atlas_close_n")
+texture_pressed = SubResource("Atlas_close_p")
+texture_hover = SubResource("Atlas_close_p")
