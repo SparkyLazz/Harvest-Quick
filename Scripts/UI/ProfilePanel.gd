@@ -68,6 +68,7 @@ const HEART_EMPTY := Rect2(71, 25, 18, 16)
 @onready var _button: Button = $Click
 @onready var _lines: Control = $Lines
 @onready var _hearts: Control = $Hearts
+@onready var _tools: Control = $Tools
 
 var _frame: int = 0
 var _elapsed: float = 0.0
@@ -100,6 +101,22 @@ func set_line(index: int, text: String) -> void:
 	if _lines == null or index < 0 or index >= _lines.get_child_count():
 		return
 	(_lines.get_child(index) as Label).text = text
+
+## How many tool slots the scene holds.
+func tool_count() -> int:
+	return _tools.get_child_count() if _tools != null else 0
+
+## Puts [param texture] in tool slot [param index]. A null texture leaves the
+## slot empty.
+func set_tool(index: int, texture: Texture2D) -> void:
+	if _tools == null or index < 0 or index >= _tools.get_child_count():
+		return
+	(_tools.get_child(index).get_node("Icon") as TextureRect).texture = texture
+
+## Empties every tool slot.
+func clear_tools() -> void:
+	for i in tool_count():
+		set_tool(i, null)
 
 ## Sets the row to [param current] half-hearts out of [param maximum].
 func set_health(current: int, maximum: int = -1) -> void:

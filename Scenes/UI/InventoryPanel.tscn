@@ -1,4 +1,4 @@
-[gd_scene load_steps=46 format=3]
+[gd_scene load_steps=43 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/InventoryPanel.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Inventorys/Inventory_Spritesheet.png" id="2_inv"]
@@ -8,7 +8,6 @@
 [ext_resource type="Script" path="res://Scripts/UI/ProfilePanel.gd" id="6_profile"]
 [ext_resource type="Script" path="res://Scripts/UI/PanelTabs.gd" id="7_tabs"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Sliders/Sliders.png" id="8_sliders"]
-[ext_resource type="Texture2D" path="res://Assets/UI/Marks/Marks.png" id="9_marks"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Settings/Settings_Widgets.png" id="10_set"]
 
 [sub_resource type="ButtonGroup" id="Group_tabs"]
@@ -21,6 +20,10 @@ region = Rect2(323, 162, 42, 44)
 atlas = ExtResource("2_inv")
 region = Rect2(227, 162, 42, 44)
 
+[sub_resource type="AtlasTexture" id="Atlas_toolslot"]
+atlas = ExtResource("2_inv")
+region = Rect2(281, 73, 30, 32)
+
 [sub_resource type="AtlasTexture" id="Atlas_portrait"]
 atlas = ExtResource("2_inv")
 region = Rect2(275, 162, 42, 44)
@@ -29,6 +32,7 @@ region = Rect2(275, 162, 42, 44)
 resource_local_to_scene = true
 atlas = ExtResource("3_teemo")
 region = Rect2(0, 32, 32, 32)
+filter_clip = true
 
 [sub_resource type="AtlasTexture" id="Atlas_close_n"]
 atlas = ExtResource("4_icons")
@@ -37,14 +41,6 @@ region = Rect2(128, 0, 32, 32)
 [sub_resource type="AtlasTexture" id="Atlas_close_p"]
 atlas = ExtResource("4_icons")
 region = Rect2(160, 0, 32, 32)
-
-[sub_resource type="AtlasTexture" id="Atlas_track_h"]
-atlas = ExtResource("8_sliders")
-region = Rect2(133, 38, 38, 4)
-
-[sub_resource type="AtlasTexture" id="Atlas_grab_h"]
-atlas = ExtResource("8_sliders")
-region = Rect2(103, 4, 18, 8)
 
 [sub_resource type="AtlasTexture" id="Atlas_track_v"]
 atlas = ExtResource("8_sliders")
@@ -58,40 +54,36 @@ region = Rect2(133, 5, 7, 18)
 atlas = ExtResource("10_set")
 region = Rect2(2, 151, 28, 18)
 
-[sub_resource type="AtlasTexture" id="Atlas_toggle_hover"]
-atlas = ExtResource("10_set")
-region = Rect2(34, 151, 28, 18)
-
 [sub_resource type="AtlasTexture" id="Atlas_toggle_on"]
 atlas = ExtResource("10_set")
 region = Rect2(66, 151, 28, 18)
 
-[sub_resource type="AtlasTexture" id="Atlas_seg_off"]
+[sub_resource type="AtlasTexture" id="Atlas_track_off"]
 atlas = ExtResource("10_set")
 region = Rect2(22, 178, 5, 12)
 
-[sub_resource type="AtlasTexture" id="Atlas_seg_on"]
+[sub_resource type="AtlasTexture" id="Atlas_track_on"]
 atlas = ExtResource("10_set")
 region = Rect2(6, 178, 5, 12)
 
-[sub_resource type="AtlasTexture" id="Atlas_seg_grab"]
+[sub_resource type="AtlasTexture" id="Atlas_knob"]
 atlas = ExtResource("10_set")
-region = Rect2(6, 178, 4, 12)
+region = Rect2(1, 213, 14, 21)
 
-[sub_resource type="StyleBoxTexture" id="SB_seg_track"]
+[sub_resource type="StyleBoxTexture" id="SB_track"]
 content_margin_left = 0.0
 content_margin_top = 6.0
 content_margin_right = 0.0
 content_margin_bottom = 6.0
-texture = SubResource("Atlas_seg_off")
+texture = SubResource("Atlas_track_off")
 axis_stretch_horizontal = 1
 
-[sub_resource type="StyleBoxTexture" id="SB_seg_fill"]
+[sub_resource type="StyleBoxTexture" id="SB_fill"]
 content_margin_left = 0.0
 content_margin_top = 6.0
 content_margin_right = 0.0
 content_margin_bottom = 6.0
-texture = SubResource("Atlas_seg_on")
+texture = SubResource("Atlas_track_on")
 axis_stretch_horizontal = 1
 
 [sub_resource type="StyleBoxTexture" id="SB_scroll"]
@@ -113,11 +105,11 @@ texture_margin_top = 6.0
 texture_margin_bottom = 6.0
 
 [sub_resource type="Theme" id="Theme_settings"]
-HSlider/icons/grabber = SubResource("Atlas_seg_grab")
-HSlider/icons/grabber_highlight = SubResource("Atlas_seg_grab")
-HSlider/styles/grabber_area = SubResource("SB_seg_fill")
-HSlider/styles/grabber_area_highlight = SubResource("SB_seg_fill")
-HSlider/styles/slider = SubResource("SB_seg_track")
+HSlider/icons/grabber = SubResource("Atlas_knob")
+HSlider/icons/grabber_highlight = SubResource("Atlas_knob")
+HSlider/styles/grabber_area = SubResource("SB_fill")
+HSlider/styles/grabber_area_highlight = SubResource("SB_fill")
+HSlider/styles/slider = SubResource("SB_track")
 VScrollBar/styles/grabber = SubResource("SB_grabber")
 VScrollBar/styles/grabber_highlight = SubResource("SB_grabber")
 VScrollBar/styles/grabber_pressed = SubResource("SB_grabber")
@@ -158,11 +150,11 @@ region = Rect2(32, 128, 32, 32)
 
 [sub_resource type="AtlasTexture" id="Atlas_Encyclopedia_n"]
 atlas = ExtResource("4_icons")
-region = Rect2(64, 128, 32, 32)
+region = Rect2(0, 384, 32, 32)
 
 [sub_resource type="AtlasTexture" id="Atlas_Encyclopedia_p"]
 atlas = ExtResource("4_icons")
-region = Rect2(96, 128, 32, 32)
+region = Rect2(32, 384, 32, 32)
 
 [sub_resource type="AtlasTexture" id="Atlas_Statistics_n"]
 atlas = ExtResource("4_icons")
@@ -195,7 +187,6 @@ offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 pivot_offset = Vector2(180.0, 100.0)
-mouse_filter = 2
 script = ExtResource("1_script")
 
 [node name="Panel" type="NinePatchRect" parent="."]
@@ -378,6 +369,142 @@ offset_bottom = 74.0
 mouse_filter = 2
 texture = SubResource("Atlas_heart4")
 
+[node name="ToolsLabel" type="Label" parent="Panel/Body/Split/LeftPanel/Profile"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 82.0
+offset_right = 108.0
+offset_bottom = 94.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "TOOLS"
+vertical_alignment = 1
+
+[node name="Tools" type="Control" parent="Panel/Body/Split/LeftPanel/Profile"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Slot0" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 98.0
+offset_right = 36.0
+offset_bottom = 130.0
+mouse_filter = 2
+texture = SubResource("Atlas_toolslot")
+
+[node name="Icon" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools/Slot0"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 26.0
+offset_bottom = 26.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot1" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools"]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 98.0
+offset_right = 72.0
+offset_bottom = 130.0
+mouse_filter = 2
+texture = SubResource("Atlas_toolslot")
+
+[node name="Icon" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools/Slot1"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 26.0
+offset_bottom = 26.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot2" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools"]
+layout_mode = 0
+offset_left = 78.0
+offset_top = 98.0
+offset_right = 108.0
+offset_bottom = 130.0
+mouse_filter = 2
+texture = SubResource("Atlas_toolslot")
+
+[node name="Icon" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools/Slot2"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 26.0
+offset_bottom = 26.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot3" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools"]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 136.0
+offset_right = 36.0
+offset_bottom = 168.0
+mouse_filter = 2
+texture = SubResource("Atlas_toolslot")
+
+[node name="Icon" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools/Slot3"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 26.0
+offset_bottom = 26.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot4" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools"]
+layout_mode = 0
+offset_left = 42.0
+offset_top = 136.0
+offset_right = 72.0
+offset_bottom = 168.0
+mouse_filter = 2
+texture = SubResource("Atlas_toolslot")
+
+[node name="Icon" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools/Slot4"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 26.0
+offset_bottom = 26.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Slot5" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools"]
+layout_mode = 0
+offset_left = 78.0
+offset_top = 136.0
+offset_right = 108.0
+offset_bottom = 168.0
+mouse_filter = 2
+texture = SubResource("Atlas_toolslot")
+
+[node name="Icon" type="TextureRect" parent="Panel/Body/Split/LeftPanel/Profile/Tools/Slot5"]
+layout_mode = 0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 26.0
+offset_bottom = 26.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
 [node name="Click" type="Button" parent="Panel/Body/Split/LeftPanel/Profile"]
 layout_mode = 0
 offset_left = 6.0
@@ -393,49 +520,57 @@ size_flags_stretch_ratio = 2.0
 mouse_filter = 2
 script = ExtResource("7_tabs")
 
-[node name="Bar" type="HBoxContainer" parent="Panel/Body/Split/RightSide"]
-layout_mode = 0
-offset_left = 4.0
-offset_right = 150.0
-offset_bottom = 32.0
+[node name="Bar" type="Control" parent="Panel/Body/Split/RightSide"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 42.0
+grow_horizontal = 2
 mouse_filter = 2
-theme_override_constants/separation = 6
 
 [node name="Settings" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
+layout_mode = 0
+offset_left = 4.0
+offset_top = 10.0
+offset_right = 36.0
+offset_bottom = 42.0
 toggle_mode = true
 button_group = SubResource("Group_tabs")
-texture_normal = SubResource("Atlas_Settings_n")
-texture_pressed = SubResource("Atlas_Settings_p")
-texture_hover = SubResource("Atlas_Settings_p")
+texture_normal = SubResource("Atlas_Settings_p")
+texture_pressed = SubResource("Atlas_Settings_n")
 
 [node name="Encyclopedia" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
+layout_mode = 0
+offset_left = 60.0
+offset_top = 10.0
+offset_right = 92.0
+offset_bottom = 42.0
 toggle_mode = true
 button_group = SubResource("Group_tabs")
-texture_normal = SubResource("Atlas_Encyclopedia_n")
-texture_pressed = SubResource("Atlas_Encyclopedia_p")
-texture_hover = SubResource("Atlas_Encyclopedia_p")
+texture_normal = SubResource("Atlas_Encyclopedia_p")
+texture_pressed = SubResource("Atlas_Encyclopedia_n")
 
 [node name="Statistics" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
+layout_mode = 0
+offset_left = 116.0
+offset_top = 10.0
+offset_right = 148.0
+offset_bottom = 42.0
 toggle_mode = true
 button_group = SubResource("Group_tabs")
-texture_normal = SubResource("Atlas_Statistics_n")
-texture_pressed = SubResource("Atlas_Statistics_p")
-texture_hover = SubResource("Atlas_Statistics_p")
+texture_normal = SubResource("Atlas_Statistics_p")
+texture_pressed = SubResource("Atlas_Statistics_n")
 
 [node name="Inventory" type="TextureButton" parent="Panel/Body/Split/RightSide/Bar"]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 2
+layout_mode = 0
+offset_left = 172.0
+offset_top = 10.0
+offset_right = 204.0
+offset_bottom = 42.0
 toggle_mode = true
 button_group = SubResource("Group_tabs")
-texture_normal = SubResource("Atlas_Inventory_n")
-texture_pressed = SubResource("Atlas_Inventory_p")
-texture_hover = SubResource("Atlas_Inventory_p")
+texture_normal = SubResource("Atlas_Inventory_p")
+texture_pressed = SubResource("Atlas_Inventory_n")
 
 [node name="Page" type="NinePatchRect" parent="Panel/Body/Split/RightSide"]
 layout_mode = 1
@@ -444,7 +579,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-offset_top = 24.0
+offset_top = 30.0
 mouse_filter = 2
 texture = SubResource("Atlas_page")
 patch_margin_left = 4
@@ -459,10 +594,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-offset_left = 6.0
-offset_top = 6.0
-offset_right = -6.0
-offset_bottom = -6.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
 mouse_filter = 2
 
 [node name="Settings" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
@@ -475,6 +610,19 @@ grow_vertical = 2
 mouse_filter = 2
 theme = SubResource("Theme_settings")
 
+[node name="Title" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 14.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
+theme_override_fonts/font = ExtResource("5_font")
+theme_override_font_sizes/font_size = 9
+text = "SETTINGS"
+vertical_alignment = 1
+
 [node name="Scroll" type="ScrollContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings"]
 layout_mode = 1
 anchors_preset = 15
@@ -482,19 +630,28 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+offset_top = 18.0
 horizontal_scroll_mode = 0
 
-[node name="List" type="VBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll"]
+[node name="Pad" type="MarginContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 2
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 2
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 2
 
-[node name="Row0" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="List" type="VBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row0"]
+[node name="Row0" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row0"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -503,18 +660,18 @@ theme_override_font_sizes/font_size = 9
 text = "MASTER"
 vertical_alignment = 1
 
-[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row0"]
-custom_minimum_size = Vector2(74, 12)
+[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row0"]
+custom_minimum_size = Vector2(75, 22)
 layout_mode = 2
 size_flags_vertical = 4
 value = 80.0
 
-[node name="Row1" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row1" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row1"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row1"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -523,18 +680,18 @@ theme_override_font_sizes/font_size = 9
 text = "MUSIC"
 vertical_alignment = 1
 
-[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row1"]
-custom_minimum_size = Vector2(74, 12)
+[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row1"]
+custom_minimum_size = Vector2(75, 22)
 layout_mode = 2
 size_flags_vertical = 4
 value = 60.0
 
-[node name="Row2" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row2" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row2"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row2"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -543,18 +700,18 @@ theme_override_font_sizes/font_size = 9
 text = "SFX"
 vertical_alignment = 1
 
-[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row2"]
-custom_minimum_size = Vector2(74, 12)
+[node name="Value" type="HSlider" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row2"]
+custom_minimum_size = Vector2(75, 22)
 layout_mode = 2
 size_flags_vertical = 4
 value = 70.0
 
-[node name="Row3" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row3" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row3"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row3"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -563,7 +720,7 @@ theme_override_font_sizes/font_size = 9
 text = "FULLSCREEN"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row3"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row3"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -571,14 +728,13 @@ toggle_mode = true
 button_pressed = false
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
-[node name="Row4" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row4" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row4"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row4"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -587,7 +743,7 @@ theme_override_font_sizes/font_size = 9
 text = "VSYNC"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row4"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row4"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -595,14 +751,13 @@ toggle_mode = true
 button_pressed = true
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
-[node name="Row5" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row5" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row5"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row5"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -611,7 +766,7 @@ theme_override_font_sizes/font_size = 9
 text = "SHOW FPS"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row5"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row5"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -619,14 +774,13 @@ toggle_mode = true
 button_pressed = false
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
-[node name="Row6" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row6" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row6"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row6"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -635,7 +789,7 @@ theme_override_font_sizes/font_size = 9
 text = "SCREEN SHAKE"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row6"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row6"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -643,14 +797,13 @@ toggle_mode = true
 button_pressed = true
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
-[node name="Row7" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row7" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row7"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row7"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -659,7 +812,7 @@ theme_override_font_sizes/font_size = 9
 text = "AUTOSAVE"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row7"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row7"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -667,14 +820,13 @@ toggle_mode = true
 button_pressed = true
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
-[node name="Row8" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row8" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row8"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row8"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -683,7 +835,7 @@ theme_override_font_sizes/font_size = 9
 text = "TOOLTIPS"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row8"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row8"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -691,14 +843,13 @@ toggle_mode = true
 button_pressed = true
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
-[node name="Row9" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List"]
-custom_minimum_size = Vector2(0, 18)
+[node name="Row9" type="HBoxContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List"]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
-[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row9"]
+[node name="Name" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row9"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
@@ -707,7 +858,7 @@ theme_override_font_sizes/font_size = 9
 text = "PIXEL SNAP"
 vertical_alignment = 1
 
-[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/List/Row9"]
+[node name="Value" type="TextureButton" parent="Panel/Body/Split/RightSide/Page/Pages/Settings/Scroll/Pad/List/Row9"]
 custom_minimum_size = Vector2(28, 18)
 layout_mode = 2
 size_flags_vertical = 4
@@ -715,7 +866,6 @@ toggle_mode = true
 button_pressed = true
 texture_normal = SubResource("Atlas_toggle_off")
 texture_pressed = SubResource("Atlas_toggle_on")
-texture_hover = SubResource("Atlas_toggle_hover")
 
 [node name="Encyclopedia" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
 layout_mode = 1
@@ -726,19 +876,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Placeholder" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Encyclopedia"]
+[node name="Title" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Encyclopedia"]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
+offset_bottom = 14.0
 grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 9
 text = "ENCYCLOPEDIA"
-horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Statistics" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
@@ -750,19 +898,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Placeholder" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Statistics"]
+[node name="Title" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Statistics"]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
+offset_bottom = 14.0
 grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 9
 text = "STATISTICS"
-horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Inventory" type="Control" parent="Panel/Body/Split/RightSide/Page/Pages"]
@@ -774,27 +920,25 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Placeholder" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Inventory"]
+[node name="Title" type="Label" parent="Panel/Body/Split/RightSide/Page/Pages/Inventory"]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 10
 anchor_right = 1.0
-anchor_bottom = 1.0
+offset_bottom = 14.0
 grow_horizontal = 2
-grow_vertical = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.564706, 0.384314, 0.364706, 1)
+theme_override_colors/font_color = Color(0.301961, 0.207843, 0.192157, 1)
 theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 9
 text = "INVENTORY"
-horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Close" type="TextureButton" parent="."]
 layout_mode = 0
-offset_left = 334.0
-offset_top = -6.0
-offset_right = 366.0
-offset_bottom = 26.0
+offset_left = 329.0
+offset_top = 1.0
+offset_right = 361.0
+offset_bottom = 33.0
 texture_normal = SubResource("Atlas_close_n")
 texture_pressed = SubResource("Atlas_close_p")
 texture_hover = SubResource("Atlas_close_p")

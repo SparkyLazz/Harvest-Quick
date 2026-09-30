@@ -180,6 +180,7 @@ const SEASON_LENGTH: int = 28
 @onready var _glyph_prev: TextureRect = $IconWindow/Bob/GlyphPrev
 @onready var _needle: TextureRect = $Needle
 @onready var _mercury: TextureRect = $Thermometer/Mercury
+@onready var _mercury_next: TextureRect = $Thermometer/MercuryNext
 @onready var _date: Label = $Date
 
 var _cycle: Node
@@ -193,7 +194,7 @@ var _bob_tween: Tween
 func _ready() -> void:
 	_refresh_icon(false)
 	_refresh_needle()
-	_show_mercury(float(mercury_level()))
+	_show_mercury(mercury_reading())
 	_refresh_date()
 	_restart_bob()
 	if Engine.is_editor_hint() or not follow_day_night:
@@ -213,13 +214,24 @@ func set_date(day: int) -> void:
 	var season: String = SEASONS[(index / SEASON_LENGTH) % SEASONS.size()]
 	date_text = "%s.%02d" % [season, index % SEASON_LENGTH + 1]
 
-## Which of the nine mercury states [member temperature] calls for.
-func mercury_level() -> int:
+## Where [member temperature] falls among the nine mercury states, as a
+## fraction — 3.5 means halfway between the fourth state and the fifth.
+##
+## Kept fractional because nine states over the whole range is a step of
+## several degrees, and a reading that only ever lands on one of nine
+## heights cannot show a mild morning differing from a warm one. What the
+## fraction is *for* is [method _show_mercury], which dissolves one state
+## into the next.
+func mercury_reading() -> float:
 	var last := MERCURY_REGION.size() - 1
 	if is_equal_approx(hottest, coldest):
-		return 0
+		return 0.0
 	var t := clampf(inverse_lerp(coldest, hottest, temperature), 0.0, 1.0)
-	return clampi(roundi(t * last), 0, last)
+	return t * last
+
+## Which of the nine drawn states is nearest the current reading.
+func mercury_level() -> int:
+	return clampi(roundi(mercury_reading()), 0, MERCURY_REGION.size() - 1)
 
 ## Which needle frame [member time_of_day] calls for. Noon puts the sun
 ## overhead and the needle with it; midnight drops both.
@@ -320,7 +332,7 @@ func _refresh_needle() -> void:
 func _refresh_mercury() -> void:
 	if not is_node_ready():
 		return
-	var target := float(mercury_level())
+	var target := mercury_reading()
 	if is_equal_approx(target, _shown_level):
 		return
 	if Engine.is_editor_hint() or mercury_slide <= 0.0:
@@ -334,13 +346,37 @@ func _refresh_mercury() -> void:
 	_mercury_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_mercury_tween.tween_method(_show_mercury, _shown_level, target, mercury_slide)
 
+## Shows a reading of [param level], dissolving the state below it into the
+## state above.
+##
+## The artist drew nine columns and no more, and they differ in colour as
+## well as height — a cold one is blue and short, a hot one red and full —
+## so an in-between reading cannot be had by stretching one of them. Showing
+## both and fading between is the one way to get a continuous column out of
+## nine pictures while every pixel on screen is still the artist's.
+##
+## The warmer state is the one that fades in, and it is drawn second so its
+## extra height arrives over the cooler column rather than under it.
 func _show_mercury(level: float) -> void:
 	_shown_level = level
-	var index := clampi(roundi(level), 0, MERCURY_REGION.size() - 1)
-	var region: Rect2 = MERCURY_REGION[index]
-	(_mercury.texture as AtlasTexture).region = region
-	_mercury.position = Vector2(MERCURY_X, MERCURY_FLOOR - region.size.y)
-	_mercury.size = region.size
+	var last := MERCURY_REGION.size() - 1
+	var lower := clampi(floori(level), 0, last)
+	var upper := mini(lower + 1, last)
+	_place_mercury(_mercury, MERCURY_REGION[lower])
+	_mercury.modulate.a = 1.0
+	if _mercury_next == null:
+		return
+	_place_mercury(_mercury_next, MERCURY_REGION[upper])
+	# Nothing to blend into at the top of the scale, and nothing to blend
+	# from when the reading sits exactly on a state.
+	_mercury_next.modulate.a = 0.0 if upper == lower else clampf(level - float(lower), 0.0, 1.0)
+
+## Stands [param rect] on the floor of the glass. The columns share a bottom
+## edge and differ in height, so the top is what moves.
+func _place_mercury(node: TextureRect, region: Rect2) -> void:
+	(node.texture as AtlasTexture).region = region
+	node.position = Vector2(MERCURY_X, MERCURY_FLOOR - region.size.y)
+	node.size = region.size
 
 func _restart_bob() -> void:
 	if _bob_tween != null:

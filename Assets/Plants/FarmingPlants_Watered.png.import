@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cop87jd4ou61v"
-path="res://.godot/imported/Marks.png-8e176f37069fca8dfd370be11cde95ff.ctex"
+uid="uid://b15vdghd1enpy"
+path="res://.godot/imported/FarmingPlants_Watered.png-e00041cb2262ff695f4b6288986fb0ea.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/UI/Marks/Marks.png"
-dest_files=["res://.godot/imported/Marks.png-8e176f37069fca8dfd370be11cde95ff.ctex"]
+source_file="res://Assets/Plants/FarmingPlants_Watered.png"
+dest_files=["res://.godot/imported/FarmingPlants_Watered.png-e00041cb2262ff695f4b6288986fb0ea.ctex"]
 
 [params]
 
