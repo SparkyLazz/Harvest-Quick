@@ -11,8 +11,8 @@ extends Resource
 ## Where it is allowed to grow.
 enum On {
 	GRASS, ## Any grassed tile.
-	SHORE, ## Grass with water next to it.
-	WATER, ## Open sea.
+	SHORE, ## The sea where it meets land — the tile the shoreline is drawn on.
+	WATER, ## Open sea, out past the shoreline.
 }
 
 ## Short name, for reading a generated map back.
@@ -41,9 +41,10 @@ enum On {
 ## height it stands on, or -1 to take the scatter's own
 ## [member NatureScatter.edge_margin].
 ##
-## Ground cover sets this to zero. A tuft of grass running right up to the
-## lip of a hill is the fringe the map is drawn with; a tree doing the same
-## has its trunk in the cliff face.
+## Every kind takes the scatter's margin: the lip of a hill is drawn as rock
+## whatever is standing on it, so a bush on one is as wrong as a tree. This
+## is here for a kind that wants to break the rule — scenery drawn as part of
+## the edge itself would set it to zero.
 ##
 ## Only read for a kind that grows on grass. A shore kind is *defined* by
 ## standing at the water's edge and a lily pad floats on open sea, so neither

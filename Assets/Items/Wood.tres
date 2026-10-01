@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ItemData" format=3]
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dq4ec6usj63my"]
 
-[ext_resource type="Script" path="res://Scripts/Items/ItemData.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/UI/Objects/Emoji_Spritesheet.png" id="2_sheet"]
+[ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://k57453n323bk" path="res://Assets/UI/Objects/Emoji_Spritesheet.png" id="2_sheet"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
 atlas = ExtResource("2_sheet")
@@ -13,5 +13,4 @@ script = ExtResource("1_script")
 id = &"wood"
 display_name = "Wood"
 icon = SubResource("AtlasTexture_icon")
-action = &""
 stack_size = 99

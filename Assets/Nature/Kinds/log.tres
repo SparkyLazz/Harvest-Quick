@@ -1,21 +1,19 @@
-[gd_resource type="Resource" script_class="NatureKind" format=3]
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://ku3ygi0vr51k"]
 
-[ext_resource type="Script" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/Nature/TreesStumpsBushes.png" id="2_sheet"]
-[ext_resource type="Resource" path="res://Assets/Items/Wood.tres" id="3_wood"]
+[ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_51mfe"]
+[ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dgdmv0sj0xe8r" path="res://Assets/Nature/TreesStumpsBushes.png" id="2_sheet"]
+[ext_resource type="Resource" uid="uid://dq4ec6usj63my" path="res://Assets/Items/Wood.tres" id="3_wood"]
 
 [resource]
 script = ExtResource("1_script")
 id = &"log"
 sheet = ExtResource("2_sheet")
 region = Rect2(64, 112, 32, 16)
-frames = 1
-fps = 6.0
 footprint = Vector2i(2, 1)
-on = 0
-weight = 0.50
+weight = 0.5
 solid = true
 broken_by = &"axe"
 hits = 2
-drops = Array[ExtResource("3_wood")]([ExtResource("3_wood")])
+drops = Array[ExtResource("1_51mfe")]([ExtResource("3_wood")])
 drop_counts = Array[int]([2])

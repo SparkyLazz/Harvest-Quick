@@ -13,6 +13,12 @@ extends Control
 ##
 ## It opens and closes on [member toggle_action], which the project already
 ## binds to E, I and Escape.
+##
+## The window itself is also the backdrop a stack is put down on when the
+## player changes their mind. Clicks reach the slots first — a child is
+## picked before its parent, and the slots take what they answer — so
+## anything arriving here landed on the frame, the parchment or the gap
+## between two slots, and means "never mind".
 
 ## Emitted when the window opens.
 signal opened
@@ -42,6 +48,7 @@ var _base_scale: Vector2 = Vector2.ONE
 
 func _ready() -> void:
 	pivot_offset = size * 0.5
+	gui_input.connect(_on_backdrop_input)
 	_base_scale = scale
 	if Engine.is_editor_hint():
 		return
@@ -62,6 +69,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(toggle_action):
 		toggle()
 		get_viewport().set_input_as_handled()
+
+## Puts a carried stack back when the click that would have placed it landed
+## on the window rather than on a slot.
+func _on_backdrop_input(event: InputEvent) -> void:
+	if Engine.is_editor_hint() or not Inventory.has_grab():
+		return
+	var button := event as InputEventMouseButton
+	if button == null or not button.pressed:
+		return
+	if button.button_index != MOUSE_BUTTON_LEFT and button.button_index != MOUSE_BUTTON_RIGHT:
+		return
+	Inventory.return_grab()
+	accept_event()
 
 ## Whether the window is up, or on its way up.
 func is_open() -> bool:

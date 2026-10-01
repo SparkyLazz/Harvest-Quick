@@ -5,43 +5,46 @@
 [ext_resource type="Script" uid="uid://gy6igq887wxi" path="res://Scripts/World/DayNightCycle.gd" id="3_daynight"]
 [ext_resource type="PackedScene" uid="uid://dodna2aopuxga" path="res://Scenes/UI/WeatherWidget.tscn" id="4_weather"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/Hotbar.tscn" id="5_hotbar"]
+[ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="6_210na"]
 [ext_resource type="PackedScene" path="res://Scenes/UI/InventoryPanel.tscn" id="6_invpanel"]
 [ext_resource type="Script" uid="uid://dpl6daf0sv2nh" path="res://Scripts/UI/HudInventory.gd" id="7_hudinv"]
 [ext_resource type="Script" uid="uid://dgsv4g61j0vlv" path="res://Scripts/World/WorldObjects.gd" id="8_objects"]
 [ext_resource type="Script" uid="uid://cg4l8lrpwmiwn" path="res://Scripts/World/FarmPlots.gd" id="9_plots"]
-[ext_resource type="Script" path="res://Scripts/World/NatureScatter.gd" id="10_nature"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/birch_sapling.tres" id="n00"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/birch_tree.tres" id="n01"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/bush.tres" id="n02"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/bush_cherry.tres" id="n03"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/cherry_sapling.tres" id="n04"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/cherry_tree.tres" id="n05"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/flower_blue.tres" id="n06"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/flower_pink.tres" id="n07"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/flower_purple.tres" id="n08"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/flower_yellow.tres" id="n09"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/grass_birch.tres" id="n10"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/grass_pine.tres" id="n11"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/lily_flower.tres" id="n12"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/lily_pad.tres" id="n13"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/lily_pad_big.tres" id="n14"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/log.tres" id="n15"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/mushroom_purple.tres" id="n16"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/mushroom_red.tres" id="n17"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/pebble.tres" id="n18"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/pine_sapling.tres" id="n19"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/pine_tree.tres" id="n20"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/reeds.tres" id="n21"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/reeds_tall.tres" id="n22"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/river_rock.tres" id="n23"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/rock_big.tres" id="n24"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/shore_rock.tres" id="n25"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/stone.tres" id="n26"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/stump.tres" id="n27"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/sunflower.tres" id="n28"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/tree_oak.tres" id="n29"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/tuft_a.tres" id="n30"]
-[ext_resource type="Resource" path="res://Assets/Nature/Kinds/tuft_b.tres" id="n31"]
+[ext_resource type="Script" uid="uid://cno8ntj586t4i" path="res://Scripts/World/NatureScatter.gd" id="10_nature"]
+[ext_resource type="Script" uid="uid://bqws4031vfxgi" path="res://Scripts/UI/GrabGhost.gd" id="11_ghost"]
+[ext_resource type="FontFile" uid="uid://2f3fsnmjhth0" path="res://Assets/UI/Fonts/pixelFont-4-7x7-sproutLands.ttf" id="12_font"]
+[ext_resource type="Resource" uid="uid://ctmltqmbjksow" path="res://Assets/Nature/Kinds/birch_sapling.tres" id="n00"]
+[ext_resource type="Resource" uid="uid://crw5cxu20gbpv" path="res://Assets/Nature/Kinds/birch_tree.tres" id="n01"]
+[ext_resource type="Resource" uid="uid://wkpal10dt0vg" path="res://Assets/Nature/Kinds/bush.tres" id="n02"]
+[ext_resource type="Resource" uid="uid://hufyhq0glj6x" path="res://Assets/Nature/Kinds/bush_cherry.tres" id="n03"]
+[ext_resource type="Resource" uid="uid://cwduynrs5bbvs" path="res://Assets/Nature/Kinds/cherry_sapling.tres" id="n04"]
+[ext_resource type="Resource" uid="uid://c4xautja5na6u" path="res://Assets/Nature/Kinds/cherry_tree.tres" id="n05"]
+[ext_resource type="Resource" uid="uid://decfpuw3qna73" path="res://Assets/Nature/Kinds/flower_blue.tres" id="n06"]
+[ext_resource type="Resource" uid="uid://e6jcrhpdb0v0" path="res://Assets/Nature/Kinds/flower_pink.tres" id="n07"]
+[ext_resource type="Resource" uid="uid://duqk3h53142ks" path="res://Assets/Nature/Kinds/flower_purple.tres" id="n08"]
+[ext_resource type="Resource" uid="uid://sn0xpjx804dv" path="res://Assets/Nature/Kinds/flower_yellow.tres" id="n09"]
+[ext_resource type="Resource" uid="uid://17vwbodvnqdm" path="res://Assets/Nature/Kinds/grass_birch.tres" id="n10"]
+[ext_resource type="Resource" uid="uid://dj7o3tx4lgwad" path="res://Assets/Nature/Kinds/grass_pine.tres" id="n11"]
+[ext_resource type="Resource" uid="uid://cnremb23nl0hl" path="res://Assets/Nature/Kinds/lily_flower.tres" id="n12"]
+[ext_resource type="Resource" uid="uid://d0uq43nyxr5y8" path="res://Assets/Nature/Kinds/lily_pad.tres" id="n13"]
+[ext_resource type="Resource" uid="uid://d1kk3vfrpfhfo" path="res://Assets/Nature/Kinds/lily_pad_big.tres" id="n14"]
+[ext_resource type="Resource" uid="uid://ku3ygi0vr51k" path="res://Assets/Nature/Kinds/log.tres" id="n15"]
+[ext_resource type="Resource" uid="uid://wfmii2878th5" path="res://Assets/Nature/Kinds/mushroom_purple.tres" id="n16"]
+[ext_resource type="Resource" uid="uid://dca510ej25nlm" path="res://Assets/Nature/Kinds/mushroom_red.tres" id="n17"]
+[ext_resource type="Resource" uid="uid://dpo1qdlta13a7" path="res://Assets/Nature/Kinds/pebble.tres" id="n18"]
+[ext_resource type="Resource" uid="uid://bmxhq6oacopyi" path="res://Assets/Nature/Kinds/pine_sapling.tres" id="n19"]
+[ext_resource type="Resource" uid="uid://dea4wyfxt8eey" path="res://Assets/Nature/Kinds/pine_tree.tres" id="n20"]
+[ext_resource type="Resource" uid="uid://dblcm8cy80v3b" path="res://Assets/Nature/Kinds/reeds.tres" id="n21"]
+[ext_resource type="Resource" uid="uid://dx2lgj78rpc1o" path="res://Assets/Nature/Kinds/reeds_tall.tres" id="n22"]
+[ext_resource type="Resource" uid="uid://dita0erqcrx4h" path="res://Assets/Nature/Kinds/river_rock.tres" id="n23"]
+[ext_resource type="Resource" uid="uid://ckfuew7op5qi5" path="res://Assets/Nature/Kinds/rock_big.tres" id="n24"]
+[ext_resource type="Resource" uid="uid://drgpvj3pqr3hi" path="res://Assets/Nature/Kinds/shore_rock.tres" id="n25"]
+[ext_resource type="Resource" uid="uid://bbbsdm4inramn" path="res://Assets/Nature/Kinds/stone.tres" id="n26"]
+[ext_resource type="Resource" uid="uid://8tae24gsoo5p" path="res://Assets/Nature/Kinds/stump.tres" id="n27"]
+[ext_resource type="Resource" uid="uid://ch2ac4ms1e5ih" path="res://Assets/Nature/Kinds/sunflower.tres" id="n28"]
+[ext_resource type="Resource" uid="uid://dn4qccn378u0r" path="res://Assets/Nature/Kinds/tree_oak.tres" id="n29"]
+[ext_resource type="Resource" uid="uid://elh0uhy00k2x" path="res://Assets/Nature/Kinds/tuft_a.tres" id="n30"]
+[ext_resource type="Resource" uid="uid://c7kjd5gl0toxs" path="res://Assets/Nature/Kinds/tuft_b.tres" id="n31"]
 
 [node name="Main Farm" type="Node2D" unique_id=1930876094]
 
@@ -86,18 +89,9 @@ script = ExtResource("9_plots")
 soil_layers = Array[NodePath]([NodePath("../Height 0/Soil"), NodePath("../Height 1/Soil")])
 grass_layers = Array[NodePath]([NodePath("../Height 0/Grass"), NodePath("../Height 1/Grass")])
 
-[node name="NatureScatter" type="Node" parent="."]
+[node name="NatureScatter" type="Node" parent="." unique_id=382260009]
 script = ExtResource("10_nature")
-objects_path = NodePath("../Objects")
-farm_plots_path = NodePath("../FarmPlots")
-random_seed = 20260930
-kinds = Array[ExtResource("n00")]([ExtResource("n00"), ExtResource("n01"), ExtResource("n02"), ExtResource("n03"), ExtResource("n04"), ExtResource("n05"), ExtResource("n06"), ExtResource("n07"), ExtResource("n08"), ExtResource("n09"), ExtResource("n10"), ExtResource("n11"), ExtResource("n12"), ExtResource("n13"), ExtResource("n14"), ExtResource("n15"), ExtResource("n16"), ExtResource("n17"), ExtResource("n18"), ExtResource("n19"), ExtResource("n20"), ExtResource("n21"), ExtResource("n22"), ExtResource("n23"), ExtResource("n24"), ExtResource("n25"), ExtResource("n26"), ExtResource("n27"), ExtResource("n28"), ExtResource("n29"), ExtResource("n30"), ExtResource("n31")])
-grass_density = 0.1
-water_density = 0.04
-shore_density = 0.12
-clear_radius = 5
-max_neighbours = 2
-water_reach = 2
+kinds = Array[ExtResource("6_210na")]([ExtResource("n00"), ExtResource("n01"), ExtResource("n02"), ExtResource("n03"), ExtResource("n04"), ExtResource("n05"), ExtResource("n06"), ExtResource("n07"), ExtResource("n08"), ExtResource("n09"), ExtResource("n10"), ExtResource("n11"), ExtResource("n12"), ExtResource("n13"), ExtResource("n14"), ExtResource("n15"), ExtResource("n16"), ExtResource("n17"), ExtResource("n18"), ExtResource("n19"), ExtResource("n20"), ExtResource("n21"), ExtResource("n22"), ExtResource("n23"), ExtResource("n24"), ExtResource("n25"), ExtResource("n26"), ExtResource("n27"), ExtResource("n28"), ExtResource("n29"), ExtResource("n30"), ExtResource("n31")])
 
 [node name="DayNightCycle" type="CanvasModulate" parent="." unique_id=1348820711]
 script = ExtResource("3_daynight")
@@ -118,3 +112,12 @@ scale = Vector2(1.5, 1.5)
 
 [node name="InventoryPanel" parent="HUD" unique_id=117346277 instance=ExtResource("6_invpanel")]
 scale = Vector2(2, 2)
+
+[node name="GrabGhost" type="Control" parent="HUD" unique_id=824426925]
+texture_filter = 1
+layout_mode = 3
+anchors_preset = 0
+scale = Vector2(2, 2)
+mouse_filter = 2
+script = ExtResource("11_ghost")
+font = ExtResource("12_font")

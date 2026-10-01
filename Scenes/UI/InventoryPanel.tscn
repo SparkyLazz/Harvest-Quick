@@ -1,4 +1,4 @@
-[gd_scene load_steps=43 format=3]
+[gd_scene load_steps=44 format=3]
 
 [ext_resource type="Script" path="res://Scripts/UI/InventoryPanel.gd" id="1_script"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Inventorys/Inventory_Spritesheet.png" id="2_inv"]
@@ -7,6 +7,7 @@
 [ext_resource type="FontFile" path="res://Assets/UI/Fonts/pixelFont-4-7x7-sproutLands.ttf" id="5_font"]
 [ext_resource type="Script" path="res://Scripts/UI/ProfilePanel.gd" id="6_profile"]
 [ext_resource type="Script" path="res://Scripts/UI/PanelTabs.gd" id="7_tabs"]
+[ext_resource type="Script" path="res://Scripts/UI/ItemGrid.gd" id="9_grid"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Sliders/Sliders.png" id="8_sliders"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Settings/Settings_Widgets.png" id="10_set"]
 
@@ -932,6 +933,36 @@ theme_override_fonts/font = ExtResource("5_font")
 theme_override_font_sizes/font_size = 9
 text = "INVENTORY"
 vertical_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Inventory"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_top = 18.0
+theme = SubResource("Theme_settings")
+horizontal_scroll_mode = 0
+
+[node name="Pad" type="MarginContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Inventory/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 1
+theme_override_constants/margin_top = 1
+theme_override_constants/margin_right = 7
+theme_override_constants/margin_bottom = 1
+
+[node name="Grid" type="GridContainer" parent="Panel/Body/Split/RightSide/Page/Pages/Inventory/Scroll/Pad"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/h_separation = 2
+theme_override_constants/v_separation = 2
+columns = 6
+script = ExtResource("9_grid")
+sheet = ExtResource("2_inv")
+font = ExtResource("5_font")
+first_slot = 9
 
 [node name="Close" type="TextureButton" parent="."]
 layout_mode = 0

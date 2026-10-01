@@ -16,6 +16,10 @@ extends CharacterBody2D
 ## so it is worth saying out loud rather than working out again later.
 signal tool_used(action: StringName, at: Vector2)
 
+## Emitted when a swing does not happen because there was no stamina left to
+## pay for it, with the action that was asked for.
+signal tool_refused(action: StringName)
+
 ## Emitted when something is set down, with the item it came out of and the
 ## tile it landed on.
 signal thing_placed(item: PlaceableData, at: Vector2i)
@@ -84,6 +88,7 @@ const FACING_STEP := {
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var water: AnimatedSprite2D = $Water
 @onready var cursor: TileCursor = $TileCursor
+@onready var stamina: Stamina = $Stamina
 
 var facing: String = "down"
 
@@ -268,6 +273,11 @@ func _update_cursor() -> void:
 ## else. Nothing here has a side effect, which is the point — this runs every
 ## frame.
 func _tool_would_work(action: StringName, tile: Vector2i) -> bool:
+	# A swing there is no stamina for will not land, and the cursor only
+	# ever shows a swing that will. Checked first, because the answer is the
+	# same whatever is standing on the tile.
+	if stamina != null and not stamina.can_afford(action):
+		return false
 	var plots := get_tree().get_first_node_in_group("farm_plots")
 	if plots != null and action == &"hoe":
 		return plots.can_clear(tile)
@@ -305,6 +315,13 @@ func _try_swing() -> bool:
 		return false
 	if not sprite.sprite_frames.has_animation("%s_%s" % [item.action, facing]):
 		return false
+	# Paid for before anything moves. The pool reports the refusal itself,
+	# to the dial and to whatever else is listening, so there is nothing to
+	# say here beyond passing it on and not swinging.
+	if stamina != null and not stamina.spend(item.action):
+		tool_refused.emit(item.action)
+		_shudder()
+		return true
 	_swinging = item.action
 	_landed = false
 	velocity = Vector2.ZERO
@@ -334,6 +351,20 @@ func _land_swing() -> void:
 	_try_hit(_swinging)
 
 
+
+## A small jolt of the player themselves, for a swing that was too much to
+## ask. The dial says what happened; this says it happened to *them*.
+##
+## Through the sprite's offset rather than the body's position, so nothing
+## that reads where the player is standing — the cursor, the aim, the
+## collision — sees them twitch.
+func _shudder() -> void:
+	var rest := Vector2(0.0, -7.0)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.tween_property(sprite, "offset", rest + Vector2(1.0, 0.0), 0.05)
+	tween.tween_property(sprite, "offset", rest - Vector2(1.0, 0.0), 0.06)
+	tween.tween_property(sprite, "offset", rest, 0.05)
 
 func _on_swing_finished() -> void:
 	if _swinging == &"":

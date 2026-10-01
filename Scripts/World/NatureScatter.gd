@@ -63,7 +63,7 @@ signal sown(count: int)
 @export_range(0.0, 1.0) var grass_density: float = 0.1
 ## Share of eligible water.
 @export_range(0.0, 1.0) var water_density: float = 0.04
-## Share of eligible shore.
+## Share of eligible shoreline.
 @export_range(0.0, 1.0) var shore_density: float = 0.12
 
 @export_group("Clearings")
@@ -71,12 +71,22 @@ signal sown(count: int)
 @export var clear_radius: int = 5
 
 ## How far out to sea anything may be sown, in tiles from the nearest land.
+## The outer bound of the band; [member water_margin] is the inner one.
 ##
 ## The sea is thirteen thousand tiles and nearly all of it is open water.
 ## Without this, reeds and lily pads spread evenly across the whole ocean —
 ## which is both wrong to look at and most of the work: the first run put
 ## four hundred and forty of them out of sight of the island.
-@export var water_reach: int = 2
+@export var water_reach: int = 3
+
+## How close to land a floating kind may come, in tiles.
+##
+## The sea tile against the shore is not open water. The shoreline is drawn
+## across it — the pale lip of sand the land ends in — so a rock sown there
+## sits on the beach rather than in the sea, and a lily pad laps over dry
+## ground. A tile of clear water in between is what tells the eye the thing
+## is floating.
+@export var water_margin: int = 1
 
 ## How much of the map to leave open regardless, so the farm has somewhere to
 ## be. Nothing is sown on a tile whose neighbours are already crowded.
@@ -237,8 +247,9 @@ func _sow_one(kind: NatureKind, tile: Vector2i, target: Node,
 func _ground_suits(ground: NatureKind.On, tile: Vector2i,
 		land: Dictionary[Vector2i, bool]) -> bool:
 	if ground == NatureKind.On.WATER:
-		return not land.has(tile) and _near_land(tile, land, water_reach)
-	# Grass and shore both want somewhere to stand.
+		return _open_water(tile, land)
+	if ground == NatureKind.On.SHORE:
+		return _shallows(tile, land)
 	return _has_grass(tile)
 
 ## The tiles of each kind of ground.
@@ -249,14 +260,14 @@ func _tiles_for(ground: NatureKind.On, land: Dictionary[Vector2i, bool]) -> Arra
 			for layer in _grass:
 				out.append_array(layer.get_used_cells())
 		NatureKind.On.SHORE:
-			for layer in _grass:
-				for cell in layer.get_used_cells():
-					if _touches_water(cell, land):
+			if _sea != null:
+				for cell in _sea.get_used_cells():
+					if _shallows(cell, land):
 						out.append(cell)
 		NatureKind.On.WATER:
 			if _sea != null:
 				for cell in _sea.get_used_cells():
-					if not land.has(cell) and _near_land(cell, land, water_reach):
+					if _open_water(cell, land):
 						out.append(cell)
 	return out
 
@@ -300,21 +311,30 @@ func _land_tiles() -> Dictionary[Vector2i, bool]:
 			land[cell] = true
 	return land
 
+## Whether [param tile] is the shallows: sea, with land beside it.
+##
+## The water side of the line, not the grass side. Reeds and bulrushes are
+## drawn standing in a puddle of their own and a rock meant for the shore is
+## drawn wet, so both belong on the tile the shoreline runs across — the one
+## that is half pale sand and half water. Sown a tile inland instead, a reed
+## brings its puddle with it and stands in a pond in the middle of a field.
+func _shallows(tile: Vector2i, land: Dictionary[Vector2i, bool]) -> bool:
+	return not land.has(tile) and _near_land(tile, land, 1)
+
+## Whether [param tile] is sea something may float on: far enough out that
+## the shoreline is not drawn across it, near enough in to be worth drawing.
+func _open_water(tile: Vector2i, land: Dictionary[Vector2i, bool]) -> bool:
+	if land.has(tile):
+		return false
+	if water_margin > 0 and _near_land(tile, land, water_margin):
+		return false
+	return _near_land(tile, land, water_reach)
+
 ## Whether [param tile] has land within [param reach] tiles.
 func _near_land(tile: Vector2i, land: Dictionary[Vector2i, bool], reach: int) -> bool:
 	for dx in range(-reach, reach + 1):
 		for dy in range(-reach, reach + 1):
 			if land.has(tile + Vector2i(dx, dy)):
-				return true
-	return false
-
-## Whether [param tile] has open water beside it.
-func _touches_water(tile: Vector2i, land: Dictionary[Vector2i, bool]) -> bool:
-	for dx in [-1, 0, 1]:
-		for dy in [-1, 0, 1]:
-			if dx == 0 and dy == 0:
-				continue
-			if not land.has(tile + Vector2i(dx, dy)):
 				return true
 	return false
 

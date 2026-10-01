@@ -1,10 +1,13 @@
-[gd_scene load_steps=7 format=4]
+[gd_scene load_steps=10 format=4]
 
 [ext_resource type="Script" path="res://Scripts/Player/Player.gd" id="1_script"]
 [ext_resource type="SpriteFrames" path="res://Assets/Characters/PlayerFrames.tres" id="2_frames"]
 [ext_resource type="SpriteFrames" path="res://Assets/Characters/WaterFrames.tres" id="3_water"]
 [ext_resource type="Script" path="res://Scripts/World/TileCursor.gd" id="4_cursor"]
 [ext_resource type="Texture2D" path="res://Assets/UI/Selectors/Selectorst.png" id="5_sel"]
+[ext_resource type="Script" path="res://Scripts/Player/Stamina.gd" id="6_stamina"]
+[ext_resource type="Script" path="res://Scripts/UI/StaminaDial.gd" id="7_dial"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Stamina/Stamina_Dial.png" id="8_dialsheet"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(10, 6)
@@ -43,3 +46,19 @@ position = Vector2(0, -8)
 zoom = Vector2(4, 4)
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
+
+[node name="Stamina" type="Node" parent="."]
+script = ExtResource("6_stamina")
+
+[node name="StaminaLayer" type="CanvasLayer" parent="."]
+
+[node name="StaminaDial" type="Sprite2D" parent="StaminaLayer"]
+texture_filter = 1
+modulate = Color(1, 1, 1, 0)
+scale = Vector2(3, 3)
+texture = ExtResource("8_dialsheet")
+hframes = 37
+frame = 36
+script = ExtResource("7_dial")
+stamina_path = NodePath("../../Stamina")
+anchor_path = NodePath("../..")

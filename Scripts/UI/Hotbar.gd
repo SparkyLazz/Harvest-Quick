@@ -17,6 +17,14 @@ extends Control
 ## Selection is the only state here. What the slots contain comes from
 ## outside through [method set_item], so this works the same whether it is
 ## driven by a real inventory or by nothing at all.
+##
+## Clicking a slot normally brings it to hand. While the inventory window is
+## open it moves stacks about instead, because these nine slots are the front
+## of the same satchel the window is showing and the player is in the middle
+## of rearranging it — see [member moves_items]. That is the whole reason the
+## hotbar takes clicks at all: the window's grid has no room for a nine-wide
+## row, so the row already on screen is where a stack goes when it is being
+## put somewhere particular.
 
 ## Emitted when the highlighted slot changes, with the new index.
 signal selection_changed(index: int)
@@ -27,6 +35,10 @@ signal slot_activated(index: int)
 const BOX_REGION := Rect2(281, 73, 30, 32)
 ## The bigger box the artist drew for the slot under the cursor.
 const BOX_SELECTED_REGION := Rect2(227, 162, 42, 44)
+
+## Whether a click moves stacks rather than choosing a slot. Turned on for
+## as long as the inventory window is open.
+@export var moves_items: bool = false
 
 @export_group("Selection")
 ## Which slot the cursor is on.
@@ -104,10 +116,18 @@ func _collect() -> void:
 	_counts.clear()
 	_pop_tweens.clear()
 	for slot in _slots.get_children():
-		_boxes.append(slot.get_node("Box"))
+		var box := slot.get_node("Box") as TextureRect
+		_boxes.append(box)
 		_icons.append(slot.get_node("Icon"))
 		_counts.append(slot.get_node("Count"))
 		_pop_tweens.append(null)
+		# The box is what the mouse actually lands on — the slot behind it
+		# is set to ignore, and a child is picked before its parent — so the
+		# box is where the click has to be caught.
+		var index := _boxes.size() - 1
+		var handler := _on_slot_input.bind(index)
+		if not box.gui_input.is_connected(handler):
+			box.gui_input.connect(handler)
 
 func _wrap(value: int) -> int:
 	var count: int = slot_count()
@@ -133,6 +153,35 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			step_selection(-1)
 			get_viewport().set_input_as_handled()
+
+## Answers a click on slot [param i].
+##
+## Which question the click is asking depends on [member moves_items], and
+## nothing else: with the window shut a slot is a thing to choose, and with
+## it open a slot is a place to put something. Both swallow the click, so a
+## press on the bar is never also a swing at the ground behind it.
+func _on_slot_input(event: InputEvent, i: int) -> void:
+	var button := event as InputEventMouseButton
+	if button == null or not button.pressed:
+		return
+	var left := button.button_index == MOUSE_BUTTON_LEFT
+	var right := button.button_index == MOUSE_BUTTON_RIGHT
+	if not left and not right:
+		return
+
+	if not moves_items:
+		if left:
+			selected = i
+			accept_event()
+			slot_activated.emit(i)
+		return
+
+	if left and button.shift_pressed:
+		Inventory.quick_move(i)
+	else:
+		Inventory.click_slot(i, left)
+	accept_event()
+	slot_activated.emit(i)
 
 ## Puts the cursor and the two affected slots where they belong. [param
 ## previous] of -1 means "settle everything", which is what start-up wants.

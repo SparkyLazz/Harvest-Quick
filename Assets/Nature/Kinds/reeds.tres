@@ -1,18 +1,12 @@
-[gd_resource type="Resource" script_class="NatureKind" format=3]
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://dblcm8cy80v3b"]
 
-[ext_resource type="Script" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://Assets/Nature/WaterPlantsBirch.png" id="2_sheet"]
+[ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_4nfwu"]
+[ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://bglkdna2obbc0" path="res://Assets/Nature/WaterPlantsBirch.png" id="2_sheet"]
 
 [resource]
 script = ExtResource("1_script")
 id = &"reeds"
 sheet = ExtResource("2_sheet")
-region = Rect2(0, 0, 16, 16)
-frames = 1
-fps = 6.0
-footprint = Vector2i(1, 1)
 on = 1
-weight = 3.00
-solid = false
-broken_by = &""
-hits = 1
+weight = 3.0
