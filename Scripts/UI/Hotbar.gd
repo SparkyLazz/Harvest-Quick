@@ -117,13 +117,29 @@ func _collect() -> void:
 	_pop_tweens.clear()
 	for slot in _slots.get_children():
 		var box := slot.get_node("Box") as TextureRect
+		var icon := slot.get_node("Icon") as Control
+		var count := slot.get_node("Count") as Control
 		_boxes.append(box)
-		_icons.append(slot.get_node("Icon"))
-		_counts.append(slot.get_node("Count"))
+		_icons.append(icon)
+		_counts.append(count)
 		_pop_tweens.append(null)
-		# The box is what the mouse actually lands on — the slot behind it
-		# is set to ignore, and a child is picked before its parent — so the
-		# box is where the click has to be caught.
+
+		# The box is the click target, and it has to be the only one.
+		#
+		# The icon and the count are the box's siblings rather than its
+		# children, and they are drawn after it, so the mouse is offered
+		# them first and the box never sees a press through the middle of
+		# its own face. The icon covers all but a few pixels of border, so
+		# the slot ends up clickable only around its edge — which reads as
+		# a slot that has to be hit just below centre, and is the single
+		# most confusing way for this to fail.
+		#
+		# Forced here rather than left to the scene because the claim being
+		# made is about this script: a slot's click is the box's to answer,
+		# and nothing laid on top of it may quietly take that away.
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 		var index := _boxes.size() - 1
 		var handler := _on_slot_input.bind(index)
 		if not box.gui_input.is_connected(handler):
