@@ -55,6 +55,24 @@ signal thing_recovered(item: PlaceableData, at: Vector2i)
 ## game is being able to lift the chest off again.
 @export var recover_action: StringName = &"axe"
 
+## Where the spray hangs for each facing.
+##
+## The artist drew the can into the character's own pose, and it ends up
+## somewhere different in each: tucked at the hip facing down, held out at
+## arm's length facing sideways. The spray is a separate sheet with its own
+## idea of centre, so without this it leaves the middle of the player rather
+## than the spout — which is the watering can looking "a bit off".
+##
+## Measured from the sheets rather than guessed: the grey of the can gives
+## its box in every pose, and the spray's own alpha gives its centre. The
+## y of -7 throughout is the same lift the character sprite has.
+const WATER_OFFSET := {
+	"down": Vector2(0.0, -7.0),
+	"up": Vector2(12.0, -21.0),
+	"left": Vector2(-11.0, -7.0),
+	"right": Vector2(12.0, -7.0),
+}
+
 ## Where each facing points, for working out what a swing is aimed at.
 const FACING_STEP := {
 	"down": Vector2.DOWN,
@@ -65,7 +83,7 @@ const FACING_STEP := {
 
 @onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var water: AnimatedSprite2D = $Water
-@onready var ghost: PlacementGhost = $PlacementGhost
+@onready var cursor: TileCursor = $TileCursor
 
 var facing: String = "down"
 
@@ -108,7 +126,7 @@ func _physics_process(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, friction * delta)
 		move_and_slide()
 		_check_impact()
-		_update_ghost()
+		_update_cursor()
 		return
 
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
@@ -122,7 +140,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	_update_animation(direction, is_running)
-	_update_ghost()
+	_update_cursor()
 
 ## Whether a swing is under way.
 func is_swinging() -> bool:
@@ -177,22 +195,91 @@ func _try_interact() -> bool:
 		return false
 	return thing.interact()
 
-## Puts the square of light on the tile the held thing would land on, and
-## takes it away when there is nothing in hand to land.
-func _update_ghost() -> void:
-	if ghost == null:
-		return
-	var placeable := Inventory.selected_item() as PlaceableData
+## Hands the swing to whatever it landed on and lets that thing decide what
+## the tool means to it.
+##
+## The player used to know: that a can waters crops, that an axe takes chests
+## back up. That is knowledge with no natural end — every new tool and every
+## new kind of thing would add another branch here. Asking the object instead
+## keeps this one call however many tools and trees there turn out to be.
+##
+## What comes back into the hand is still the player's business, because the
+## satchel is the player's, so recovery is settled here once the object has
+## agreed to be lifted.
+func _try_hit(action: StringName) -> bool:
 	var world := _world()
-	if placeable == null or world == null:
-		ghost.hide_ghost()
+	if world == null:
+		return false
+	var tile := world.tile_at(aim_point())
+	var thing := world.at(tile) as Placed
+	if thing == null:
+		return false
+	if action == recover_action:
+		var item := thing.recover()
+		if item != null:
+			# Only let go of it once there is somewhere for it to land.
+			# Lifting a chest into a full satchel would drop it out of the
+			# world entirely.
+			if not Inventory.has_room_for(item, 1):
+				return false
+			Inventory.add(item, 1)
+			var taken := world.remove(tile)
+			if taken != null:
+				taken.queue_free()
+			thing_recovered.emit(item, tile)
+			return true
+	return thing.hit(action)
+
+## Puts the cursor on the tile in front, when what is in hand would do
+## something there, and takes it away when it would not.
+##
+## Everything the player can hold is asked the same question, so the hoe and
+## the can get the same help the placeable things always had. Before this
+## only placing showed a cursor, and working the ground was done blind.
+func _update_cursor() -> void:
+	if cursor == null:
+		return
+	var world := _world()
+	if world == null:
+		cursor.hide_cursor()
 		return
 	var tile := world.tile_at(aim_point())
 	var cell := world.tile_size()
-	ghost.show_at(
-		world.tile_centre(tile) - cell * 0.5,
-		cell * Vector2(placeable.footprint),
-		world.can_place(placeable, tile))
+	var area := cell
+	var ok := false
+
+	var item: ItemData = Inventory.selected_item()
+	var placeable := item as PlaceableData
+	if placeable != null:
+		area = cell * Vector2(placeable.footprint)
+		ok = world.can_place(placeable, tile)
+	elif item != null and item.is_tool():
+		ok = _tool_would_work(item.action, tile)
+
+	if ok:
+		cursor.show_at(world.tile_centre(tile) - cell * 0.5, area)
+	else:
+		cursor.hide_cursor()
+
+## Whether swinging [param action] at [param tile] would change anything.
+##
+## Asks the same two places the swing itself would: the ground, for a tool
+## that works the ground, and whatever is standing there, for everything
+## else. Nothing here has a side effect, which is the point — this runs every
+## frame.
+func _tool_would_work(action: StringName, tile: Vector2i) -> bool:
+	var plots := get_tree().get_first_node_in_group("farm_plots")
+	if plots != null and action == &"hoe":
+		return plots.can_clear(tile)
+	var world := _world()
+	if world == null:
+		return false
+	var thing := world.at(tile) as Placed
+	if thing == null:
+		return false
+	if action == recover_action and thing.recover() != null:
+		return true
+	return thing.accepts(action)
 
 ## Whether [param event] is [param action] being pressed. Tolerates an
 ## action the project has not bound, so the player still works in a scene
@@ -225,6 +312,7 @@ func _try_swing() -> bool:
 	if _swinging == &"water":
 		# The spray is its own sheet, drawn over the pose it belongs to. It
 		# runs a frame longer than the swing and hides itself at the end.
+		water.offset = WATER_OFFSET.get(facing, Vector2(0.0, -7.0))
 		water.show()
 		water.play(facing)
 	return true
@@ -243,49 +331,9 @@ func _check_impact() -> void:
 func _land_swing() -> void:
 	_landed = true
 	tool_used.emit(_swinging, aim_point())
-	if _try_water(_swinging):
-		return
-	_try_recover(_swinging)
+	_try_hit(_swinging)
 
-## Wets whatever is growing where the swing landed. Returns whether anything
-## drank it, so a can emptied over bare ground is not mistaken for a watered
-## crop.
-func _try_water(action: StringName) -> bool:
-	if action != &"water":
-		return false
-	var world := _world()
-	if world == null:
-		return false
-	var thing := world.at(world.tile_at(aim_point()))
-	if thing == null or not thing.has_method("water"):
-		return false
-	return thing.water()
 
-## Takes back whatever the swing landed on, when the tool swung is the one
-## that lifts things and the thing agrees to be lifted. Returns whether
-## anything was recovered.
-func _try_recover(action: StringName) -> bool:
-	if action != recover_action or recover_action == &"":
-		return false
-	var world := _world()
-	if world == null:
-		return false
-	var tile := world.tile_at(aim_point())
-	var thing := world.at(tile)
-	if thing == null or not thing.has_method("recover"):
-		return false
-	var item: PlaceableData = thing.recover()
-	if item == null:
-		return false
-	# Only let go of it once there is somewhere for it to land. Lifting a
-	# chest into a full satchel would drop it out of the world entirely.
-	if Inventory.add(item, 1) > 0:
-		return false
-	var taken := world.remove(tile)
-	if taken != null:
-		taken.queue_free()
-	thing_recovered.emit(item, tile)
-	return true
 
 func _on_swing_finished() -> void:
 	if _swinging == &"":

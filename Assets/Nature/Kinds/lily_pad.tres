@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="NatureKind" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Nature/WaterPlantsBirch.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"lily_pad"
+sheet = ExtResource("2_sheet")
+region = Rect2(64, 0, 16, 16)
+frames = 1
+fps = 6.0
+footprint = Vector2i(1, 1)
+on = 2
+weight = 2.50
+solid = false
+broken_by = &""
+hits = 1

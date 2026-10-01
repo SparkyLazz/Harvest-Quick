@@ -112,39 +112,39 @@ region = Rect2(384, 96, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_0"]
 atlas = ExtResource("1_water")
-region = Rect2(0, 96, 48, 48)
+region = Rect2(0, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_1"]
 atlas = ExtResource("1_water")
-region = Rect2(48, 96, 48, 48)
+region = Rect2(48, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_2"]
 atlas = ExtResource("1_water")
-region = Rect2(96, 96, 48, 48)
+region = Rect2(96, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_3"]
 atlas = ExtResource("1_water")
-region = Rect2(144, 96, 48, 48)
+region = Rect2(144, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_4"]
 atlas = ExtResource("1_water")
-region = Rect2(192, 96, 48, 48)
+region = Rect2(192, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_5"]
 atlas = ExtResource("1_water")
-region = Rect2(240, 96, 48, 48)
+region = Rect2(240, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_6"]
 atlas = ExtResource("1_water")
-region = Rect2(288, 96, 48, 48)
+region = Rect2(288, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_7"]
 atlas = ExtResource("1_water")
-region = Rect2(336, 96, 48, 48)
+region = Rect2(336, 0, 48, 48)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_up_8"]
 atlas = ExtResource("1_water")
-region = Rect2(384, 96, 48, 48)
+region = Rect2(384, 0, 48, 48)
 
 [resource]
 animations = [{

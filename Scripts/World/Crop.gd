@@ -112,6 +112,20 @@ func harvest() -> bool:
 			queue_free()
 	return true
 
+## A crop answers to the watering can and to nothing else. Anything else
+## swung at it falls through to [Placed], which will ignore it unless the
+## crop has been given a [member Placed.broken_by].
+func hit(action: StringName) -> bool:
+	if action == &"water":
+		return water()
+	return super(action)
+
+## A crop takes the can only while it is still thirsty.
+func accepts(action: StringName) -> bool:
+	if action == &"water":
+		return not watered and not is_ripe()
+	return super(action)
+
 ## Picking is what interacting with a crop means.
 func interact() -> bool:
 	return harvest()

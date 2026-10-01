@@ -53,6 +53,12 @@ signal removed(at: Vector2i)
 ## What sits on each spoken-for tile.
 var _occupied: Dictionary[Vector2i, Node2D] = {}
 
+## And the reverse: which tiles each thing holds. Kept alongside rather than
+## worked out on demand, because taking something up otherwise means reading
+## every tile on the map to find the ones that were its — which is fine with
+## a dozen things down and measurably not with a thousand.
+var _held: Dictionary[Node2D, Array] = {}
+
 var _ground: Array[TileMapLayer] = []
 var _region: Array[TileMapLayer] = []
 
@@ -61,6 +67,39 @@ func _ready() -> void:
 	y_sort_enabled = true
 	_ground = _resolve(ground_layers)
 	_region = _resolve(region_layers)
+	adopt_scenery()
+
+## Files away anything already standing here when the farm loads.
+##
+## A tree or a rock drawn into the scene by hand never went through [method
+## place], so without this the map does not know it is there — and a tile
+## nothing knows about is a tile the player can drop a chest onto. Adopting
+## them on the way in means authored scenery and placed things are the same
+## kind of thing from here on, which is the only way trees and chests can
+## share one set of rules.
+func adopt_scenery() -> void:
+	for child in get_children():
+		var thing := child as Placed
+		if thing == null:
+			continue
+		if _held.has(thing):
+			continue
+		if thing.origin == Vector2i.ZERO:
+			thing.origin = standing_on(thing.global_position)
+		var tiles: Array[Vector2i] = [thing.origin]
+		if thing.source != null:
+			tiles = thing.source.tiles_from(thing.origin)
+		_claim(thing, tiles)
+
+## Which tile a thing standing at [param global_pos] is on.
+##
+## Not [method tile_at], which answers for the point itself. A solid thing
+## puts its origin on the *bottom edge* of its tile, and that edge belongs to
+## the tile below — ask about the point and you are told the wrong square,
+## consistently, by exactly one tile. A pixel up lands inside the tile the
+## thing is really standing in.
+func standing_on(global_pos: Vector2) -> Vector2i:
+	return tile_at(global_pos - Vector2(0.0, 1.0))
 
 ## The layers [param paths] point at, skipping any that are missing or are
 ## not layers — a path left dangling by a rename should cost that one layer,
@@ -165,12 +204,19 @@ func place(placeable: PlaceableData, origin: Vector2i) -> Node2D:
 	add_child(node)
 	# Filed under every tile it covers, so aiming at any part of a wide thing
 	# finds the whole of it.
-	for tile in placeable.tiles_from(origin):
-		_occupied[tile] = node
+	_claim(node, placeable.tiles_from(origin))
 	if node.has_method("placed_as"):
 		node.placed_as(placeable, origin)
 	placed.emit(node, origin)
 	return node
+
+## Marks [param tiles] as taken by [param node], both ways round.
+func _claim(node: Node2D, tiles: Array) -> void:
+	var mine: Array[Vector2i] = []
+	for tile in tiles:
+		_occupied[tile] = node
+		mine.append(tile)
+	_held[node] = mine
 
 ## What stands on [param tile], or null.
 func at(tile: Vector2i) -> Node2D:
@@ -183,12 +229,9 @@ func remove(tile: Vector2i) -> Node2D:
 	var node: Node2D = _occupied.get(tile)
 	if node == null:
 		return null
-	# Found by value rather than by recomputing the footprint: the thing may
-	# have been placed by something that knew a different footprint, and the
-	# tiles it actually holds are the ones that must be let go.
-	for held in _occupied.keys():
-		if _occupied[held] == node:
-			_occupied.erase(held)
+	for held in _held.get(node, [] as Array[Vector2i]):
+		_occupied.erase(held)
+	_held.erase(node)
 	remove_child(node)
 	removed.emit(tile)
 	return node

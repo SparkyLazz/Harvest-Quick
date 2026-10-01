@@ -141,6 +141,15 @@ func height_at(tile: Vector2i) -> int:
 			return i
 	return -1
 
+## The grass layers, already followed. For anything that needs to walk the
+## map rather than ask about one tile of it.
+func grass_layers_resolved() -> Array[TileMapLayer]:
+	return _grass
+
+## The soil layers, likewise.
+func soil_layers_resolved() -> Array[TileMapLayer]:
+	return _soil
+
 ## Whether [param tile] has bare ground under it at all.
 func is_plot(tile: Vector2i) -> bool:
 	return height_at(tile) >= 0

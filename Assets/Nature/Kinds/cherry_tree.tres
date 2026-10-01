@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="NatureKind" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Nature/BiomeCherry.png" id="2_sheet"]
+[ext_resource type="Resource" path="res://Assets/Items/Wood.tres" id="3_wood"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"cherry_tree"
+sheet = ExtResource("2_sheet")
+region = Rect2(80, 16, 32, 32)
+frames = 1
+fps = 6.0
+footprint = Vector2i(2, 2)
+on = 0
+weight = 0.60
+solid = true
+broken_by = &"axe"
+hits = 3
+drops = Array[ExtResource("3_wood")]([ExtResource("3_wood")])
+drop_counts = Array[int]([2])

@@ -155,6 +155,26 @@ func add(item: ItemData, count: int = 1) -> int:
 		changed.emit()
 	return left
 
+## Whether [param count] of [param item] would fit, without putting any of
+## it in.
+##
+## Asked before something is destroyed to produce it. A drop with nowhere to
+## go is worse than a swing that did nothing — the player would lose the tree
+## as well as the wood — so the question has to be answerable in advance.
+func has_room_for(item: ItemData, count: int = 1) -> bool:
+	if item == null or count <= 0:
+		return true
+	var cap: int = maxi(item.stack_size, 1)
+	var room: int = 0
+	for i in _items.size():
+		if _items[i] == null:
+			room += cap
+		elif _items[i] == item:
+			room += maxi(cap - _counts[i], 0)
+		if room >= count:
+			return true
+	return false
+
 ## Moves the hand [param step] slots along, rolling off one end onto the other.
 func step_selection(step: int) -> void:
 	selected = posmod(_selected + step, SLOT_COUNT)

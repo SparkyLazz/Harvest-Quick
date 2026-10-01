@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=4]
+[gd_scene load_steps=7 format=4]
 
 [ext_resource type="Script" path="res://Scripts/Player/Player.gd" id="1_script"]
 [ext_resource type="SpriteFrames" path="res://Assets/Characters/PlayerFrames.tres" id="2_frames"]
 [ext_resource type="SpriteFrames" path="res://Assets/Characters/WaterFrames.tres" id="3_water"]
-[ext_resource type="Script" path="res://Scripts/World/PlacementGhost.gd" id="4_ghost"]
+[ext_resource type="Script" path="res://Scripts/World/TileCursor.gd" id="4_cursor"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Selectors/Selectorst.png" id="5_sel"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(10, 6)
@@ -28,11 +29,14 @@ offset = Vector2(0, -7)
 position = Vector2(0, -3)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="PlacementGhost" type="Node2D" parent="."]
+[node name="TileCursor" type="Node2D" parent="."]
 top_level = true
 z_index = 100
 visible = false
-script = ExtResource("4_ghost")
+script = ExtResource("4_cursor")
+sheet = ExtResource("5_sel")
+palette = 1
+variant = 0
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(0, -8)
