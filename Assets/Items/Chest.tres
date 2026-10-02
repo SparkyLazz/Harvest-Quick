@@ -13,6 +13,7 @@ filter_clip = true
 script = ExtResource("1_script")
 id = &"chest"
 display_name = "Chest"
+description = "Holds nothing yet. Set it down, walk round it, open the lid."
 icon = SubResource("AtlasTexture_icon")
 action = &""
 stack_size = 16

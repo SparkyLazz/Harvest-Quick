@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="CropData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Items/CropData.gd" id="1_script"]
+[ext_resource type="Resource" path="res://Assets/Crops/Corn.tres" id="2_produce"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"corn"
+display_name = "Corn"
+sheet_row = 1
+topper_row = 0
+stages = 6
+seasons = 6
+days_per_stage = 2
+needs_water = true
+produce = ExtResource("2_produce")
+produce_count = 2
+regrows = false
+regrow_stage = 3

@@ -19,6 +19,11 @@ extends Resource
 ## What the item is called on screen.
 @export var display_name: String = ""
 
+## A line or two about it, for a shop page or a tooltip. Empty for anything
+## that explains itself, which is most of what sits in a slot — the description
+## is for the things a player is deciding between, not for everything.
+@export_multiline var description: String = ""
+
 ## The picture in the slot. Normally an [AtlasTexture] cut from the emoji
 ## sheet in Assets/UI/Objects, whose cells are 32x32.
 @export var icon: Texture2D

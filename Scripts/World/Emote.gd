@@ -17,11 +17,24 @@ extends Sprite2D
 ## a new one is a rectangle and nothing else.
 
 ## Where the emoji sheet keeps the things worth saying about a farm.
-const HEARTS_BLUE := Rect2(192, 288, 32, 32)
-const HEARTS_GREEN := Rect2(96, 288, 32, 32)
-const HEARTS_PINK := Rect2(0, 288, 32, 32)
-const STAR := Rect2(0, 320, 32, 32)
+##
+## Verified cell by cell against Emoji_Spritesheet.png, which is ten columns of
+## 32-pixel cells: row 8 is the symbols, 9 the hearts, 10 the stars and coins,
+## 11 the thumbs, 24 the tools. Counting these rows by eye off the whole sheet
+## is how they get shifted by one, so they were sampled rather than looked at.
+const CHECK := Rect2(0, 256, 32, 32)
+const CROSS := Rect2(64, 256, 32, 32)
+const BANG := Rect2(160, 256, 32, 32)
+const QUERY := Rect2(192, 256, 32, 32)
 const NOTE := Rect2(224, 256, 32, 32)
+const HEARTS_PINK := Rect2(0, 288, 32, 32)
+const HEARTS_GREEN := Rect2(96, 288, 32, 32)
+const HEARTS_BLUE := Rect2(192, 288, 32, 32)
+const STAR := Rect2(0, 320, 32, 32)
+const COIN := Rect2(192, 320, 32, 32)
+const MONEY := Rect2(256, 320, 32, 32)
+const THUMB_UP := Rect2(0, 352, 32, 32)
+const THUMB_DOWN := Rect2(96, 352, 32, 32)
 const DROPLET := Rect2(224, 768, 32, 32)
 
 ## How big the 32-pixel cell is drawn. Half, so it reads as a remark over a

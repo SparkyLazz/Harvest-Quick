@@ -14,6 +14,7 @@ filter_clip = true
 script = ExtResource("1_script")
 id = &"eggplant_seeds"
 display_name = "Eggplant Seeds"
+description = "Two to a plant, which makes it the steady earner — and the one most likely to glut its own price."
 icon = SubResource("AtlasTexture_icon")
 action = &""
 stack_size = 99

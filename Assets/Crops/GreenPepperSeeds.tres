@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="SeedData" format=3]
+
+[ext_resource type="Script" path="res://Scripts/Items/SeedData.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Plants/PlantItemIcons.png" id="2_sheet"]
+[ext_resource type="PackedScene" path="res://Scenes/World/Crop.tscn" id="3_scene"]
+[ext_resource type="Resource" path="res://Assets/Crops/GreenPepperCrop.tres" id="4_crop"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_icon"]
+atlas = ExtResource("2_sheet")
+region = Rect2(64, 96, 32, 32)
+filter_clip = true
+
+[resource]
+script = ExtResource("1_script")
+id = &"green_pepper_seeds"
+display_name = "Green Pepper Seeds"
+description = "Keeps fruiting all summer once it starts."
+icon = SubResource("AtlasTexture_icon")
+action = &""
+stack_size = 99
+scene = ExtResource("3_scene")
+footprint = Vector2i(1, 1)
+surface = 1
+sort_lift = 16.0
+recoverable = false
+crop = ExtResource("4_crop")

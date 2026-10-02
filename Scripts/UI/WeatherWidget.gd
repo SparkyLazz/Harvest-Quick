@@ -105,10 +105,6 @@ const MERCURY_REGION: Array[Rect2] = [
 const MERCURY_X: float = 6.0
 const MERCURY_FLOOR: float = 86.0
 
-## Season names for the date plate, four to a year.
-const SEASONS: Array[String] = ["SPR", "SUM", "AUT", "WIN"]
-## Days in one season.
-const SEASON_LENGTH: int = 28
 
 @export var weather: Weather = Weather.CLEAR:
 	set(value):
@@ -209,10 +205,13 @@ func _process(_delta: float) -> void:
 		time_of_day = _cycle.time_of_day
 
 ## Shows the day on the plate as a season and a number, e.g. "SUM.14".
+##
+## The reckoning is [Season]'s rather than this widget's. It used to be two
+## constants here, which was fine while the plate was the only thing that cared
+## what month it was — and stopped being fine the moment a seed could refuse to
+## go in the ground in winter.
 func set_date(day: int) -> void:
-	var index := maxi(day, 1) - 1
-	var season: String = SEASONS[(index / SEASON_LENGTH) % SEASONS.size()]
-	date_text = "%s.%02d" % [season, index % SEASON_LENGTH + 1]
+	date_text = Season.label(day)
 
 ## Where [member temperature] falls among the nine mercury states, as a
 ## fraction — 3.5 means halfway between the fourth state and the fifth.

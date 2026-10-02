@@ -14,6 +14,7 @@ filter_clip = true
 script = ExtResource("1_script")
 id = &"cauliflower_seeds"
 display_name = "Cauliflower Seeds"
+description = "Slow and dear, and worth a great deal when the town wants one. A missed spring is a missed year."
 icon = SubResource("AtlasTexture_icon")
 action = &""
 stack_size = 99

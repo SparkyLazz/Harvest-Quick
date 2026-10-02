@@ -14,6 +14,7 @@ filter_clip = true
 script = ExtResource("1_script")
 id = &"carrot_seeds"
 display_name = "Carrot Seeds"
+description = "Quick and cheap. The crop to fall back on when a spike is too far off to wait for."
 icon = SubResource("AtlasTexture_icon")
 action = &""
 stack_size = 99

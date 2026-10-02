@@ -10,6 +10,7 @@ display_name = "Carrot"
 sheet_row = 2
 topper_row = -1
 stages = 6
+seasons = 3
 days_per_stage = 1
 needs_water = true
 produce = ExtResource("2_produce")

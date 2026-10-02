@@ -10,6 +10,7 @@ display_name = "Cauliflower"
 sheet_row = 3
 topper_row = -1
 stages = 6
+seasons = 1
 days_per_stage = 2
 needs_water = true
 produce = ExtResource("2_produce")
