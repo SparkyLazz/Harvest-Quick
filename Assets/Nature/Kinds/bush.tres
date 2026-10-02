@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://wkpal10dt0vg"]
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://5xj1qcygthmy"]
 
 [ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_nuwri"]
 [ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Resource" path="res://Assets/Items/Fiber.tres" id="2_cbvj3"]
 [ext_resource type="Texture2D" uid="uid://dgdmv0sj0xe8r" path="res://Assets/Nature/TreesStumpsBushes.png" id="2_sheet"]
 
 [resource]
@@ -11,3 +12,6 @@ sheet = ExtResource("2_sheet")
 region = Rect2(144, 16, 16, 16)
 weight = 2.0
 broken_by = &"axe"
+hits = 2
+drops = Array[ExtResource("1_nuwri")]([ExtResource("2_cbvj3")])
+drop_counts = Array[int]([2])

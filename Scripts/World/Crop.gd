@@ -91,12 +91,11 @@ func harvest() -> bool:
 	if not is_ripe() or crop == null or crop.produce == null:
 		return false
 	var count: int = maxi(crop.produce_count, 1)
-	var left := Inventory.add(crop.produce, count)
-	if left >= count:
-		# Nowhere to put it: leave the crop standing rather than destroying
-		# the harvest.
-		return false
-	harvested.emit(crop.produce, count - left)
+	# Thrown into the field rather than banked. A ripe crop can always be
+	# picked now — a full satchel leaves the produce lying in the row
+	# instead of refusing the harvest.
+	Dropped.scatter(get_parent(), global_position, crop.produce, count)
+	harvested.emit(crop.produce, count)
 	_say(Emote.HEARTS_GREEN)
 	if crop.regrows:
 		stage = clampi(crop.regrow_stage, 0, crop.ripe_stage())

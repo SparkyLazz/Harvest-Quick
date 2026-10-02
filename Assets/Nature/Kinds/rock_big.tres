@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://ckfuew7op5qi5"]
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://dtpedfkudh3mt"]
 
 [ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_rq41c"]
 [ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Resource" path="res://Assets/Items/Stone.tres" id="2_owfk5"]
 [ext_resource type="Texture2D" uid="uid://qs8n0mvs6t34" path="res://Assets/Nature/MushroomsFlowersStones.png" id="2_sheet"]
 
 [resource]
@@ -12,3 +13,7 @@ region = Rect2(96, 16, 32, 32)
 footprint = Vector2i(2, 2)
 weight = 0.4
 solid = true
+broken_by = &"axe"
+hits = 3
+drops = Array[ExtResource("1_rq41c")]([ExtResource("2_owfk5")])
+drop_counts = Array[int]([4])

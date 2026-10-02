@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://dblcm8cy80v3b"]
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://bkd74ucpwo5d3"]
 
 [ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_4nfwu"]
 [ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
+[ext_resource type="Resource" path="res://Assets/Items/Fiber.tres" id="2_5m572"]
 [ext_resource type="Texture2D" uid="uid://bglkdna2obbc0" path="res://Assets/Nature/WaterPlantsBirch.png" id="2_sheet"]
 
 [resource]
@@ -10,3 +11,6 @@ id = &"reeds"
 sheet = ExtResource("2_sheet")
 on = 1
 weight = 3.0
+broken_by = &"axe"
+drops = Array[ExtResource("1_4nfwu")]([ExtResource("2_5m572")])
+drop_counts = Array[int]([2])

@@ -226,6 +226,9 @@ func _sow_one(kind: NatureKind, tile: Vector2i, target: Node,
 	node.drops = kind.drops
 	node.drop_counts = kind.drop_counts
 	node.origin = tile
+	# The map files it under every one of these, so a wide thing is found by
+	# a swing at any part of it rather than only at its top-left corner.
+	node.footprint = span
 	target.add_child(node)
 	# Across the middle of the footprint and on the bottom edge of its lowest
 	# row, so a wide thing stands on the ground it occupies.

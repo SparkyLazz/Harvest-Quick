@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://drgpvj3pqr3hi"]
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://bk3j81oe0r51l"]
 
 [ext_resource type="Script" uid="uid://bmatuhrm4cjoy" path="res://Scripts/Items/NatureKind.gd" id="1_script"]
 [ext_resource type="Script" uid="uid://cq2hj7vnbx4ra" path="res://Scripts/Items/ItemData.gd" id="1_usasc"]
+[ext_resource type="Resource" path="res://Assets/Items/Stone.tres" id="2_pbjwq"]
 [ext_resource type="Texture2D" uid="uid://dothjb2y6gmlw" path="res://Assets/Nature/WaterObjects.png" id="2_sheet"]
 
 [resource]
@@ -11,3 +12,7 @@ sheet = ExtResource("2_sheet")
 region = Rect2(32, 0, 16, 16)
 on = 1
 weight = 1.5
+broken_by = &"axe"
+hits = 2
+drops = Array[ExtResource("1_usasc")]([ExtResource("2_pbjwq")])
+drop_counts = Array[int]([2])

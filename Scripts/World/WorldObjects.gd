@@ -86,10 +86,12 @@ func adopt_scenery() -> void:
 			continue
 		if thing.origin == Vector2i.ZERO:
 			thing.origin = standing_on(thing.global_position)
-		var tiles: Array[Vector2i] = [thing.origin]
-		if thing.source != null:
-			tiles = thing.source.tiles_from(thing.origin)
-		_claim(thing, tiles)
+		# Asked of the thing rather than of the item it came from, because
+		# scenery has no item. Reading the footprint off [member
+		# Placed.source] filed every tree under a single tile, so three
+		# quarters of every tree was ground the axe found empty and a chest
+		# could be dropped into.
+		_claim(thing, thing.tiles())
 
 ## Which tile a thing standing at [param global_pos] is on.
 ##

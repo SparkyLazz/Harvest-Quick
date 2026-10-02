@@ -92,6 +92,14 @@ const FACING_STEP := {
 
 var facing: String = "down"
 
+## Whether the player is being held still by something else — a screen
+## transition, most likely. Movement, swings and the tile cursor all stop.
+##
+## Kept apart from pausing the tree because the rest of the world should go
+## on: the clock still runs, a drop still finishes its hop, and a crop still
+## waters itself while the curtain is down.
+var _frozen: bool = false
+
 ## The layer placed things live in. Looked up once and kept, because the
 ## ghost asks for it every frame and the answer only changes when the whole
 ## farm does.
@@ -112,7 +120,36 @@ func _ready() -> void:
 	water.animation_finished.connect(water.hide)
 	water.hide()
 
+## Holds the player still, or lets them go again.
+func set_frozen(value: bool) -> void:
+	if _frozen == value:
+		return
+	_frozen = value
+	if _frozen:
+		velocity = Vector2.ZERO
+		# Cut any swing short rather than leaving it half-played to resume
+		# in a different place.
+		_swinging = &""
+		sprite.play("idle_%s" % facing)
+		if cursor != null:
+			cursor.hide_cursor()
+
+## Whether something is holding the player still.
+func is_frozen() -> bool:
+	return _frozen
+
+## Turns the player to face [param direction] and stands them idle in it.
+## Used on arriving somewhere, so they look into the new place rather than
+## back the way the last one left them.
+func face(direction: String) -> void:
+	if not FACING_STEP.has(direction):
+		return
+	facing = direction
+	sprite.play("idle_%s" % facing)
+
 func _unhandled_input(event: InputEvent) -> void:
+	if _frozen:
+		return
 	# Through _unhandled_input rather than polled, so a click that the
 	# inventory window has already answered is not also a swing at the dirt.
 	#
@@ -125,6 +162,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _physics_process(delta: float) -> void:
+	if _frozen:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		return
 	if _swinging != &"":
 		# Planted for the length of the swing, but still slowed by friction
 		# so a run does not stop dead on the first frame.
