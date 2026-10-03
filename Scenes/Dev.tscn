@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://dgqwg0k6gan3r"]
+
+[ext_resource type="TileSet" uid="uid://by2oah0hpwvnx" path="res://Tilemaps/Terrains.tres" id="1_lbjce"]
+
+[node name="Maps" type="Node2D" unique_id=1874760819]
+
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=2129162101]
+tile_set = ExtResource("1_lbjce")
