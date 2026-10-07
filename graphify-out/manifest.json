@@ -196,5 +196,11 @@
     "seen": 1791006715.7499478,
     "ast_hash": "82a91f7411391723948eca99bd83bf5c",
     "semantic_hash": ""
+  },
+  "Assets/UI/Inventory_Spritesheet.png": {
+    "mtime": 1791378506.7499046,
+    "seen": 1791378717.963958,
+    "ast_hash": "8466fbdd4665a65956fd9b9709fe9bca",
+    "semantic_hash": ""
   }
 }

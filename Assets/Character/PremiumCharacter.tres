@@ -2,6 +2,134 @@
 
 [ext_resource type="Texture2D" uid="uid://b2vi4rro3tb8t" path="res://Assets/Character/Premium_Character.png" id="1_tex"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(48, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(144, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(240, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_6"]
+atlas = ExtResource("1_tex")
+region = Rect2(288, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_down_7"]
+atlas = ExtResource("1_tex")
+region = Rect2(336, 768, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(48, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(144, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(240, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_6"]
+atlas = ExtResource("1_tex")
+region = Rect2(288, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_left_7"]
+atlas = ExtResource("1_tex")
+region = Rect2(336, 912, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(48, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(144, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(240, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_6"]
+atlas = ExtResource("1_tex")
+region = Rect2(288, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_right_7"]
+atlas = ExtResource("1_tex")
+region = Rect2(336, 864, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(48, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(96, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(144, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(240, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_6"]
+atlas = ExtResource("1_tex")
+region = Rect2(288, 816, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hoe_up_7"]
+atlas = ExtResource("1_tex")
+region = Rect2(336, 816, 48, 48)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_idle_down_0"]
 atlas = ExtResource("1_tex")
 region = Rect2(0, 0, 48, 48)
@@ -388,6 +516,122 @@ region = Rect2(336, 240, 48, 48)
 
 [resource]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_down_7")
+}],
+"loop": 0,
+"name": &"hoe_down",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_left_7")
+}],
+"loop": 0,
+"name": &"hoe_left",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_right_7")
+}],
+"loop": 0,
+"name": &"hoe_right",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hoe_up_7")
+}],
+"loop": 0,
+"name": &"hoe_up",
+"speed": 12.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_idle_down_0")
