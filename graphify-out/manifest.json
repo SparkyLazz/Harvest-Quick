@@ -202,5 +202,59 @@
     "seen": 1791378717.963958,
     "ast_hash": "8466fbdd4665a65956fd9b9709fe9bca",
     "semantic_hash": ""
+  },
+  "Assets/UI/Emoji.png": {
+    "mtime": 1791643247.0892525,
+    "seen": 1791643276.9307306,
+    "ast_hash": "08d2257b2048434f74b01949dd5f111f",
+    "semantic_hash": ""
+  },
+  "Assets/Farm/Water_Drops.png": {
+    "mtime": 1791643964.603022,
+    "seen": 1791644183.7591813,
+    "ast_hash": "ac623d4428d6985fc060c0733b63a887",
+    "semantic_hash": ""
+  },
+  "Assets/Items/All_Items.png": {
+    "mtime": 1791643964.5577867,
+    "seen": 1791644183.7591825,
+    "ast_hash": "8c6d10b91574b47736dc1c354227a970",
+    "semantic_hash": ""
+  },
+  "Assets/Farm/Farming_Plants_V2.png": {
+    "mtime": 1791650245.357326,
+    "seen": 1791650264.9316797,
+    "ast_hash": "cc14d455457fefc8a25875e03192e5b7",
+    "semantic_hash": ""
+  },
+  "Assets/Farm/Farming_Plants_V2_Watered.png": {
+    "mtime": 1791650245.3587458,
+    "seen": 1791650264.9316814,
+    "ast_hash": "b40abda6d69e0ad7d6ec398d149bb51d",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Panel_Dark.png": {
+    "mtime": 1791652039.8050559,
+    "seen": 1791652349.9234667,
+    "ast_hash": "a130c8f5d455485645dec80536e185e9",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Panel_Light.png": {
+    "mtime": 1791652039.8050559,
+    "seen": 1791652349.9234684,
+    "ast_hash": "03f515a8c3202f968aa9bd08eb78d7e8",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Scrollbar.png": {
+    "mtime": 1791652145.4474087,
+    "seen": 1791652349.923469,
+    "ast_hash": "fb9c70a48a36a2df7bd1f00e636e527c",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Tooltip_Box.png": {
+    "mtime": 1791652768.177862,
+    "seen": 1791652782.4264882,
+    "ast_hash": "0baccf1a79566a7ee8534da8575198c2",
+    "semantic_hash": ""
   }
 }
