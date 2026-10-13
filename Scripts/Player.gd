@@ -66,6 +66,14 @@ const FACING_DIRS := {
 ## hole painted with the terrain tool looks. Off leaves a hard square.
 @export var refit_grass_edges: bool = true
 
+@export_group("Interaction")
+## Layer the furniture is painted on. Each tile carries its own verb in the
+## tileset's "interact" data, so a wardrobe or a bed works wherever it is
+## painted, with no node to place beside it.
+@export var props_layer_path: NodePath = ^"../Props"
+## Float a little "E Open" sign over whatever furniture is being faced.
+@export var show_prompts: bool = true
+
 @export_group("Farming")
 ## Farm that owns planting, watering and harvesting. Without one, only the
 ## hoe works.
@@ -122,6 +130,7 @@ var _action: String = ""         # "hoe" / "water" while a swing is playing
 var _hit_landed: bool = false
 var _grass_layer: TileMapLayer
 var _soil_layer: TileMapLayer
+var _props: TileMapLayer
 var _hud: Node
 var _farm: Farm
 var _emote: EmoteBubble
@@ -129,15 +138,21 @@ var _just_denied: bool = false
 
 func _ready() -> void:
 	_facing = start_facing
-	stamina = max_stamina
+	# Checked out of PlayerState, so walking indoors does not refill the bar.
+	stamina = PlayerState.take_stamina(max_stamina)
 	_grass_layer = get_node_or_null(grass_layer_path) as TileMapLayer
 	_soil_layer = get_node_or_null(soil_layer_path) as TileMapLayer
+	_props = get_node_or_null(props_layer_path) as TileMapLayer
 	_hud = get_node_or_null(hud_path)
 	_farm = get_node_or_null(farm_path) as Farm
 	_apply_animation_speeds()
 	if show_emotes:
 		_emote = EmoteBubble.new()
 		add_child(_emote)
+	if show_prompts:
+		var prompt := InteractPrompt.new()
+		prompt.player = self
+		add_child(prompt)
 	if show_cursor and _grass_layer != null:
 		var cursor := GridCursor.new()
 		cursor.player = self
@@ -223,6 +238,8 @@ func _react(emote: String) -> void:
 
 
 func _dispatch_use(input: Vector2) -> bool:
+	if _try_interact(input):
+		return true
 	var item := _held()
 	if _hud == null:
 		return _start_action("hoe", input)
@@ -236,6 +253,53 @@ func _dispatch_use(input: Vector2) -> bool:
 	if ItemDB.is_seed(item):
 		return _try_plant(item, input)
 	return false
+
+
+## Acts on whatever furniture is being faced. The verb comes off the tile, so
+## this stays the same however the room is rearranged.
+## What using the tile ahead would do, by name, or "" for nothing. The prompt
+## sign reads this too, so what it offers and what the key does cannot drift.
+func interaction_ahead() -> String:
+	if _props == null or not _action.is_empty():
+		return ""
+	if _hud != null and _hud.has_method("is_inventory_open") and _hud.call("is_inventory_open"):
+		return ""
+	var data := _props.get_cell_tile_data(facing_cell())
+	return str(data.get_custom_data("interact")) if data != null else ""
+
+
+func _try_interact(input: Vector2) -> bool:
+	if _props == null:
+		return false
+	if input != Vector2.ZERO:
+		_facing = _facing_for(input)
+	var cell := facing_cell()
+	var data := _props.get_cell_tile_data(cell)
+	if data == null:
+		return false
+	match str(data.get_custom_data("interact")):
+		"wardrobe":
+			return _open_wardrobe(cell)
+		"bed":
+			return _sleep()
+	return false
+
+
+func _open_wardrobe(cell: Vector2i) -> bool:
+	if _hud == null or not _hud.has_method("open_storage"):
+		return false
+	var key := PlayerState.storage_key(get_tree().current_scene, cell)
+	_hud.call("open_storage", "WARDROBE", PlayerState.storage_for(key))
+	return true
+
+
+func _sleep() -> bool:
+	_play("idle")
+	velocity = Vector2.ZERO
+	SceneTransition.fade_through(func() -> void:
+		PlayerState.sleep()
+		stamina = PlayerState.stamina)
+	return true
 
 
 ## Swinging turns the character to face the input first, so you can work a tile
@@ -290,14 +354,24 @@ func _try_harvest(input: Vector2) -> bool:
 	return true
 
 
+## Any layer will do to turn a position into a cell -- they share one grid --
+## so indoors, where there is no farmland, the furniture layer stands in.
+func _grid() -> TileMapLayer:
+	return _grass_layer if _grass_layer != null else _props
+
+
 ## The cell the character is standing on, offset one step along the facing.
 func facing_cell() -> Vector2i:
-	var here := _grass_layer.local_to_map(_grass_layer.to_local(global_position))
+	var layer := _grid()
+	if layer == null:
+		return Vector2i.ZERO
+	var here := layer.local_to_map(layer.to_local(global_position))
 	return here + FACING_DIRS[_facing]
 
 ## World position of a cell's centre.
 func cell_center(cell: Vector2i) -> Vector2:
-	return _grass_layer.to_global(_grass_layer.map_to_local(cell))
+	var layer := _grid()
+	return layer.to_global(layer.map_to_local(cell)) if layer != null else global_position
 
 
 ## Would the held item do anything on this cell right now? Mirrors the order in
@@ -328,6 +402,7 @@ func _pay(cost: float) -> bool:
 		_react("tired")
 		return false
 	stamina -= cost
+	PlayerState.put_stamina(stamina)
 	_since_spent = 0.0
 	return true
 
@@ -339,6 +414,7 @@ func _regen(delta: float) -> void:
 	if stamina >= max_stamina or _since_spent < regen_delay:
 		return
 	stamina = minf(stamina + regen_rate * delta, max_stamina)
+	PlayerState.put_stamina(stamina)
 
 
 func _can_hoe(cell: Vector2i) -> bool:

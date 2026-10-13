@@ -124,8 +124,9 @@ var _tab := TAB_INVENTORY
 var _grid: GridContainer
 var _slots: Array[InventorySlot] = []
 var _carry: InventorySlot
-var _carry_item := ""
-var _carry_count := 0
+## The stack on the cursor and the rules for it, shared with the wardrobe
+## screen so both behave the same way.
+var _carry_stack := CarriedStack.new()
 
 var _tooltip: PanelContainer
 var _tip_name: Label
@@ -220,9 +221,7 @@ func open() -> void:
 
 ## Closing puts whatever is on the cursor back in the inventory.
 func close() -> void:
-	if _carry_item != "":
-		inventory.add(_carry_item, _carry_count)
-		_set_carry("", 0)
+	_carry_stack.spill_into(inventory)
 	_hide_tooltip()
 	_hover_slot = -1
 	visible = false
@@ -235,11 +234,11 @@ func _process(delta: float) -> void:
 		_poke_left -= delta
 	_sync_profile()
 	var mouse := get_viewport().get_mouse_position()
-	if _carry_item != "":
+	if not _carry_stack.is_empty():
 		_carry.position = (mouse - _carry.size * pixel_scale * 0.5).round()
 	if _tab != TAB_INVENTORY:
 		return
-	if _hover_slot >= 0 and not _tooltip.visible and _carry_item == "" and _tooltips_on:
+	if _hover_slot >= 0 and not _tooltip.visible and _carry_stack.is_empty() and _tooltips_on:
 		_hover_time += delta
 		if _hover_time >= hover_delay:
 			_show_tooltip(_hover_slot)
@@ -310,6 +309,7 @@ func _build() -> void:
 	_carry.scale = Vector2.ONE * pixel_scale
 	_carry.visible = false
 	add_child(_carry)
+	_carry_stack.changed.connect(_sync_carry)
 
 	_build_tooltip()
 
@@ -1074,12 +1074,10 @@ func _recenter() -> void:
 	_window.position = (free * 0.5).round()
 
 
-func _set_carry(item: String, count: int) -> void:
-	_carry_item = item
-	_carry_count = count
-	_carry.item = item
-	_carry.count = count
-	_carry.visible = item != ""
+func _sync_carry() -> void:
+	_carry.item = _carry_stack.item
+	_carry.count = _carry_stack.count
+	_carry.visible = not _carry_stack.is_empty()
 
 
 # --- crafting ---------------------------------------------------------------
@@ -1186,43 +1184,10 @@ func _flip_toggle(key: String) -> void:
 func _on_slot_pressed(index: int, button: int) -> void:
 	_hide_tooltip()
 	_hover_time = 0.0
-	var item := inventory.item_at(index)
-	var count := inventory.count_at(index)
 	if button == MOUSE_BUTTON_LEFT:
-		_left_click(index, item, count)
+		_carry_stack.left_click(inventory, index)
 	elif button == MOUSE_BUTTON_RIGHT:
-		_right_click(index, item, count)
-
-
-func _left_click(index: int, item: String, count: int) -> void:
-	if _carry_item == "":
-		if item != "":
-			_set_carry(item, count)
-			inventory.set_slot(index, "", 0)
-	elif item == "":
-		inventory.set_slot(index, _carry_item, _carry_count)
-		_set_carry("", 0)
-	elif item == _carry_item:
-		var moved := mini(ItemDB.max_stack(item) - count, _carry_count)
-		inventory.set_slot(index, item, count + moved)
-		_carry_count -= moved
-		_set_carry(_carry_item if _carry_count > 0 else "", _carry_count)
-	else:
-		inventory.set_slot(index, _carry_item, _carry_count)
-		_set_carry(item, count)
-
-
-func _right_click(index: int, item: String, count: int) -> void:
-	if _carry_item == "":
-		if item == "":
-			return
-		var half := (count + 1) / 2
-		_set_carry(item, half)
-		inventory.set_slot(index, item, count - half)
-	elif item == "" or (item == _carry_item and count < ItemDB.max_stack(item)):
-		inventory.set_slot(index, _carry_item, count + 1)
-		_carry_count -= 1
-		_set_carry(_carry_item if _carry_count > 0 else "", _carry_count)
+		_carry_stack.right_click(inventory, index)
 
 
 # --- tooltip ----------------------------------------------------------------

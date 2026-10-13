@@ -4,7 +4,7 @@ extends CanvasLayer
 ## in Harvest Moon: the picture goes to black, the world is swapped underneath,
 ## and it comes back up somewhere else.
 ##
-##   SceneTransition.go_to("res://Scenes/HouseInterior.tscn", &"FrontDoor")
+##   SceneTransition.go_to("res://Scenes/PlayerHouse.tscn", &"FrontDoor")
 ##
 ## Registered as an autoload, so the black it draws outlives the scene it was
 ## called from -- a fade owned by the departing scene would be freed halfway
@@ -66,6 +66,32 @@ func go_to(scene_path: String, spawn_point: StringName = &"") -> void:
 	await _fade_to(0.0, FADE_IN)
 	_busy = false
 	arrived.emit()
+
+
+## Fades out, runs `during`, waits a beat, then fades back in -- for things
+## that happen between one blink and the next, like sleeping the night through.
+## The scene stays where it is; only the picture goes away.
+func fade_through(during: Callable, hold: float = 0.35) -> void:
+	if _busy:
+		return
+	_busy = true
+	var tree := get_tree()
+	tree.paused = true
+	await _fade_to(1.0, FADE_OUT)
+	if during.is_valid():
+		during.call()
+	await _hold(hold)
+	tree.paused = false
+	await _fade_to(0.0, FADE_IN)
+	_busy = false
+	arrived.emit()
+
+
+func _hold(seconds: float) -> void:
+	var tween := create_tween()
+	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	tween.tween_interval(seconds)
+	await tween.finished
 
 
 func _fade_to(alpha: float, seconds: float) -> void:

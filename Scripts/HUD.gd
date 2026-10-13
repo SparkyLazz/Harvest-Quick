@@ -87,7 +87,7 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 @export_group("Inventory")
 ## Total slots in the player's inventory. The hotbar shows the first
 ## `slot_count`; harvested produce lands in the first free slot, seen or not.
-@export_range(1, 96) var inventory_size: int = 40
+@export_range(1, 96) var inventory_size: int = 45
 ## Starting loadout, one item id per slot, "" for empty. Ids come from ItemDB.
 @export var slot_items: Array[String] = [
 	"hoe", "watering_can", "carrot_seed", "tomato_seed", "pumpkin_seed", "corn_seed", "", "",
@@ -122,6 +122,7 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 var inventory: Inventory
 
 var _ready_done := false
+var _storage: StoragePanel
 var _pop_tween: Tween
 var _panel: ProfilePanel
 
@@ -132,6 +133,9 @@ func _ready() -> void:
 	_panel.name = "ProfilePanel"
 	add_child(_panel)
 	_panel.bind(self)
+	_storage = StoragePanel.new()
+	_storage.name = "StoragePanel"
+	add_child(_storage)
 	get_viewport().size_changed.connect(_reposition)
 	rebuild()
 
@@ -141,9 +145,23 @@ func is_profile_open() -> bool:
 	return _panel != null and _panel.is_open()
 
 
+## Opens a wardrobe alongside the player's own bag.
+func open_storage(label: String, contents: Inventory) -> void:
+	if _storage == null or inventory == null:
+		return
+	if _panel != null and _panel.is_open():
+		_panel.close()
+	_storage.open(self, inventory, contents, label)
+
+
+func is_storage_open() -> bool:
+	return _storage != null and _storage.is_open()
+
+
+## Any full-screen menu counts: the player stands still while one is up.
 ## Kept under its old name as well: Player asks for this one by name.
 func is_inventory_open() -> bool:
-	return is_profile_open()
+	return is_profile_open() or is_storage_open()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -276,17 +294,24 @@ func held_item_at(index: int) -> String:
 	return inventory.item_at(index) if inventory else ""
 
 
-## Fresh inventory from the exported loadout.
+## Borrows the one bag that outlives the scene. The exported loadout is what it
+## gets filled with the first time the game asks for it; every HUD after that --
+## a new scene's, after walking through a door -- is handed the same bag with
+## whatever is in it, so stock does not reappear on the way indoors.
 func _load_loadout() -> void:
 	if inventory:
 		inventory.changed.disconnect(_on_inventory_changed)
-	inventory = Inventory.new(maxi(inventory_size, slot_items.size()))
-	for i in slot_items.size():
-		var count := slot_counts[i] if i < slot_counts.size() else 1
-		inventory.set_slot(i, slot_items[i], count)
+	inventory = PlayerState.take_inventory(
+			maxi(inventory_size, slot_items.size()), _fill_starting_loadout)
 	inventory.changed.connect(_on_inventory_changed)
 	if _panel:
 		_panel.bind(self)
+
+
+func _fill_starting_loadout(bag: Inventory) -> void:
+	for i in slot_items.size():
+		var count := slot_counts[i] if i < slot_counts.size() else 1
+		bag.set_slot(i, slot_items[i], count)
 
 
 func _on_inventory_changed(_slot: int) -> void:

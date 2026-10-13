@@ -304,5 +304,41 @@
     "seen": 1791873972.8934634,
     "ast_hash": "a20970b563a39bf9e3121f495ec29dda",
     "semantic_hash": ""
+  },
+  "Assets/Buildings/Wooden_House_Walls_Tilset.png": {
+    "mtime": 1791875066.7790487,
+    "seen": 1791875312.5057743,
+    "ast_hash": "b0d0fae2db7ffdb007c993c2f2afbb10",
+    "semantic_hash": ""
+  },
+  "Assets/Buildings/Basic_Furniture.png": {
+    "mtime": 1791881402.0341294,
+    "seen": 1791881600.5239885,
+    "ast_hash": "0c3e2a6244341a98d0e866a728f64dfc",
+    "semantic_hash": ""
+  },
+  "Tools/setup_interior_tiles.py": {
+    "mtime": 1791884252.8194187,
+    "seen": 1791887349.550721,
+    "ast_hash": "78229192593c3fa56237f4ab3bc7cd1f",
+    "semantic_hash": ""
+  },
+  "Tools/furn_labeled.png": {
+    "mtime": 1791884181.251639,
+    "seen": 1791887349.5507743,
+    "ast_hash": "36336ae0145b5ecb9917ba2410350507",
+    "semantic_hash": ""
+  },
+  "Tools/hero_probe.png": {
+    "mtime": 1791887776.6565614,
+    "seen": 1791888476.9576638,
+    "ast_hash": "7e25d6944a99ddc4d6e95c7c5c92d9d0",
+    "semantic_hash": ""
+  },
+  "Tools/item_contact.png": {
+    "mtime": 1791887589.8055124,
+    "seen": 1791888476.9576674,
+    "ast_hash": "125618e4ae31456fee4f02125d49f2eb",
+    "semantic_hash": ""
   }
 }

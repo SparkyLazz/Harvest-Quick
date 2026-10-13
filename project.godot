@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+PlayerState="*res://Scripts/PlayerState.gd"
 SceneTransition="*res://Scripts/SceneTransition.gd"
 
 [display]

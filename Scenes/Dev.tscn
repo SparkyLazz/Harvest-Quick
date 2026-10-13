@@ -34,6 +34,6 @@ position = Vector2(160, 128)
 position = Vector2(168, 128)
 
 [node name="Door" parent="." unique_id=9229769 instance=ExtResource("6_door")]
-position = Vector2(168, 112)
-target_scene = "res://Scenes/HouseInterior.tscn"
+position = Vector2(168, 109)
+target_scene = "res://Scenes/PlayerHouse.tscn"
 spawn_point = &"FrontDoor"

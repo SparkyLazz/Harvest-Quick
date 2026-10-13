@@ -30,7 +30,7 @@ func _initialize() -> void:
 
 	var door := current_scene.get_node_or_null("Door")
 	check(door != null, "Dev.tscn has a Door node")
-	check(door != null and door.target_scene.ends_with("HouseInterior.tscn"),
+	check(door != null and door.target_scene.ends_with("PlayerHouse.tscn"),
 			"door points at the interior")
 
 	var player: Node2D = current_scene.find_child("Player", true, false)
@@ -47,7 +47,7 @@ func _initialize() -> void:
 		if not trans._busy:
 			break
 	check(not trans._busy, "transition finishes")
-	check(current_scene != null and current_scene.scene_file_path.ends_with("HouseInterior.tscn"),
+	check(current_scene != null and current_scene.scene_file_path.ends_with("PlayerHouse.tscn"),
 			"we are inside the house")
 
 	var inside: Node2D = current_scene.find_child("Player", true, false)
@@ -59,11 +59,11 @@ func _initialize() -> void:
 
 	# The exit door must not fire while we are standing on the spawn point.
 	await settle(10)
-	check(current_scene.scene_file_path.ends_with("HouseInterior.tscn"),
+	check(current_scene.scene_file_path.ends_with("PlayerHouse.tscn"),
 			"spawning indoors does not bounce us straight back")
 
 	# Now walk out.
-	inside.global_position = Vector2(144, 164)
+	inside.global_position = Vector2(144, 175)
 	await settle(8)
 	for i in 90:
 		await process_frame
@@ -78,6 +78,37 @@ func _initialize() -> void:
 	await settle(10)
 	check(current_scene.scene_file_path.ends_with("Dev.tscn"),
 			"arriving outside does not bounce us back in")
+
+	# --- carried state -------------------------------------------------------
+	var state := root.get_node_or_null("/root/PlayerState")
+	check(state != null, "PlayerState autoload is registered")
+
+	var hud = current_scene.find_child("HUD", true, false)
+	check(hud != null and hud.inventory == state.inventory,
+			"the HUD borrows PlayerState's bag rather than making one")
+
+	# Spend stamina and take an item, then go through the door and back.
+	var p2: Node2D = current_scene.find_child("Player", true, false)
+	p2.stamina = 42.0
+	state.put_stamina(42.0)
+	hud.inventory.set_slot(5, "wheat", 7)
+	var bag_before: Inventory = hud.inventory
+
+	p2.global_position = Vector2(168, 114)
+	await settle(8)
+	for i in 90:
+		await process_frame
+		if not trans._busy:
+			break
+	check(current_scene.scene_file_path.ends_with("PlayerHouse.tscn"), "indoors again")
+
+	var hud2 = current_scene.find_child("HUD", true, false)
+	var p3: Node2D = current_scene.find_child("Player", true, false)
+	check(hud2 != null and hud2.inventory == bag_before, "same bag object indoors")
+	check(hud2 != null and hud2.inventory.item_at(5) == "wheat"
+			and hud2.inventory.count_at(5) == 7, "the 7 wheat survived the door")
+	check(p3 != null and is_equal_approx(p3.stamina, 42.0),
+			"stamina stayed at 42 instead of refilling")
 
 	print("")
 	print("FAILURES: ", _fails)

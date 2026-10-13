@@ -4,6 +4,66 @@
   "graph": {},
   "nodes": [
     {
+      "id": "tools_setup_interior_tiles_cells_of",
+      "label": "cells_of()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "cells_of()",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L42"
+    },
+    {
+      "id": "tools_setup_interior_tiles_main",
+      "label": "main()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "main()",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L73"
+    },
+    {
+      "id": "tools_setup_interior_tiles_opaque_box",
+      "label": "opaque_box()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "opaque_box()",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L29"
+    },
+    {
+      "id": "tools_setup_interior_tiles_rebuild",
+      "label": "rebuild()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "rebuild()",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L51"
+    },
+    {
+      "id": "tools_setup_interior_tiles_replace_source",
+      "label": "replace_source()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "replace_source()",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L65"
+    },
+    {
       "id": "claude_skills_graphify_skill_step_0_github_repos_and_multi_path_merge_only_if_a_url_or_several_paths",
       "label": "Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)",
       "_origin": "ast",
@@ -330,6 +390,39 @@
       "norm_label": "graphify reference: extraction subagent prompt",
       "source_file": ".claude/skills/graphify/references/extraction-spec.md",
       "source_location": "L1"
+    },
+    {
+      "id": "tools_setup_interior_tiles",
+      "label": "setup_interior_tiles.py",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "setup_interior_tiles.py",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tools_setup_interior_tiles_rationale_1",
+      "label": "Gives the house tiles their collision and interaction data. Collision is taken\u2026",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "rationale",
+      "norm_label": "gives the house tiles their collision and interaction data. collision is taken...",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tools_setup_interior_tiles_rationale_30",
+      "label": "The tile's art, as a polygon in Godot's cell-centre coordinates.",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "rationale",
+      "norm_label": "the tile's art, as a polygon in godot's cell-centre coordinates.",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L30"
     },
     {
       "id": "claude_skills_graphify_references_exports",
@@ -777,6 +870,54 @@
     }
   ],
   "links": [
+    {
+      "source": "tools_setup_interior_tiles_main",
+      "target": "tools_setup_interior_tiles_replace_source",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_main",
+      "target": "tools_setup_interior_tiles_rebuild",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_rebuild",
+      "target": "tools_setup_interior_tiles_cells_of",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L53",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_rebuild",
+      "target": "tools_setup_interior_tiles_opaque_box",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L56",
+      "weight": 1.0
+    },
     {
       "source": "claude",
       "target": "claude_graphify",
@@ -1359,8 +1500,85 @@
       "source_file": ".claude/skills/graphify/SKILL.md",
       "source_location": "L65",
       "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles",
+      "target": "tools_setup_interior_tiles_opaque_box",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles",
+      "target": "tools_setup_interior_tiles_cells_of",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles",
+      "target": "tools_setup_interior_tiles_rebuild",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L51",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles",
+      "target": "tools_setup_interior_tiles_replace_source",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L65",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles",
+      "target": "tools_setup_interior_tiles_main",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_rationale_1",
+      "target": "tools_setup_interior_tiles",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_rationale_30",
+      "target": "tools_setup_interior_tiles_opaque_box",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L30",
+      "weight": 1.0
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "f1d36549d84a0f3fb99835a799e15bf02f9b4737"
+  "built_at_commit": "a969368b9184e11fb99ff79598da0c32205adb73"
 }
