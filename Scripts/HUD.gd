@@ -123,22 +123,27 @@ var inventory: Inventory
 
 var _ready_done := false
 var _pop_tween: Tween
-var _panel: InventoryPanel
+var _panel: ProfilePanel
 
 func _ready() -> void:
 	_ready_done = true
 	_load_loadout()
-	_panel = InventoryPanel.new()
-	_panel.name = "InventoryPanel"
+	_panel = ProfilePanel.new()
+	_panel.name = "ProfilePanel"
 	add_child(_panel)
 	_panel.bind(self)
 	get_viewport().size_changed.connect(_reposition)
 	rebuild()
 
 
-## True while the inventory panel is on screen; the player stands still then.
-func is_inventory_open() -> bool:
+## True while the profile panel is on screen; the player stands still then.
+func is_profile_open() -> bool:
 	return _panel != null and _panel.is_open()
+
+
+## Kept under its old name as well: Player asks for this one by name.
+func is_inventory_open() -> bool:
+	return is_profile_open()
 
 
 func _unhandled_input(event: InputEvent) -> void:

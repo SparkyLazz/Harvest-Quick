@@ -256,5 +256,53 @@
     "seen": 1791652782.4264882,
     "ast_hash": "0baccf1a79566a7ee8534da8575198c2",
     "semantic_hash": ""
+  },
+  "Assets/UI/Bar_Fill.png": {
+    "mtime": 1791853528.7846358,
+    "seen": 1791853686.2295468,
+    "ast_hash": "d3d76e48d12ae55bea0ddbec947e72a1",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Bar_Trough.png": {
+    "mtime": 1791852680.318597,
+    "seen": 1791853264.1807342,
+    "ast_hash": "602b4cce0fa06599e4196e9ea8408937",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Check.png": {
+    "mtime": 1791852788.1832573,
+    "seen": 1791853264.1807349,
+    "ast_hash": "a1aca439971125a67d3acec12e74ea68",
+    "semantic_hash": ""
+  },
+  "Assets/UI/Cross.png": {
+    "mtime": 1791852788.1832573,
+    "seen": 1791853264.1807356,
+    "ast_hash": "005ee05a68ae38fe9e6ac11006240e51",
+    "semantic_hash": ""
+  },
+  "Assets/Buildings/Small_House.png": {
+    "mtime": 1791856312.62759,
+    "seen": 1791856551.1488082,
+    "ast_hash": "3de2f11494dbfd2b670ccdfe9eebe9ad",
+    "semantic_hash": ""
+  },
+  "Tools/house_grid_16.png": {
+    "mtime": 1791872521.9995565,
+    "seen": 1791872998.5434337,
+    "ast_hash": "f591abbd741ea1313db5bdab66854320",
+    "semantic_hash": ""
+  },
+  "Tools/door_placement.png": {
+    "mtime": 1791873952.9969833,
+    "seen": 1791873972.8934617,
+    "ast_hash": "24daabb09d9760a49a78312fd140429e",
+    "semantic_hash": ""
+  },
+  "Tools/house_door_zoom.png": {
+    "mtime": 1791873553.1062138,
+    "seen": 1791873972.8934634,
+    "ast_hash": "a20970b563a39bf9e3121f495ec29dda",
+    "semantic_hash": ""
   }
 }

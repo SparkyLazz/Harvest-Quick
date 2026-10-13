@@ -82,6 +82,21 @@ func _process(delta: float) -> void:
 			_refresh_sprite(cell)
 
 
+## How the plots stand right now: {tilled, watered, growing, ripe}. Nothing in
+## here needs the breakdown; the profile panel reads it for its rail.
+func counts() -> Dictionary:
+	var ripe := 0
+	for cell: Vector2i in _crops:
+		if is_ripe(cell):
+			ripe += 1
+	return {
+		"tilled": _tilled.size(),
+		"watered": _wet.size(),
+		"growing": _crops.size(),
+		"ripe": ripe,
+	}
+
+
 func is_tilled(cell: Vector2i) -> bool:
 	return _tilled.has(cell)
 
