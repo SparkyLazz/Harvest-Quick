@@ -71,8 +71,6 @@ const FACING_DIRS := {
 ## tileset's "interact" data, so a wardrobe or a bed works wherever it is
 ## painted, with no node to place beside it.
 @export var props_layer_path: NodePath = ^"../Props"
-## Float a little "E Open" sign over whatever furniture is being faced.
-@export var show_prompts: bool = true
 
 @export_group("Farming")
 ## Farm that owns planting, watering and harvesting. Without one, only the
@@ -131,6 +129,10 @@ var _hit_landed: bool = false
 var _grass_layer: TileMapLayer
 var _soil_layer: TileMapLayer
 var _props: TileMapLayer
+var _prop_anim: PropAnimator
+## The prop whose window is up, so its lid can be shut again when the window
+## goes. Unset between times rather than left pointing at the last chest used.
+var _open_prop: Variant = null
 var _hud: Node
 var _farm: Farm
 var _emote: EmoteBubble
@@ -143,16 +145,17 @@ func _ready() -> void:
 	_grass_layer = get_node_or_null(grass_layer_path) as TileMapLayer
 	_soil_layer = get_node_or_null(soil_layer_path) as TileMapLayer
 	_props = get_node_or_null(props_layer_path) as TileMapLayer
+	if _props != null:
+		_prop_anim = PropAnimator.new()
+		add_child(_prop_anim)
 	_hud = get_node_or_null(hud_path)
+	if _hud != null and _hud.has_signal("storage_closed"):
+		_hud.connect("storage_closed", _on_storage_closed)
 	_farm = get_node_or_null(farm_path) as Farm
 	_apply_animation_speeds()
 	if show_emotes:
 		_emote = EmoteBubble.new()
 		add_child(_emote)
-	if show_prompts:
-		var prompt := InteractPrompt.new()
-		prompt.player = self
-		add_child(prompt)
 	if show_cursor and _grass_layer != null:
 		var cursor := GridCursor.new()
 		cursor.player = self
@@ -264,8 +267,26 @@ func interaction_ahead() -> String:
 		return ""
 	if _hud != null and _hud.has_method("is_inventory_open") and _hud.call("is_inventory_open"):
 		return ""
-	var data := _props.get_cell_tile_data(facing_cell())
+	var data := _props.get_cell_tile_data(prop_in_reach())
 	return str(data.get_custom_data("interact")) if data != null else ""
+
+
+## The prop this player can use.
+##
+## A prop's hitbox is the floor in front of it, not the square it stands on, so
+## simply walking up to a chest is enough: standing on that floor counts even
+## without lining the facing up. Whatever is being faced still counts too, which
+## is what makes a bed usable from its side.
+func prop_in_reach() -> Vector2i:
+	var faced := facing_cell()
+	if _props.get_cell_tile_data(faced) != null:
+		return faced
+	var layer := _grid()
+	if layer == null:
+		return faced
+	var standing := layer.local_to_map(layer.to_local(global_position))
+	var behind := standing - Vector2i(0, 1)
+	return behind if _props.get_cell_tile_data(behind) != null else faced
 
 
 func _try_interact(input: Vector2) -> bool:
@@ -273,24 +294,67 @@ func _try_interact(input: Vector2) -> bool:
 		return false
 	if input != Vector2.ZERO:
 		_facing = _facing_for(input)
-	var cell := facing_cell()
+	var cell := prop_in_reach()
 	var data := _props.get_cell_tile_data(cell)
 	if data == null:
 		return false
 	match str(data.get_custom_data("interact")):
+		"chest":
+			# Opens a shut lid and shuts an open one. Which it is comes off the
+			# tile, so a chest left open stays open until someone closes it.
+			if _prop_anim == null:
+				return false
+			# Read which way the lid is about to go before moving it: the window
+			# follows the lid, so a chest being shut takes its window with it.
+			var opening := not _prop_anim.is_open(_props, cell)
+			if not _prop_anim.toggle(_props, cell):
+				return false
+			if opening:
+				_open_storage(cell)
+			else:
+				_close_storage()
+			return true
 		"wardrobe":
-			return _open_wardrobe(cell)
+			# A dresser has the one frame, so there is nothing to animate --
+			# using it is the window opening and nothing else.
+			return _open_storage(cell)
 		"bed":
 			return _sleep()
 	return false
 
 
-func _open_wardrobe(cell: Vector2i) -> bool:
+## Puts the storage window up on the furniture at `cell`. The cell is the
+## furniture's identity -- painted props have no node to name -- so the window
+## comes back to the same contents every time that one is opened.
+func _open_storage(cell: Vector2i) -> bool:
 	if _hud == null or not _hud.has_method("open_storage"):
 		return false
-	var key := PlayerState.storage_key(get_tree().current_scene, cell)
-	_hud.call("open_storage", "WARDROBE", PlayerState.storage_for(key))
+	_play("idle")
+	velocity = Vector2.ZERO
+	_open_prop = cell
+	_hud.call("open_storage", PlayerState.storage_key(get_tree().current_scene, cell))
 	return true
+
+
+func _close_storage() -> void:
+	if _hud != null and _hud.has_method("close_storage"):
+		_hud.call("close_storage")
+
+
+## The window has gone, so the furniture goes back to how it was found. Esc and
+## the profile key close the window without going through the chest, so without
+## this a chest is left standing open with nothing on screen to close it.
+##
+## Shutting a lid that is already travelling is refused by the animator, so the
+## ordinary case -- using the chest again, which shuts the lid and the window
+## together -- is not animated twice.
+func _on_storage_closed(_key: String) -> void:
+	var cell: Variant = _open_prop
+	_open_prop = null
+	if cell == null or _prop_anim == null or _props == null:
+		return
+	if _prop_anim.can_animate(_props, cell) and _prop_anim.is_open(_props, cell):
+		_prop_anim.play(_props, cell, false)
 
 
 func _sleep() -> bool:

@@ -19,10 +19,15 @@ extends Control
 ## Left click picks up a whole stack, drops it, merges it, or swaps it with the
 ## one underneath. Right click picks up half a stack, or drops a single item.
 
-const PANEL_TEXTURE := preload("res://Assets/UI/Panel_Dark.png")
-const INNER_TEXTURE := preload("res://Assets/UI/Panel_Light.png")
-const TOOLTIP_TEXTURE := preload("res://Assets/UI/Tooltip_Box.png")
-const SCROLL_TEXTURE := preload("res://Assets/UI/Scrollbar.png")
+# One plate, three shades. The pack's boxes were 110x28 strips with their own
+# palettes; these are the same rounded plate the storage window uses, recoloured
+# a step down and a step up the pack's own shade ladder, so the whole UI is cut
+# from one shape. The shades still carry meaning and must stay distinct: the
+# frame is what the lighter plates sit on, and it is also what an unselected tab
+# is drawn with.
+const PANEL_TEXTURE := preload("res://Assets/UI/Panel_Plate_Dark.png")
+const INNER_TEXTURE := preload("res://Assets/UI/Panel_Plate.png")
+const TOOLTIP_TEXTURE := preload("res://Assets/UI/Panel_Plate_Tip.png")
 const CHECK_TEXTURE := preload("res://Assets/UI/Check.png")
 const CROSS_TEXTURE := preload("res://Assets/UI/Cross.png")
 const EMOJI := preload("res://Assets/UI/Emoji.png")
@@ -86,6 +91,16 @@ const PLATE_PAD_Y := 8
 const RAIL_GAP := 7
 ## Side of one UI-scale step button on the settings tab, in source pixels.
 const STEP_SIZE := 14
+## The crafting detail card, in source pixels. Fixed, not fitted: the card used
+## to be as big as whatever recipe was open, so picking "cauliflower" after
+## "corn" grew it a line taller and a word wider and shoved the list beside it.
+## Both of its labels are held to the tallest any recipe needs instead, which is
+## measured from the recipes themselves -- so it is one size for all of them,
+## with nothing clipped, and it resizes itself if the recipe list ever changes.
+const DETAIL_WIDTH := 128
+## How much narrower than its own width a label wraps. Measured, not guessed:
+## see `_wrapped_height`.
+const WRAP_SLACK := 3
 
 const TAB_INVENTORY := 0
 const TAB_CRAFTING := 1
@@ -573,7 +588,7 @@ func _build_crafting_page() -> Control:
 		_recipe_rows.append(entry)
 
 	var detail := PanelContainer.new()
-	detail.custom_minimum_size.x = 104
+	detail.custom_minimum_size.x = DETAIL_WIDTH
 	detail.add_theme_stylebox_override("panel", _sliced(TOOLTIP_TEXTURE, 6, 7, 6))
 	detail.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	row.add_child(detail)
@@ -588,14 +603,23 @@ func _build_crafting_page() -> Control:
 	_craft_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(_craft_icon)
 
+	# The text inside the plate, once the stylebox's own padding is taken off.
+	var inner := DETAIL_WIDTH - 7 * 2
+
 	_craft_name = _label(UIFont.title(), TEXT_COLOR)
 	_craft_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Wrapping rather than running on is what stops a long name from widening
+	# the whole card; holding the height stops the wrap from making it taller.
+	_craft_name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_craft_name.custom_minimum_size.x = inner
 	box.add_child(_craft_name)
+	_craft_name.custom_minimum_size.y = _tallest(_craft_name, _recipe_names(), inner)
 
 	_craft_body = _label(UIFont.body(), MUTED_COLOR)
 	_craft_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_craft_body.custom_minimum_size.x = 90
+	_craft_body.custom_minimum_size.x = inner
 	box.add_child(_craft_body)
+	_craft_body.custom_minimum_size.y = _tallest(_craft_body, _recipe_bodies(), inner)
 
 	_craft_cost = _label(UIFont.body(), TEXT_COLOR)
 	_craft_cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -615,6 +639,64 @@ func _build_crafting_page() -> Control:
 	_craft_button.pressed.connect(_on_craft_pressed)
 	box.add_child(_craft_button)
 	return page
+
+
+## Every recipe's name and blurb, as the card will show them.
+func _recipe_names() -> Array[String]:
+	var out: Array[String] = []
+	for recipe in _recipes:
+		out.append(String(recipe["name"]).to_upper())
+	return out
+
+
+func _recipe_bodies() -> Array[String]:
+	var out: Array[String] = []
+	for recipe in _recipes:
+		out.append(RecipeDB.describe(recipe).to_upper())
+	return out
+
+
+## How tall `label` has to be to hold the longest of `lines` without growing.
+##
+## The wrap is worked out here rather than asked of the label, because a label
+## only shapes its text once it is on screen: at build time the crafting page is
+## still detached and hidden, so it reports one line for everything. Godot's
+## `get_multiline_string_size` is no good either -- it breaks one line later
+## than the label does, which is how a card sized by it ends up a line short for
+## exactly the longest recipe.
+##
+## So the words are laid out the way the label lays them out, greedily, and the
+## height follows from the line count. `test_craft_card.gd` checks the answer
+## against what the label really does for every recipe, which is what keeps this
+## honest if the font or the padding ever changes.
+func _tallest(label: Label, lines: Array[String], width: int) -> float:
+	var font := label.get_theme_font("font")
+	var tallest := 0.0
+	for line in lines:
+		tallest = maxf(tallest, _wrapped_height(label, font, line, width))
+	return tallest
+
+
+func _wrapped_height(label: Label, font: Font, text: String, width: int) -> float:
+	# A label breaks a line a pixel or two before the measured string actually
+	# runs past its edge, so wrapping against the full width guesses one line
+	# too few on the longest recipe. Wrapping against a slightly narrower line
+	# errs the other way: the worst case that is reserved is never smaller than
+	# the one the label lays out, which is the side to be wrong on.
+	var usable := float(width) - WRAP_SLACK
+	var count := 1
+	var current := ""
+	for word in text.split(" ", false):
+		var candidate: String = word if current.is_empty() else current + " " + word
+		if font.get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1,
+				UIFont.SIZE).x > usable:
+			count += 1
+			current = word
+		else:
+			current = candidate
+	# Lines are spaced apart, not padded, so the gap falls between them only.
+	var gap := label.get_theme_constant("line_spacing")
+	return count * (font.get_height(UIFont.SIZE) + gap) - gap
 
 
 func _build_recipe_row(recipe: Dictionary, index: int) -> Button:
@@ -833,18 +915,9 @@ func _label(font: Font, color: Color) -> Label:
 
 ## A box that stretches: the corners stay put and the edges and middle grow.
 ## `edge` is how much of the texture is border; `pad` is the space inside it.
+## Lives in UISkin now, so the storage window slices its plates the same way.
 func _sliced(texture: Texture2D, edge: int, pad_x: int, pad_y: int) -> StyleBoxTexture:
-	var box := StyleBoxTexture.new()
-	box.texture = texture
-	box.texture_margin_left = edge
-	box.texture_margin_right = edge
-	box.texture_margin_top = edge
-	box.texture_margin_bottom = edge
-	box.content_margin_left = pad_x
-	box.content_margin_right = pad_x
-	box.content_margin_top = pad_y
-	box.content_margin_bottom = pad_y
-	return box
+	return UISkin.sliced(texture, edge, pad_x, pad_y)
 
 
 ## Dresses a button in one of the panel plates. Hover and press shift the plate's
@@ -865,33 +938,10 @@ func _style_button(button: Button, texture: Texture2D) -> void:
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 
 
-## The scrollbar, sliced the same way: the grabber stretches along the bar, and
-## the track stays 7px wide inside its 11px cell.
+## The scrollbar, shared with the storage window -- see UISkin.
 func _scroll_theme() -> Theme:
-	var theme := Theme.new()
-	theme.set_stylebox("scroll", "VScrollBar", _scroll_part(Rect2(33, 0, 11, 40), 5, 3))
-	theme.set_stylebox("scroll_focus", "VScrollBar", _scroll_part(Rect2(33, 0, 11, 40), 5, 3))
-	theme.set_stylebox("grabber", "VScrollBar", _scroll_part(Rect2(11, 0, 11, 21), 4, 5))
-	theme.set_stylebox("grabber_highlight", "VScrollBar", _scroll_part(Rect2(22, 0, 11, 21), 4, 5))
-	theme.set_stylebox("grabber_pressed", "VScrollBar", _scroll_part(Rect2(0, 0, 11, 21), 4, 5))
-	return theme
+	return UISkin.scroll_theme()
 
-
-func _scroll_part(region: Rect2, side: int, end: int) -> StyleBoxTexture:
-	var atlas := AtlasTexture.new()
-	atlas.atlas = SCROLL_TEXTURE
-	atlas.region = region
-	var box := StyleBoxTexture.new()
-	box.texture = atlas
-	box.texture_margin_left = side
-	box.texture_margin_right = side
-	box.texture_margin_top = end
-	box.texture_margin_bottom = end
-	box.content_margin_left = 0
-	box.content_margin_right = 0
-	box.content_margin_top = 0
-	box.content_margin_bottom = 0
-	return box
 
 
 func _atlas(region: Rect2, sheet: Texture2D) -> AtlasTexture:

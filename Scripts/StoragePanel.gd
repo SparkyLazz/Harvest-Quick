@@ -1,323 +1,423 @@
 class_name StoragePanel
 extends Control
 
-## The wardrobe screen: your bag on the left, the wardrobe's on the right, with
-## one stack on the cursor that can move between them.
+## The window a wardrobe or a chest opens behind.
 ##
-## The click rules and the slot grids are shared with the profile screen (see
-## CarriedStack and ItemGrid), so the two behave the same and only the layout
-## is written here.
+## Only the frame so far: the plate, dimmed world behind it, and the rules for
+## how big it is and where it sits. The slots that will live inside it are the
+## next job -- what this fixes now is the shape they get to fill, because that
+## is what every later measurement is taken from.
 ##
-## Controls match what players expect from a chest:
-##   left click    pick up or put down a whole stack, or swap
-##   right click   take half, or put down one at a time
-##   shift click   send the stack straight across to the other side
+## The shape is 16:10 and stays 16:10. A storage window is read as a grid, and a
+## grid wants a stable frame: if the window followed the screen's aspect the
+## same chest would be a different shape on every machine, and the row and
+## column counts that look right on one would be wrong on the next. So the panel
+## is authored once at `BASE_SIZE` in source pixels and only ever multiplied by
+## a whole number, which keeps both the ratio exact and the pixel art sharp.
 
-const PANEL_TEXTURE := preload("res://Assets/UI/Panel_Dark.png")
-const INNER_TEXTURE := preload("res://Assets/UI/Panel_Light.png")
-const TEXT_COLOR := Color("5a3d3d")
-const MUTED_COLOR := Color("90625d")
+## Fires when the window goes away, however it went -- the key it was opened
+## on, so whoever opened it can put the furniture back. A chest's lid belongs to
+## its window: dismissing the window with Esc has to shut the lid too, or the
+## room is left standing open with nothing on screen to explain it.
+signal closed(key: String)
 
-## Both halves share this, so the two grids line up instead of stepping: the
-## wardrobe is three rows of it and the bag five.
-const COLUMNS := 9
+const PANEL_BOX := preload("res://Assets/UI/Panel_Plate.tres")
+
+## The lighter plate the two halves are drawn on. A plate the same shade as the
+## window would vanish into it, so the halves step one shade up the pack's
+## ladder -- the same way the profile screen floats its boxes on its frame.
+const INNER_BOX := preload("res://Assets/UI/Panel_Plate_Tip.tres")
+
+## The padding inside the plates, as their .tres files set them.
+const PAD := 8
+const INNER_PAD := 7
+## Space between the two halves.
+const SPLIT_GAP := 6
+
+## One slot and the gap between them, matching the profile screen's grid.
+const SLOT := Vector2(30, 32)
 const SLOT_GAP := 4
-const WINDOW_PAD := 9
-const PLATE_PAD := 8
-## Clear space kept around the window at every resolution.
-const EDGE_MARGIN := 24.0
-const TOOLTIP_TEXTURE := preload("res://Assets/UI/Tooltip_Box.png")
-const CREAM := Color("fff4dc")
+
+## The window in source pixels, 16:10. Multiplied by a whole-number zoom; never
+## stretched, so the ratio survives every screen size.
+##
+## Sized for nine slots across when it was one undivided space. Split in two it
+## no longer holds nine to a half -- `columns_per_half` reports what it does
+## hold, which is four. Worth knowing before the slots are built, because the
+## shape is the part that cannot bend: the ratio is fixed, so more columns means
+## a wider window rather than a different proportion.
+const BASE_SIZE := Vector2(336, 210)
+
+## What the window calls itself.
+const TITLE := "STORAGE"
+
+## The close button's mark. The pack's own X -- the same one the settings page
+## uses for "off" -- so the window shuts with a glyph the game already speaks.
+const CROSS := preload("res://Assets/UI/Cross.png")
+## How much the X brightens under the mouse and dips when held. The pack ships
+## no pressed variant of it, so the feedback is in the tint, the way
+## ProfilePanel dresses its buttons.
+const HOVER_TINT := Color(1.12, 1.12, 1.12)
+const PRESS_TINT := Color(0.88, 0.88, 0.88)
+
+## The ink and the rule under the heading, from the shared skin.
+const INK := UISkin.TEXT_COLOR
+const RULE := UISkin.RULE_COLOR
+
+## What each half is called.
+const LEFT_TITLE := "BACKPACK"
+const RIGHT_TITLE := "CHEST"
+
+## The most of the screen the window may take up before the zoom steps down.
+## Leaves the hotbar and a margin of world visible around it.
+const MAX_FILL := 0.82
+
+## How dark the world goes behind the panel. The same wash the profile screen
+## uses, so the two read as one game rather than two.
+const DIM_COLOR := Color(0.1, 0.06, 0.04, 0.45)
+
+## Which piece of furniture is open, as `PlayerState.storage_key` spells it.
+## Nothing reads it yet; it is what the slots will be filled from.
+var storage_key := ""
 
 var hud: HUD
-var bag: Inventory
-var store: Inventory
-var title: String = "WARDROBE"
 
 var _window: PanelContainer
-var _bag_grid: ItemGrid
-var _store_grid: ItemGrid
-var _carry := CarriedStack.new()
-var _carry_icon: InventorySlot
-var _title_label: Label
-var _scale := 2.0
-## The frame this opened on. The same key press that opens a wardrobe is still
-## travelling when the panel appears, so it would otherwise shut again at once.
-var _opened_on := -1
+var _dim: ColorRect
+var _left: PanelContainer
+var _right: PanelContainer
+var _close_button: TextureButton
+var _player_slots: Array[InventorySlot] = []
+var _store_slots: Array[InventorySlot] = []
+## The furniture's own contents, for as long as its window is up.
+var _store: Inventory
+## The stack riding on the cursor, and the rules for what a click does to it.
+## The same object the profile screen uses, so picking a stack up here behaves
+## exactly as it does there.
+var _carry_stack := CarriedStack.new()
+var _carry: InventorySlot
 
 
-func _init() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	visible = false
+	get_viewport().size_changed.connect(_recenter)
 
 
-## Shows the screen for one wardrobe. Called again for a different wardrobe,
-## it simply rebinds -- the grids are only built once.
-func open(owner_hud: HUD, player_bag: Inventory, contents: Inventory, label: String) -> void:
-	hud = owner_hud
-	bag = player_bag
-	store = contents
-	title = label
-	_scale = float(hud.ui_scale)
-	if _window == null:
-		_build()
-	_retitle()
-	_bag_grid.build(bag, COLUMNS, SLOT_GAP, hud.item_icon_scale)
-	_store_grid.build(store, COLUMNS, SLOT_GAP, hud.item_icon_scale)
-	if not bag.changed.is_connected(_refresh):
-		bag.changed.connect(_refresh)
-	if not store.changed.is_connected(_refresh):
-		store.changed.connect(_refresh)
-	visible = true
-	_opened_on = Engine.get_process_frames()
-	_recentre()
-
-
-## Closing puts whatever is on the cursor back in your bag, never the wardrobe,
-## so a stack cannot be lost by shutting the lid on it.
-func close() -> void:
-	if bag != null:
-		_carry.spill_into(bag)
-	if bag != null and bag.changed.is_connected(_refresh):
-		bag.changed.disconnect(_refresh)
-	if store != null and store.changed.is_connected(_refresh):
-		store.changed.disconnect(_refresh)
-	visible = false
+## Hooks the panel to a HUD, which is where its zoom comes from.
+func bind(target: HUD) -> void:
+	if hud != null and hud.inventory != null:
+		if hud.inventory.changed.is_connected(_refresh):
+			hud.inventory.changed.disconnect(_refresh)
+	hud = target
+	# Built here rather than in _ready: the grids are sized from the HUD's zoom
+	# and filled from its bag, and neither is known before this.
+	_build()
+	if hud.inventory != null:
+		hud.inventory.changed.connect(_refresh)
+	_refresh()
+	_recenter()
 
 
 func is_open() -> bool:
 	return visible
 
 
-func _process(_delta: float) -> void:
-	if not visible:
-		return
-	if not _carry.is_empty():
-		var mouse := get_viewport().get_mouse_position()
-		_carry_icon.position = (mouse - _carry_icon.size * _scale * 0.5).round()
+## Opens on one piece of furniture. `key` identifies it -- see
+## `PlayerState.storage_key` -- so reopening the same chest later comes back to
+## the same contents once there are contents to come back to.
+func open(key: String) -> void:
+	_unbind_store()
+	storage_key = key
+	# Which chest this is only becomes known now, so the right-hand grid is
+	# pointed at its contents here rather than at build time.
+	_store = PlayerState.storage_for(key)
+	_store.changed.connect(_refresh)
+	visible = true
+	_refresh()
+	_recenter()
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func close() -> void:
+	# Only a window that was actually up has anything to announce; closing one
+	# that is already shut would shut the furniture a second time.
 	if not visible:
 		return
-	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("inventory") \
-			or event.is_action_pressed("use"):
+	# The X keeps whatever tint the mouse left on it otherwise, and wears it
+	# the next time the window opens.
+	if _close_button != null:
+		_close_button.self_modulate = Color.WHITE
+	# Whatever is on the cursor goes back in the bag. Closing a window is not
+	# a way to destroy a stack, and the bag is the one container that is always
+	# there to put it in.
+	if _bag() != null:
+		_carry_stack.spill_into(_bag())
+	var was := storage_key
+	visible = false
+	storage_key = ""
+	_unbind_store()
+	closed.emit(was)
+
+
+## Lets go of the furniture's inventory. Left connected, a closed window would
+## keep redrawing slots for a chest nobody is standing at.
+func _unbind_store() -> void:
+	if _store != null and _store.changed.is_connected(_refresh):
+		_store.changed.disconnect(_refresh)
+	_store = null
+
+
+func toggle(key: String) -> void:
+	if visible and storage_key == key:
 		close()
-		get_viewport().set_input_as_handled()
+	else:
+		open(key)
 
-
-# --- layout -----------------------------------------------------------------
 
 func _build() -> void:
+	# Binding again -- a HUD that swapped its bag, say -- rebuilds rather than
+	# stacking a second window on top of the first.
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
+	_player_slots.clear()
+	_store_slots.clear()
+
+	_dim = ColorRect.new()
+	_dim.color = DIM_COLOR
+	# STOP, not IGNORE: while the window is up a click belongs to it, not to
+	# the hoe swing underneath.
+	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_dim)
+
 	_window = PanelContainer.new()
-	_window.add_theme_stylebox_override("panel", _sliced(PANEL_TEXTURE, 6, WINDOW_PAD, WINDOW_PAD))
-	_window.mouse_filter = Control.MOUSE_FILTER_STOP
+	_window.add_theme_stylebox_override("panel", PANEL_BOX)
+	_window.custom_minimum_size = BASE_SIZE
+	_window.size = BASE_SIZE
 	add_child(_window)
 
-	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 6)
-	_window.add_child(page)
-	page.add_child(_header())
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	_window.add_child(box)
 
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 7)
-	page.add_child(row)
+	# The heading and the close button share a row, so the X sits on the title's
+	# line at the top right rather than floating over the plate.
+	var head := HBoxContainer.new()
+	box.add_child(head)
 
-	_bag_grid = ItemGrid.new()
-	_store_grid = ItemGrid.new()
-	row.add_child(_side("BACKPACK", _bag_grid))
-	row.add_child(_transfer())
-	row.add_child(_side(title, _store_grid))
+	var title := Label.new()
+	title.text = TITLE
+	title.add_theme_font_override("font", UIFont.title())
+	title.add_theme_font_size_override("font_size", UIFont.SIZE)
+	title.add_theme_color_override("font_color", INK)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(title)
 
-	page.add_child(_hints())
+	_close_button = TextureButton.new()
+	_close_button.texture_normal = CROSS
+	_close_button.focus_mode = Control.FOCUS_NONE
+	_close_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_close_button.pressed.connect(close)
+	_close_button.mouse_entered.connect(func() -> void:
+			_close_button.self_modulate = HOVER_TINT)
+	_close_button.mouse_exited.connect(func() -> void:
+			_close_button.self_modulate = Color.WHITE)
+	_close_button.button_down.connect(func() -> void:
+			_close_button.self_modulate = PRESS_TINT)
+	_close_button.button_up.connect(func() -> void:
+			_close_button.self_modulate = Color.WHITE)
+	head.add_child(_close_button)
 
-	for grid in [_bag_grid, _store_grid]:
-		grid.slot_pressed.connect(_on_slot_pressed)
+	var rule := ColorRect.new()
+	rule.color = RULE
+	rule.custom_minimum_size.y = 1
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(rule)
 
-	# The carried stack is drawn last so it rides over both grids.
-	_carry_icon = InventorySlot.new()
-	_carry_icon.show_background = false
-	_carry_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_carry_icon.icon_scale = hud.item_icon_scale
-	_carry_icon.visible = false
-	add_child(_carry_icon)
-	_carry.changed.connect(_sync_carry)
+	# The two halves. Both take an equal share of the width and all of what is
+	# left below the heading, so they reach the bottom of the window whatever
+	# zoom it is drawn at.
+	var split := HBoxContainer.new()
+	split.add_theme_constant_override("separation", SPLIT_GAP)
+	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	box.add_child(split)
 
-	get_viewport().size_changed.connect(_recentre)
+	_left = _half(LEFT_TITLE, _player_slots, hud.inventory.size() if hud != null
+			and hud.inventory != null else 0, false)
+	_right = _half(RIGHT_TITLE, _store_slots, PlayerState.STORAGE_SLOTS, true)
+	split.add_child(_left)
+	split.add_child(_right)
 
-
-## Title, the wardrobe's name, and a way out that is not a keypress.
-func _header() -> Control:
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", 5)
-	_title_label = _label(UIFont.title(), TEXT_COLOR)
-	_title_label.text = title
-	bar.add_child(_title_label)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bar.add_child(spacer)
-	var shut := Button.new()
-	shut.text = "X"
-	shut.focus_mode = Control.FOCUS_NONE
-	shut.add_theme_font_override("font", UIFont.title())
-	shut.add_theme_font_size_override("font_size", UIFont.SIZE)
-	shut.add_theme_color_override("font_color", TEXT_COLOR)
-	shut.add_theme_stylebox_override("normal", _sliced(INNER_TEXTURE, 6, 4, 2))
-	shut.add_theme_stylebox_override("hover", _sliced(PANEL_TEXTURE, 6, 4, 2))
-	shut.add_theme_stylebox_override("pressed", _sliced(PANEL_TEXTURE, 6, 4, 2))
-	shut.pressed.connect(close)
-	bar.add_child(shut)
-	return bar
-
-
-## Moving a whole side at once, which clicking one stack at a time cannot.
-func _transfer() -> Control:
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 4)
-	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	column.add_child(_arrow(">>", "Store everything", _store_all))
-	column.add_child(_arrow("<<", "Take everything", _take_all))
-	return column
-
-
-func _arrow(glyph: String, hint: String, action: Callable) -> Button:
-	var button := Button.new()
-	button.text = glyph
-	button.tooltip_text = hint
-	button.focus_mode = Control.FOCUS_NONE
-	button.add_theme_font_override("font", UIFont.title())
-	button.add_theme_font_size_override("font_size", UIFont.SIZE)
-	button.add_theme_color_override("font_color", TEXT_COLOR)
-	button.add_theme_stylebox_override("normal", _sliced(INNER_TEXTURE, 6, 5, 4))
-	button.add_theme_stylebox_override("hover", _sliced(PANEL_TEXTURE, 6, 5, 4))
-	button.add_theme_stylebox_override("pressed", _sliced(PANEL_TEXTURE, 6, 5, 4))
-	button.pressed.connect(action)
-	return button
+	# The carried stack is drawn last so it rides over everything, and is only
+	# an icon -- no slot plate behind it.
+	_carry = InventorySlot.new()
+	_carry.show_background = false
+	_carry.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if hud != null:
+		_carry.icon_scale = hud.item_icon_scale
+	_carry.visible = false
+	add_child(_carry)
+	_carry_stack.changed.connect(_sync_carry)
 
 
-func _hints() -> Control:
-	var plate := PanelContainer.new()
-	plate.add_theme_stylebox_override("panel", _sliced(INNER_TEXTURE, 6, 6, 3))
-	var line := _label(UIFont.body(), MUTED_COLOR)
-	line.text = "CLICK TAKE   RIGHT HALF   SHIFT ACROSS   E CLOSE"
-	plate.add_child(line)
-	return plate
-
-
-func _side(heading: String, grid: ItemGrid) -> Control:
-	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 5)
-	var head := _label(UIFont.title(), TEXT_COLOR)
-	head.text = heading
-	head.name = "Head"
-	column.add_child(head)
-	var plate := PanelContainer.new()
-	plate.add_theme_stylebox_override("panel", _sliced(INNER_TEXTURE, 6, PLATE_PAD, PLATE_PAD))
-	plate.add_child(grid)
-	column.add_child(plate)
-	return column
-
-
-func _retitle() -> void:
-	if _title_label != null:
-		_title_label.text = title
-	if _store_grid == null:
-		return
-	var head := _store_grid.get_parent().get_parent().get_node_or_null("Head") as Label
-	if head:
-		head.text = title
-
-
-## Sends every stack it can; anything that will not fit simply stays put.
-func _store_all() -> void:
-	_sweep(bag, store)
-
-
-func _take_all() -> void:
-	_sweep(store, bag)
-
-
-func _sweep(from: Inventory, to: Inventory) -> void:
-	if from == null or to == null:
-		return
-	for i in from.size():
-		_carry.quick_move(from, i, to)
-
-
-## Fits the window to whatever the screen is.
+## One side of the window: a lighter plate that fills its share of the width,
+## stretches to the bottom, and scrolls its grid when the slots outrun it.
 ##
-## Eighteen slots across is a wide thing to draw, so the preferred `ui_scale`
-## does not fit every resolution -- at 2x it ran off both edges of a 1152-wide
-## viewport. The window is measured unscaled, then given the largest scale that
-## leaves a margin: whole numbers while they fit, so the pixel art stays crisp,
-## and only below 1 does it fall to a fractional scale rather than be clipped.
-func _recentre() -> void:
-	size = get_viewport_rect().size
-	if _window == null:
+## Both sides are built the same way on purpose. A bag and a chest are the same
+## thing to look at, and the moment they are built by two different routines
+## they start to drift -- different gaps, different scroll feel.
+func _half(title: String, into: Array[InventorySlot], slots: int,
+		is_store: bool) -> PanelContainer:
+	var half := PanelContainer.new()
+	half.add_theme_stylebox_override("panel", INNER_BOX)
+	half.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	half.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 3)
+	half.add_child(column)
+
+	var heading := Label.new()
+	heading.text = title
+	heading.add_theme_font_override("font", UIFont.body())
+	heading.add_theme_font_size_override("font_size", UIFont.SIZE)
+	heading.add_theme_color_override("font_color", UISkin.MUTED_COLOR)
+	column.add_child(heading)
+
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.theme = UISkin.scroll_theme()
+	column.add_child(scroll)
+	# The bar's width comes from its art; the sliced boxes carry no minimum.
+	scroll.get_v_scroll_bar().custom_minimum_size.x = UISkin.SCROLLBAR_WIDTH
+
+	# The bar sits on the scroll area's right edge, so the grid is held a gap
+	# clear of it rather than running underneath it.
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_right",
+			UISkin.SCROLLBAR_WIDTH + SLOT_GAP)
+	scroll.add_child(margin)
+
+	var grid := GridContainer.new()
+	grid.columns = columns_per_half()
+	grid.add_theme_constant_override("h_separation", SLOT_GAP)
+	grid.add_theme_constant_override("v_separation", SLOT_GAP)
+	margin.add_child(grid)
+
+	for i in slots:
+		var slot := InventorySlot.new()
+		slot.index = i
+		if hud != null:
+			slot.icon_scale = hud.item_icon_scale
+		# Which grid was clicked is bound here, so the handler knows which
+		# inventory the index belongs to and which one is "the other one".
+		# Passed in rather than worked out from `into`: comparing arrays in
+		# GDScript compares their contents, and both are empty at build time,
+		# so the backpack would have been wired to the chest.
+		slot.pressed.connect(_on_slot_pressed.bind(is_store))
+		grid.add_child(slot)
+		into.append(slot)
+	return half
+
+
+## A click on a slot, by the rules every inventory screen in the game shares.
+##
+## Shift sends the stack straight across to the other container without it
+## touching the cursor; otherwise left and right click pick up, put down, merge,
+## split and swap, which is all CarriedStack's business rather than this
+## window's. Both inventories announce their own changes, so nothing is redrawn
+## by hand here.
+func _on_slot_pressed(index: int, button: int, from_store: bool) -> void:
+	var here: Inventory = _store if from_store else _bag()
+	var there: Inventory = _bag() if from_store else _store
+	if here == null:
 		return
-	_window.scale = Vector2.ONE
-	_window.reset_size()
-	var natural := _window.size
-	if natural.x <= 0.0 or natural.y <= 0.0:
-		return
-	var room := size - Vector2(EDGE_MARGIN, EDGE_MARGIN) * 2.0
-	var fits := minf(room.x / natural.x, room.y / natural.y)
-	var want := minf(float(hud.ui_scale if hud else 2), fits)
-	_scale = floorf(want) if want >= 1.0 else maxf(want, 0.25)
-	_window.scale = Vector2.ONE * _scale
-	_window.position = ((size - natural * _scale) * 0.5).round()
-	if _carry_icon:
-		_carry_icon.scale = Vector2.ONE * _scale
-
-
-# --- clicks -----------------------------------------------------------------
-
-func _on_slot_pressed(grid: ItemGrid, index: int, button: int) -> void:
-	var here := grid.inventory
-	var other := store if here == bag else bag
 	if Input.is_key_pressed(KEY_SHIFT):
-		# Shift sends the stack across; the cursor is not involved.
-		if _carry.is_empty():
-			_carry.quick_move(here, index, other)
+		# Only with empty hands: shift-clicking while carrying something would
+		# have to guess whether the stack on the cursor or the one in the slot
+		# was meant, and guessing wrong loses items.
+		if _carry_stack.is_empty() and there != null:
+			_carry_stack.quick_move(here, index, there)
 		return
 	if button == MOUSE_BUTTON_LEFT:
-		_carry.left_click(here, index)
+		_carry_stack.left_click(here, index)
 	elif button == MOUSE_BUTTON_RIGHT:
-		_carry.right_click(here, index)
+		_carry_stack.right_click(here, index)
 
 
+func _bag() -> Inventory:
+	return hud.inventory if hud != null else null
+
+
+## Draws the stack on the cursor, and keeps it under the mouse.
 func _sync_carry() -> void:
-	_carry_icon.item = _carry.item
-	_carry_icon.count = _carry.count
-	_carry_icon.visible = not _carry.is_empty()
+	if _carry == null:
+		return
+	_carry.item = _carry_stack.item
+	_carry.count = _carry_stack.count
+	_carry.visible = not _carry_stack.is_empty()
 
 
-func _refresh(_slot: int = -1) -> void:
-	_bag_grid.refresh()
-	_store_grid.refresh()
+func _process(_delta: float) -> void:
+	if not visible or _carry == null or _carry_stack.is_empty():
+		return
+	var zoom := _zoom()
+	_carry.position = (get_viewport().get_mouse_position()
+			- _carry.size * zoom * 0.5).round()
 
 
-# --- small helpers, matching the profile screen's plates --------------------
-
-func _label(font: Font, color: Color) -> Label:
-	var label := Label.new()
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", UIFont.SIZE)
-	label.add_theme_color_override("font_color", color)
-	return label
+## Draws both grids from whatever they are standing for right now.
+func _refresh(_slot: int = 0) -> void:
+	_fill(_player_slots, hud.inventory if hud != null else null)
+	_fill(_store_slots, _store)
 
 
-func _sliced(texture: Texture2D, edge: int, pad_x: int, pad_y: int) -> StyleBoxTexture:
-	var box := StyleBoxTexture.new()
-	box.texture = texture
-	box.texture_margin_left = edge
-	box.texture_margin_right = edge
-	box.texture_margin_top = edge
-	box.texture_margin_bottom = edge
-	box.content_margin_left = pad_x
-	box.content_margin_right = pad_x
-	box.content_margin_top = pad_y
-	box.content_margin_bottom = pad_y
-	return box
+func _fill(slots: Array[InventorySlot], from: Inventory) -> void:
+	for slot in slots:
+		var has: bool = from != null and slot.index < from.size()
+		slot.item = from.item_at(slot.index) if has else ""
+		slot.count = from.count_at(slot.index) if has else 0
+
+
+## How many slots fit across one half, at the window's authored size.
+##
+## The scrollbar and the gap holding the grid clear of it come off the width
+## first. Leaving them out reports one column too many, and a grid one column
+## too wide does not overflow quietly -- it pushes its half past the plate,
+## because a container cannot shrink below what its contents need.
+func columns_per_half() -> int:
+	var inner := (BASE_SIZE.x - PAD * 2 - SPLIT_GAP) / 2.0 - INNER_PAD * 2
+	var usable := inner - UISkin.SCROLLBAR_WIDTH - SLOT_GAP
+	return int(floorf((usable + SLOT_GAP) / (SLOT.x + SLOT_GAP)))
+
+
+## The zoom to draw at: the HUD's, stepped down until the window fits the
+## screen with room to spare. Whole numbers only -- a fractional zoom on pixel
+## art puts seams through the plate's border.
+func _zoom() -> int:
+	var want: int = hud.ui_scale if hud != null else 2
+	var room := get_viewport_rect().size * MAX_FILL
+	while want > 1 and (BASE_SIZE.x * want > room.x or BASE_SIZE.y * want > room.y):
+		want -= 1
+	return want
+
+
+func _recenter() -> void:
+	# A Control under a CanvasLayer gets no size from anchors, so fit the screen
+	# by hand -- the same thing ProfilePanel has to do.
+	position = Vector2.ZERO
+	size = get_viewport_rect().size
+	if _dim != null:
+		_dim.position = Vector2.ZERO
+		_dim.size = size
+	if _window == null:
+		return
+	var zoom := _zoom()
+	if _carry != null:
+		_carry.scale = Vector2.ONE * zoom
+	_window.scale = Vector2.ONE * zoom
+	_window.size = BASE_SIZE
+	_window.position = ((size - BASE_SIZE * zoom) * 0.5).round()

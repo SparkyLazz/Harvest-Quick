@@ -1,16 +1,16 @@
-# Graph Report - HarvestQuick  (2026-10-13)
+# Graph Report - HarvestQuick  (2026-10-14)
 
 ## Corpus Check
-- 13 files · ~25,547 words
+- 14 files · ~25,596 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 72 nodes · 64 edges · 14 communities (9 shown, 5 thin omitted)
+- 78 nodes · 71 edges · 15 communities (10 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a969368b`
+- Built from commit: `a6722a80`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -29,6 +29,7 @@
 - .claude/CLAUDE.md
 - extraction-spec.md
 - setup_interior_tiles.py
+- sweep.py
 
 ## God Nodes (most connected - your core abstractions)
 1. `What You Must Do When Invoked` - 12 edges
@@ -36,11 +37,11 @@
 3. `graphify reference: extra exports and benchmark` - 8 edges
 4. `graphify reference: query, path, explain` - 5 edges
 5. `rebuild()` - 4 edges
-6. `Step 3 - Extract entities and relationships` - 4 edges
-7. `opaque_box()` - 3 edges
-8. `main()` - 3 edges
-9. `graphify reference: add a URL and watch a folder` - 3 edges
-10. `graphify reference: commit hook and native CLAUDE.md integration` - 3 edges
+6. `main()` - 4 edges
+7. `Step 3 - Extract entities and relationships` - 4 edges
+8. `opaque_box()` - 3 edges
+9. `chest_source()` - 3 edges
+10. `graphify reference: add a URL and watch a folder` - 3 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
@@ -48,7 +49,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (14 total, 5 thin omitted)
+## Communities (15 total, 5 thin omitted)
 
 ### Community 0 - "What You Must Do When Invoked"
 Cohesion: 0.18
@@ -83,8 +84,12 @@ Cohesion: 0.50
 Nodes (4): Part A - Structural extraction for code files, Part B - Semantic extraction (parallel subagents), Part C - Merge AST + semantic into final extraction, Step 3 - Extract entities and relationships
 
 ### Community 13 - "setup_interior_tiles.py"
-Cohesion: 0.39
-Nodes (7): cells_of(), main(), opaque_box(), Gives the house tiles their collision and interaction data. Collision is taken…, The tile's art, as a polygon in Godot's cell-centre coordinates., rebuild(), replace_source()
+Cohesion: 0.31
+Nodes (9): cells_of(), chest_source(), main(), opaque_box(), Gives the house tiles their collision and interaction data. Collision is taken…, The tile's art, as a polygon in Godot's cell-centre coordinates., Every chest frame as a paintable tile. Only the first frame is tagged. The…, rebuild() (+1 more)
+
+### Community 14 - "sweep.py"
+Cohesion: 0.67
+Nodes (3): chest_box(), Finds the texture_origin that seats the chest in the cell it is painted in., set_origin()
 
 ## Knowledge Gaps
 - **43 isolated node(s):** `graphify`, `Usage`, `What graphify is for`, `Step 0 - GitHub repos and multi-path merge (only if a URL or several paths)`, `Step 1 - Ensure graphify is installed` (+38 more)
@@ -95,10 +100,10 @@ Nodes (7): cells_of(), main(), opaque_box(), Gives the house tiles their collisi
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `What You Must Do When Invoked` connect `What You Must Do When Invoked` to `/graphify`, `Step 3 - Extract entities and relationships`?**
-  _High betweenness centrality (0.091) - this node is a cross-community bridge._
+  _High betweenness centrality (0.077) - this node is a cross-community bridge._
 - **Why does `/graphify` connect `/graphify` to `What You Must Do When Invoked`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+  _High betweenness centrality (0.058) - this node is a cross-community bridge._
 - **Why does `Step 3 - Extract entities and relationships` connect `Step 3 - Extract entities and relationships` to `What You Must Do When Invoked`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **What connects `graphify`, `Usage`, `What graphify is for` to the rest of the system?**
   _43 weakly-connected nodes found - possible documentation gaps or missing edges._

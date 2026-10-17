@@ -9,6 +9,8 @@ extends CanvasLayer
 ## hearts and one half.
 
 signal slot_selected(index: int)
+## Fires when the wardrobe or chest window closes, with the key it was on.
+signal storage_closed(key: String)
 ## Fires whenever what the player is holding changes, by id ("" when empty).
 signal held_item_changed(item: String)
 
@@ -21,26 +23,21 @@ const SHEET := preload("res://Assets/UI/Inventory_Spritesheet.png")
 # What an item id means (name, icon, stacking) lives in ItemDB, and the stacks
 # themselves in Inventory; this script only draws the first `slot_count` slots.
 
-# Both bars are nine-sliced so they size to whatever they hold. The corner
-# curve runs through rows 0-5, so 6 covers it on the top and sides.
+# Both bars are nine-sliced so they size to whatever they hold.
 #
-# The bottom margin is 0, not 6, because these plates have no bottom border:
-# every one is flat, full-width face colour down to its last row. They are
-# drawn open-bottomed on purpose, to sit flush against whatever is beneath --
-# the heart bar on the hotbar, and the hotbar on the bottom of the screen.
+# They used to be cut from the sheet's own 110x28 strips, which are drawn
+# open-bottomed -- flat face colour down to the last row -- so they could stack
+# flush. They are the same rounded plate as every other window now, which has a
+# border on all four sides, so each bar closes itself and the two are given a
+# gap to sit in rather than being butted together.
 #
-# 0 rather than 1 also removes a nine-patch seam. A bottom band has to stretch
-# the middle by a fractional factor, so the boundary between them can land
-# mid-pixel and show as a hairline where the two bars meet. With no bottom
-# band the last row comes from the stretched middle, which is flat face
-# colour, so a sampling error there is invisible.
-const PLATE_REGION := Rect2(113, 307, 110, 29)
+# The corner curve runs through rows 0-5, so 6 covers it on every side. That is
+# the one number: the plate is one shape, sliced one way, wherever it appears.
+const PLATE := preload("res://Assets/UI/Panel_Plate.png")
 const PLATE_PATCH := 6
-const PLATE_PATCH_BOTTOM := 0
-
-const HEART_PLATE_REGION := Rect2(113, 279, 110, 25)
-const HEART_PATCH := 6
-const HEART_PATCH_BOTTOM := 0
+## Gap between the heart bar and the hotbar, in source pixels. Zero butts two
+## borders against each other and reads as a seam.
+const PLATE_GAP := 2
 
 # Sizes and spacings below are measured off the pack's own example composites,
 # so the bars match the reference artwork.
@@ -64,7 +61,7 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 
 @export_group("Hotbar")
 ## How many item slots the bar shows.
-@export_range(1, 12) var slot_count: int = 8: set = set_slot_count
+@export_range(1, 12) var slot_count: int = 9: set = set_slot_count
 ## Which slot is highlighted. -1 for none.
 @export_range(-1, 11) var selected_slot: int = 0: set = set_selected_slot
 
@@ -82,7 +79,11 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 @export_range(0, 64) var heart_indent: int = 13: set = set_heart_indent
 ## Distance from the bottom edge of the screen, in screen pixels. 0 stands the
 ## bars on the bottom edge; positive floats them, negative hangs them off.
-@export_range(-300, 300) var bottom_margin: int = 0
+##
+## Floated by default, which the closed plate needs: the old strips were drawn
+## open-bottomed to sit flush on the edge, but this one has a bottom border, and
+## standing it on the edge crops that border off and reads as a bar cut in half.
+@export_range(-300, 300) var bottom_margin: int = 10
 
 @export_group("Inventory")
 ## Total slots in the player's inventory. The hotbar shows the first
@@ -122,9 +123,9 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 var inventory: Inventory
 
 var _ready_done := false
-var _storage: StoragePanel
 var _pop_tween: Tween
 var _panel: ProfilePanel
+var _storage: StoragePanel
 
 func _ready() -> void:
 	_ready_done = true
@@ -136,6 +137,8 @@ func _ready() -> void:
 	_storage = StoragePanel.new()
 	_storage.name = "StoragePanel"
 	add_child(_storage)
+	_storage.bind(self)
+	_storage.closed.connect(storage_closed.emit)
 	get_viewport().size_changed.connect(_reposition)
 	rebuild()
 
@@ -145,21 +148,30 @@ func is_profile_open() -> bool:
 	return _panel != null and _panel.is_open()
 
 
-## Opens a wardrobe alongside the player's own bag.
-func open_storage(label: String, contents: Inventory) -> void:
-	if _storage == null or inventory == null:
-		return
-	if _panel != null and _panel.is_open():
-		_panel.close()
-	_storage.open(self, inventory, contents, label)
-
-
+## True while a wardrobe or chest window is on screen.
 func is_storage_open() -> bool:
 	return _storage != null and _storage.is_open()
 
 
-## Any full-screen menu counts: the player stands still while one is up.
-## Kept under its old name as well: Player asks for this one by name.
+## Opens the storage window on one piece of furniture, named as
+## `PlayerState.storage_key` spells it. The profile screen steps aside: both
+## are full-screen windows, so only one of them can be the one you are in.
+func open_storage(key: String) -> void:
+	if _storage == null:
+		return
+	if _panel != null and _panel.is_open():
+		_panel.close()
+	_storage.open(key)
+
+
+func close_storage() -> void:
+	if _storage != null:
+		_storage.close()
+
+
+## Kept under its old name as well: Player asks for this one by name. Any
+## window being up means the same thing to the player -- stand still, and let
+## the keys belong to the window.
 func is_inventory_open() -> bool:
 	return is_profile_open() or is_storage_open()
 
@@ -168,14 +180,22 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not _ready_done:
 		return
 	if event.is_action_pressed("inventory"):
-		_panel.toggle()
+		# With a chest open the key shuts it rather than stacking the profile
+		# screen on top: one window at a time, and the nearest one first.
+		if is_storage_open():
+			close_storage()
+		else:
+			_panel.toggle()
 		get_viewport().set_input_as_handled()
 		return
-	if event.is_action_pressed("ui_cancel") and _panel.is_open():
-		_panel.close()
+	if event.is_action_pressed("ui_cancel") and (is_storage_open() or _panel.is_open()):
+		if is_storage_open():
+			close_storage()
+		else:
+			_panel.close()
 		get_viewport().set_input_as_handled()
 		return
-	if not selection_input or _panel.is_open():
+	if not selection_input or _panel.is_open() or is_storage_open():
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var digit := (event as InputEventKey).keycode - KEY_1
@@ -196,11 +216,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func rebuild() -> void:
 	if not _ready_done:
 		return
-	# The plates butt up against each other, as they do in the reference art.
-	(_scaler.get_node("Bars") as VBoxContainer).add_theme_constant_override("separation", 0)
+	# Each plate closes itself now, so they are spaced rather than butted.
+	(_scaler.get_node("Bars") as VBoxContainer).add_theme_constant_override("separation", PLATE_GAP)
 	_heart_row.add_theme_constant_override("margin_left", heart_indent)
-	_apply_plate(_heart_plate, SHEET, HEART_PLATE_REGION, HEART_PATCH, HEART_PATCH_BOTTOM)
-	_apply_plate(_hotbar_plate, SHEET, PLATE_REGION, PLATE_PATCH, PLATE_PATCH_BOTTOM)
+	_apply_plate(_heart_plate, PLATE, Rect2(), PLATE_PATCH)
+	_apply_plate(_hotbar_plate, PLATE, Rect2(), PLATE_PATCH)
 	_build_row(_hearts, max_hearts, HEART_FULL_REGION, SHEET, heart_spacing)
 	_build_row(_slots, slot_count, SLOT_REGION, SHEET, slot_spacing)
 	_fit(_heart_plate, _hearts, max_hearts, HEART_FULL_REGION.size, heart_spacing)
@@ -242,7 +262,9 @@ func _fit(plate: NinePatchRect, row: HBoxContainer, count: int, item: Vector2, g
 func _apply_plate(plate: NinePatchRect, sheet: Texture2D, region: Rect2,
 		patch: int, bottom := -1) -> void:
 	plate.texture = sheet
-	plate.region_rect = region
+	# An empty region means the whole texture, for art that is its own file
+	# rather than a crop out of the sheet.
+	plate.region_rect = region if region.size != Vector2.ZERO else Rect2(Vector2.ZERO, sheet.get_size())
 	plate.patch_margin_left = patch
 	plate.patch_margin_top = patch
 	plate.patch_margin_right = patch
@@ -388,7 +410,10 @@ func _reposition() -> void:
 		return
 	var w := maxf(_heart_plate.custom_minimum_size.x + heart_indent,
 			_hotbar_plate.custom_minimum_size.x) * ui_scale
-	var h := (_heart_plate.custom_minimum_size.y + _hotbar_plate.custom_minimum_size.y) * ui_scale
+	# The gap between the two plates counts towards the stack's height; leaving
+	# it out hangs that much of the hotbar off the bottom of the screen.
+	var h := (_heart_plate.custom_minimum_size.y + _hotbar_plate.custom_minimum_size.y
+			+ PLATE_GAP) * ui_scale
 	# Offsets are measured from the anchors (bottom-centre); `position` would be
 	# measured from the parent's top-left instead and land off-screen. The
 	# scaler is a zero-sized transform holder, so all four match.

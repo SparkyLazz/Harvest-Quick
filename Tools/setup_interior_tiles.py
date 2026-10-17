@@ -25,6 +25,13 @@ FURN_CLEAR |= {(x, 5) for x in range(9)}          # rugs
 BED = {(x, y) for x in (0, 1, 2) for y in (1, 2, 3, 4)}
 WARDROBE = {(3, 2)}
 
+# The chest is its own sheet. Its five lid frames sit three columns apart, and
+# an open lid reaches into the row above, so every frame is one cell wide and
+# two tall, anchored on the upper cell. Two styles: front on, and side on.
+CHEST_ROWS = {"front": 0, "side": 3}
+CHEST_COLUMNS = [1, 4, 7, 10, 13]
+CHEST_STEP = 3
+
 
 def opaque_box(img, tx, ty):
     """The tile's art, as a polygon in Godot's cell-centre coordinates."""
@@ -70,13 +77,66 @@ def replace_source(text, sub_id, new_body):
     return text[:m.start(2)] + new_body + text[m.end(2):]
 
 
+def chest_source(ext_id):
+    """Every chest frame as a paintable tile.
+
+    Only the first frame is tagged. The others are where the script parks the
+    cell mid-open, so tagging them too would let the cursor light up over a
+    half-raised lid that nothing can act on.
+    """
+    lines = ['[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_chest"]',
+             f'texture = ExtResource("{ext_id}")']
+    for row in CHEST_ROWS.values():
+        for i, col in enumerate(CHEST_COLUMNS):
+            at = f"{col}:{row}"
+            lines.append(f"{at}/size_in_atlas = Vector2i(1, 2)")
+            lines.append(f"{at}/0 = 0")
+            # The cell you paint is the chest's BODY, with the lid drawn in
+            # the cell above. A tall tile is drawn from its cell downwards, so
+            # without this the body lands below the cell that was painted.
+            #
+            # +8, measured rather than reasoned: a positive origin lifts the
+            # art. Both -8 and -16 were tried on the assumption that it pushed
+            # the other way, and each left the chest sitting a cell low, which
+            # is what made every hitbox look like it was one cell too high.
+            lines.append(f"{at}/0/texture_origin = Vector2i(0, 8)")
+            # Sorts on the floor under it, so you can pass behind a raised lid.
+            lines.append(f"{at}/0/y_sort_origin = 8")
+            # The whole cell, not an inset box. At 14x12 the player could clip
+            # a pixel into the chest from either side, which reads as walking
+            # into it; furniture standing on the floor should own its square.
+            lines.append(f"{at}/0/physics_layer_0/polygon_0/points = "
+                         "PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)")
+            # Every frame is tagged, not just the first. An open chest shows
+            # its last frame, and an untagged one would be invisible to both
+            # the cursor and the use key -- you could open it and never shut it.
+            # Carrying its own index is also what lets the first frame be found
+            # again from any of them, so nothing has to remember where it was.
+            lines.append(f'{at}/0/custom_data_0 = "chest"')
+            lines.append(f"{at}/0/custom_data_1 = {len(CHEST_COLUMNS)}")
+            lines.append(f"{at}/0/custom_data_2 = {CHEST_STEP}")
+            lines.append(f"{at}/0/custom_data_3 = {i}")
+    return "\n".join(lines) + "\n"
+
+
 def main():
     t = open(TRES, encoding="utf-8").read()
 
-    # One string per tile saying what walking into it does. Empty means nothing.
-    if "custom_data_layer_0/name" not in t:
-        t = t.replace("\n[resource]\n", "\n[resource]\n", 1)
-        t = re.sub(r'(\[resource\]\n)', r'\1custom_data_layer_0/name = "interact"\ncustom_data_layer_0/type = 4\n', t, count=1)
+    # Per-tile data: what using it does and, for the ones that open, how many
+    # frames there are, how far apart they sit on the sheet, and which one this
+    # is. The last of those is what makes a frame self-describing: the first can
+    # be found again from any of them, so nothing has to remember where it was.
+    layers = ('custom_data_layer_0/name = "interact"\n'
+              'custom_data_layer_0/type = 4\n'
+              'custom_data_layer_1/name = "frames"\n'
+              'custom_data_layer_1/type = 2\n'
+              'custom_data_layer_2/name = "step"\n'
+              'custom_data_layer_2/type = 2\n'
+              'custom_data_layer_3/name = "frame"\n'
+              'custom_data_layer_3/type = 2\n')
+    t = re.sub(r'custom_data_layer_\d+/(name|type) = [^\n]*\n', "", t)
+    at = t.index("[resource]\n") + len("[resource]\n")
+    t = t[:at] + layers + t[at:]
 
     walls_img = Image.open("Assets/Buildings/Wooden_House_Walls_Tilset.png").convert("RGBA")
     furn_img = Image.open("Assets/Buildings/Basic_Furniture.png").convert("RGBA")
@@ -92,7 +152,29 @@ def main():
                                lambda c: c not in FURN_CLEAR,
                                lambda c: "bed" if c in BED else ("wardrobe" if c in WARDROBE else "")))
 
+    # The chest gets its own source, so painting one is just another tile.
+    if "Chest.png" not in t:
+        anchor = ('[ext_resource type="Texture2D" uid="uid://dyq0yqdn7gfrb"'
+                  ' path="res://Assets/Buildings/Basic_Furniture.png" id="22_furn"]')
+        assert anchor in t, "furniture texture line not found"
+        t = t.replace(anchor, anchor + '\n[ext_resource type="Texture2D"'
+                      ' path="res://Assets/Buildings/Chest.png" id="23_chest"]', 1)
+    block = chest_source("23_chest")
+    if 'id="TileSetAtlasSource_chest"' in t:
+        t = re.sub(r'\[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_chest"\]\n'
+                   r'texture = ExtResource\("[^"]+"\)\n.*?(?=\n\[sub_resource|\n\[resource\])',
+                   block.rstrip("\n"), t, flags=re.S)
+    else:
+        spot = t.index("\n[resource]\n")
+        t = t[:spot] + "\n" + block + t[spot:]
+    if "sources/23" not in t:
+        line = 'sources/22 = SubResource("TileSetAtlasSource_furn")'
+        assert line in t, "furniture source line not found"
+        t = t.replace(line, line + '\nsources/23 = SubResource("TileSetAtlasSource_chest")', 1)
+
     open(TRES, "w", encoding="utf-8", newline="\n").write(t)
+    print("chest: %d frames x %d styles, first frame tagged"
+          % (len(CHEST_COLUMNS), len(CHEST_ROWS)))
     print("wall cells solid except", sorted(WALLS_WALKABLE))
     print("furniture cells left clear:", len(FURN_CLEAR))
     print("bed cells tagged:", len(BED), " wardrobe cells tagged:", len(WARDROBE))

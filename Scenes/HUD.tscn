@@ -1,7 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://beges25kbhi3x"]
 
-[ext_resource type="Script" path="res://Scripts/HUD.gd" id="1_jo1ms"]
-[ext_resource type="Texture2D" path="res://Assets/UI/Inventory_Spritesheet.png" id="2_psnte"]
+[ext_resource type="Script" uid="uid://b6i2ta4uevdv5" path="res://Scripts/HUD.gd" id="1_jo1ms"]
+[ext_resource type="Texture2D" uid="uid://dni3phai0qgud" path="res://Assets/UI/Panel_Plate.png" id="2_psnte"]
 
 [node name="HUD" type="CanvasLayer" unique_id=422025384]
 layer = 10
@@ -12,6 +12,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="Scaler" type="Control" parent="Screen" unique_id=47950721]
@@ -36,11 +38,11 @@ mouse_filter = 2
 layout_mode = 2
 size_flags_horizontal = 0
 texture = ExtResource("2_psnte")
-region_rect = Rect2(1, 307, 110, 29)
-patch_margin_left = 7
-patch_margin_top = 7
-patch_margin_right = 7
-patch_margin_bottom = 8
+region_rect = Rect2(0, 0, 106, 122)
+patch_margin_left = 6
+patch_margin_top = 6
+patch_margin_right = 6
+patch_margin_bottom = 6
 
 [node name="Hearts" type="HBoxContainer" parent="Screen/Scaler/Bars/HeartRow/HeartPlate" unique_id=1784499122]
 layout_mode = 0
@@ -52,11 +54,11 @@ mouse_filter = 2
 layout_mode = 2
 size_flags_horizontal = 0
 texture = ExtResource("2_psnte")
-region_rect = Rect2(1, 307, 110, 29)
-patch_margin_left = 7
-patch_margin_top = 7
-patch_margin_right = 7
-patch_margin_bottom = 8
+region_rect = Rect2(0, 0, 106, 122)
+patch_margin_left = 6
+patch_margin_top = 6
+patch_margin_right = 6
+patch_margin_bottom = 6
 
 [node name="Slots" type="HBoxContainer" parent="Screen/Scaler/Bars/HotbarPlate" unique_id=1657323390]
 layout_mode = 0

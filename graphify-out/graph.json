@@ -13,7 +13,19 @@
       "file_type": "code",
       "norm_label": "cells_of()",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L42"
+      "source_location": "L49"
+    },
+    {
+      "id": "tools_setup_interior_tiles_chest_source",
+      "label": "chest_source()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "code",
+      "norm_label": "chest_source()",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L80"
     },
     {
       "id": "tools_setup_interior_tiles_main",
@@ -25,7 +37,7 @@
       "file_type": "code",
       "norm_label": "main()",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L73"
+      "source_location": "L122"
     },
     {
       "id": "tools_setup_interior_tiles_opaque_box",
@@ -37,7 +49,7 @@
       "file_type": "code",
       "norm_label": "opaque_box()",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L29"
+      "source_location": "L36"
     },
     {
       "id": "tools_setup_interior_tiles_rebuild",
@@ -49,7 +61,7 @@
       "file_type": "code",
       "norm_label": "rebuild()",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L51"
+      "source_location": "L58"
     },
     {
       "id": "tools_setup_interior_tiles_replace_source",
@@ -61,7 +73,31 @@
       "file_type": "code",
       "norm_label": "replace_source()",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L65"
+      "source_location": "L72"
+    },
+    {
+      "id": "tools_sweep_chest_box",
+      "label": "chest_box()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "sweep.py",
+      "file_type": "code",
+      "norm_label": "chest_box()",
+      "source_file": "Tools/sweep.py",
+      "source_location": "L16"
+    },
+    {
+      "id": "tools_sweep_set_origin",
+      "label": "set_origin()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "sweep.py",
+      "file_type": "code",
+      "norm_label": "set_origin()",
+      "source_file": "Tools/sweep.py",
+      "source_location": "L10"
     },
     {
       "id": "claude_skills_graphify_skill_step_0_github_repos_and_multi_path_merge_only_if_a_url_or_several_paths",
@@ -414,7 +450,7 @@
       "source_location": "L1"
     },
     {
-      "id": "tools_setup_interior_tiles_rationale_30",
+      "id": "tools_setup_interior_tiles_rationale_37",
       "label": "The tile's art, as a polygon in Godot's cell-centre coordinates.",
       "_origin": "ast",
       "community": 13,
@@ -422,7 +458,40 @@
       "file_type": "rationale",
       "norm_label": "the tile's art, as a polygon in godot's cell-centre coordinates.",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L30"
+      "source_location": "L37"
+    },
+    {
+      "id": "tools_setup_interior_tiles_rationale_81",
+      "label": "Every chest frame as a paintable tile. Only the first frame is tagged. The\u2026",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "setup_interior_tiles.py",
+      "file_type": "rationale",
+      "norm_label": "every chest frame as a paintable tile. only the first frame is tagged. the...",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L81"
+    },
+    {
+      "id": "tools_sweep",
+      "label": "sweep.py",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "sweep.py",
+      "file_type": "code",
+      "norm_label": "sweep.py",
+      "source_file": "Tools/sweep.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "tools_sweep_rationale_1",
+      "label": "Finds the texture_origin that seats the chest in the cell it is painted in.",
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "sweep.py",
+      "file_type": "rationale",
+      "norm_label": "finds the texture_origin that seats the chest in the cell it is painted in.",
+      "source_file": "Tools/sweep.py",
+      "source_location": "L1"
     },
     {
       "id": "claude_skills_graphify_references_exports",
@@ -879,7 +948,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L85",
+      "source_location": "L145",
       "weight": 1.0
     },
     {
@@ -891,7 +960,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L86",
+      "source_location": "L146",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_main",
+      "target": "tools_setup_interior_tiles_chest_source",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L162",
       "weight": 1.0
     },
     {
@@ -903,7 +984,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L53",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -915,7 +996,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L56",
+      "source_location": "L63",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_sweep_chest_box",
+      "target": "tools_sweep_set_origin",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "Tools/sweep.py",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -1503,13 +1596,24 @@
     },
     {
       "source": "tools_setup_interior_tiles",
+      "target": "tools_setup_interior_tiles_main",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L122",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles",
       "target": "tools_setup_interior_tiles_opaque_box",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L29",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -1520,7 +1624,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L42",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -1531,7 +1635,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L51",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -1542,18 +1646,40 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L65",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
       "source": "tools_setup_interior_tiles",
-      "target": "tools_setup_interior_tiles_main",
+      "target": "tools_setup_interior_tiles_chest_source",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L73",
+      "source_location": "L80",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_sweep",
+      "target": "tools_sweep_set_origin",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/sweep.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_sweep",
+      "target": "tools_sweep_chest_box",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/sweep.py",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -1568,17 +1694,39 @@
       "weight": 1.0
     },
     {
-      "source": "tools_setup_interior_tiles_rationale_30",
+      "source": "tools_setup_interior_tiles_rationale_37",
       "target": "tools_setup_interior_tiles_opaque_box",
       "relation": "rationale_for",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "Tools/setup_interior_tiles.py",
-      "source_location": "L30",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_setup_interior_tiles_rationale_81",
+      "target": "tools_setup_interior_tiles_chest_source",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/setup_interior_tiles.py",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "tools_sweep_rationale_1",
+      "target": "tools_sweep",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "Tools/sweep.py",
+      "source_location": "L1",
       "weight": 1.0
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a969368b9184e11fb99ff79598da0c32205adb73"
+  "built_at_commit": "a6722a80f468032b36812706bec052d5ce1a867d"
 }

@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+MouseCursor="*res://Scripts/MouseCursor.gd"
 PlayerState="*res://Scripts/PlayerState.gd"
 SceneTransition="*res://Scripts/SceneTransition.gd"
 
