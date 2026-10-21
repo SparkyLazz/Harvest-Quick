@@ -16,7 +16,8 @@ func check(ok: bool, what: String) -> void:
 
 func _initialize() -> void:
 	var ts: TileSet = load("res://Tilemaps/Terrains.tres")
-	check(ts.get_terrain_sets_count() == 2, "no extra terrain set was left behind")
+	# Ground, simple grass, and the fence run.
+	check(ts.get_terrain_sets_count() == 3, "no extra terrain set was left behind")
 
 	# The wall sheet is registered exactly as the artist drew it: sliced, nothing
 	# added. Every cell must be a plain 16x16 with no terrain, collision or sort

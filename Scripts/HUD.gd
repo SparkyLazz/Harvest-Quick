@@ -91,10 +91,10 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 @export_range(1, 96) var inventory_size: int = 45
 ## Starting loadout, one item id per slot, "" for empty. Ids come from ItemDB.
 @export var slot_items: Array[String] = [
-	"hoe", "watering_can", "carrot_seed", "tomato_seed", "pumpkin_seed", "corn_seed", "", "",
+	"hoe", "watering_can", "axe", "carrot_seed", "tomato_seed", "pumpkin_seed", "corn_seed", "",
 ]: set = set_slot_items
 ## How many of each starting item. A slot with no entry here gets 1.
-@export var slot_counts: Array[int] = [1, 1, 10, 10, 10, 10]
+@export var slot_counts: Array[int] = [1, 1, 1, 10, 10, 10, 10]
 ## Zoom for item icons inside their slot, on top of each item's own zoom. The
 ## 16px crop icons fit the 26x26 inner face at 1.0 and stay on whole pixels,
 ## which keeps them sharp.

@@ -7,14 +7,22 @@ extends CharacterBody2D
 ##
 ## The use input acts on the tile the character faces, and what it does depends
 ## on the held hotbar item:
-##   hoe           clears the grass, uncovering tilled soil
+##   hoe           clears the grass, uncovering tilled soil -- but only open
+##                 grass: a tree, stump, flower, fence or building standing on
+##                 the cell has to be cleared with the axe first
 ##   watering can  waters the soil
+##   axe           chops a tree (then its stump), breaks a decoration (a
+##                 flower, a mushroom, a fence), or grows grass back over
+##                 hoed soil
 ##   seeds         plant in tilled soil
+##   tree seeds    plant in open grass, and grow into a tree
 ##   anything else harvests a ripe crop (a ripe crop is picked with any item
 ##                 except the watering can)
 
 ## Emitted once the hoe has actually cleared a cell, for sound or particles.
 signal tilled(cell: Vector2i)
+## Emitted once the axe has grown grass back over a hoed cell.
+signal untilled(cell: Vector2i)
 
 const FACING_DIRS := {
 	"down": Vector2i.DOWN,
@@ -50,6 +58,8 @@ const FACING_DIRS := {
 @export_range(1.0, 30.0, 0.5) var hoe_fps: float = 12.0
 ## Playback speed of the watering animation, in frames per second.
 @export_range(1.0, 30.0, 0.5) var water_fps: float = 10.0
+## Playback speed of the axe swing, in frames per second.
+@export_range(1.0, 30.0, 0.5) var axe_fps: float = 12.0
 
 @export_group("Hoeing")
 ## HUD that owns the hotbar. The swing only happens while its held item
@@ -71,6 +81,8 @@ const FACING_DIRS := {
 ## tileset's "interact" data, so a wardrobe or a bed works wherever it is
 ## painted, with no node to place beside it.
 @export var props_layer_path: NodePath = ^"../Props"
+## Layer trees are painted on, as scene tiles. Planted tree seeds go here too.
+@export var trees_layer_path: NodePath = ^"../Trees"
 
 @export_group("Farming")
 ## Farm that owns planting, watering and harvesting. Without one, only the
@@ -81,6 +93,12 @@ const FACING_DIRS := {
 ## Frame of the watering animation where water leaves the can.
 @export_range(0, 7) var water_impact_frame: int = 3
 
+@export_group("Axe")
+## Item id that counts as an axe.
+@export var axe_item: String = ItemDB.AXE
+## Frame of the axe swing that lands the chop. The swoosh is drawn on frame 4.
+@export_range(0, 7) var axe_impact_frame: int = 4
+
 @export_group("Stamina")
 ## Stamina when full.
 @export_range(1.0, 500.0, 1.0, "or_greater") var max_stamina: float = 100.0
@@ -88,6 +106,8 @@ const FACING_DIRS := {
 @export_range(0.0, 100.0, 0.5) var hoe_cost: float = 8.0
 ## What a watering costs. Only paid on tilled soil.
 @export_range(0.0, 100.0, 0.5) var water_cost: float = 5.0
+## What an axe swing costs. Only paid when it hits a tree or hoed soil.
+@export_range(0.0, 100.0, 0.5) var axe_cost: float = 6.0
 ## What planting a seed costs.
 @export_range(0.0, 100.0, 0.5) var plant_cost: float = 2.0
 ## Below this share of full stamina, every interaction shows the tired emote
@@ -124,11 +144,12 @@ const FACING_DIRS := {
 var _facing: String = "down"
 var stamina: float = 0.0
 var _since_spent: float = 0.0
-var _action: String = ""         # "hoe" / "water" while a swing is playing
+var _action: String = ""         # "hoe" / "water" / "axe" while a swing is playing
 var _hit_landed: bool = false
 var _grass_layer: TileMapLayer
 var _soil_layer: TileMapLayer
 var _props: TileMapLayer
+var _trees_layer: TileMapLayer
 var _prop_anim: PropAnimator
 ## The prop whose window is up, so its lid can be shut again when the window
 ## goes. Unset between times rather than left pointing at the last chest used.
@@ -137,6 +158,18 @@ var _hud: Node
 var _farm: Farm
 var _emote: EmoteBubble
 var _just_denied: bool = false
+## What each hoed cell looked like before, so the axe can put it back, and
+## which soil tile it was given. Lives in PlayerState's record of this map, so
+## it survives the scene being swapped out -- see `_restore_world`.
+var _hoed := {}
+## Decorations the axe has broken on this map, in order: [layer name, cell].
+var _broken: Array = []
+## Every map layer beside the player, topmost first, for the axe to search for
+## tiles marked "breakable" -- so a flower breaks whichever layer it was painted on.
+var _map_layers: Array[TileMapLayer] = []
+## The layers drawn over the grass: whatever is painted on them stands on the
+## ground, so the hoe can't dig there until it is gone.
+var _cover_layers: Array[TileMapLayer] = []
 
 func _ready() -> void:
 	_facing = start_facing
@@ -145,6 +178,7 @@ func _ready() -> void:
 	_grass_layer = get_node_or_null(grass_layer_path) as TileMapLayer
 	_soil_layer = get_node_or_null(soil_layer_path) as TileMapLayer
 	_props = get_node_or_null(props_layer_path) as TileMapLayer
+	_trees_layer = get_node_or_null(trees_layer_path) as TileMapLayer
 	if _props != null:
 		_prop_anim = PropAnimator.new()
 		add_child(_prop_anim)
@@ -152,6 +186,19 @@ func _ready() -> void:
 	if _hud != null and _hud.has_signal("storage_closed"):
 		_hud.connect("storage_closed", _on_storage_closed)
 	_farm = get_node_or_null(farm_path) as Farm
+	if get_parent() != null:
+		for node in get_parent().get_children():
+			if node is TileMapLayer:
+				_map_layers.push_front(node)
+		# _map_layers runs topmost first, so everything before the grass is over it.
+		for layer in _map_layers:
+			if layer == _grass_layer:
+				break
+			_cover_layers.append(layer)
+		var world := PlayerState.world_for(get_parent())
+		_hoed = world["hoed"]
+		_broken = world["broken"]
+		_restore_world()
 	_apply_animation_speeds()
 	if show_emotes:
 		_emote = EmoteBubble.new()
@@ -253,8 +300,12 @@ func _dispatch_use(input: Vector2) -> bool:
 		return _start_action("hoe", input)
 	if item == watering_can_item and _farm != null:
 		return _start_action("water", input)
+	if item == axe_item and not axe_item.is_empty():
+		return _start_action("axe", input)
 	if ItemDB.is_seed(item):
 		return _try_plant(item, input)
+	if ItemDB.is_tree_seed(item):
+		return _try_plant_tree(item, input)
 	return false
 
 
@@ -373,14 +424,76 @@ func _start_action(action: String, input: Vector2) -> bool:
 		_facing = _facing_for(input)
 	# The swing plays either way, but only a swing that does something costs.
 	var cell := facing_cell() if _grass_layer != null else Vector2i.ZERO
-	var hits := _can_hoe(cell) if action == "hoe" else (_farm != null and _farm.is_tilled(cell))
-	if hits and not _pay(hoe_cost if action == "hoe" else water_cost):
+	if _action_hits(action, cell) and not _pay(_action_cost(action)):
 		return false
 	_action = action
 	_hit_landed = false
 	velocity = Vector2.ZERO
 	sprite.play("%s_%s" % [action, _facing])
 	return true
+
+
+## Open grass only: nothing standing on it, tilled soil included -- a tree
+## needs the ground the hoe has not had.
+func can_plant_tree(cell: Vector2i, seed_item: String) -> bool:
+	return _trees_layer != null and _tree_scene_id(ItemDB.info(seed_item).get("tree", "")) >= 0 \
+			and _grass_layer != null and _grass_layer.get_cell_tile_data(cell) != null \
+			and not is_covered(cell)
+
+
+func _try_plant_tree(seed_item: String, input: Vector2) -> bool:
+	if _hud.inventory == null:
+		return false
+	if input != Vector2.ZERO:
+		_facing = _facing_for(input)
+	var cell := facing_cell()
+	if not can_plant_tree(cell, seed_item) or not _pay(plant_cost):
+		return false
+	var scene_id := _tree_scene_id(ItemDB.info(seed_item)["tree"])
+	# The record goes in first: the tile spawns the tree, and the tree reads it.
+	PlayerState.world_for(get_parent())["trees"][cell] = ChoppableTree.planted_state(scene_id)
+	_trees_layer.set_cell(cell, _tree_source_id(), Vector2i.ZERO, scene_id)
+	_hud.inventory.remove_from_slot(_hud.selected_slot, 1)
+	_react("check")
+	_play("idle")
+	return true
+
+
+## The tileset's scene-collection source, the one trees are painted from.
+func _tree_source_id() -> int:
+	if _trees_layer == null or _trees_layer.tile_set == null:
+		return -1
+	var tiles := _trees_layer.tile_set
+	for i in tiles.get_source_count():
+		var id := tiles.get_source_id(i)
+		if tiles.get_source(id) is TileSetScenesCollectionSource:
+			return id
+	return -1
+
+
+## Which scene tile grows `species`, read off the scenes themselves so the
+## tileset can be reordered freely. -1 if no tile grows it.
+func _tree_scene_id(species: String) -> int:
+	var source_id := _tree_source_id()
+	if source_id < 0 or species.is_empty():
+		return -1
+	var source := _trees_layer.tile_set.get_source(source_id) as TileSetScenesCollectionSource
+	for i in source.get_scene_tiles_count():
+		var id := source.get_scene_tile_id(i)
+		var scene := source.get_scene_tile_scene(id)
+		if scene != null and _species_of(scene) == species:
+			return id
+	return -1
+
+
+static func _species_of(scene: PackedScene) -> String:
+	var state := scene.get_state()
+	for i in state.get_node_property_count(0):
+		if state.get_node_property_name(0, i) == &"species":
+			return state.get_node_property_value(0, i)
+	# An inherited scene that doesn't set it takes its base's.
+	var base := state.get_node_instance(0)
+	return _species_of(base) if base != null else "oak"
 
 
 func _try_plant(seed_item: String, input: Vector2) -> bool:
@@ -418,6 +531,29 @@ func _try_harvest(input: Vector2) -> bool:
 	return true
 
 
+## Would `action` do anything to `cell`? Only a swing that does pays stamina.
+func _action_hits(action: String, cell: Vector2i) -> bool:
+	match action:
+		"hoe":
+			return _can_hoe(cell)
+		"water":
+			return _farm != null and _farm.is_tilled(cell)
+		"axe":
+			return _can_axe(cell)
+	return false
+
+
+func _action_cost(action: String) -> float:
+	match action:
+		"hoe":
+			return hoe_cost
+		"water":
+			return water_cost
+		"axe":
+			return axe_cost
+	return 0.0
+
+
 ## Any layer will do to turn a position into a cell -- they share one grid --
 ## so indoors, where there is no farmland, the furniture layer stands in.
 func _grid() -> TileMapLayer:
@@ -452,8 +588,12 @@ func can_use_at(cell: Vector2i) -> bool:
 		return _can_hoe(cell) and stamina >= hoe_cost
 	if item == watering_can_item:
 		return _farm != null and _farm.is_tilled(cell) and stamina >= water_cost
+	if item == axe_item and not axe_item.is_empty():
+		return _can_axe(cell) and stamina >= axe_cost
 	if ItemDB.is_seed(item):
 		return _farm != null and _farm.is_tilled(cell) and not _farm.has_crop(cell) 				and stamina >= plant_cost
+	if ItemDB.is_tree_seed(item):
+		return can_plant_tree(cell, item) and stamina >= plant_cost
 	return false
 
 
@@ -482,7 +622,158 @@ func _regen(delta: float) -> void:
 
 
 func _can_hoe(cell: Vector2i) -> bool:
-	return _grass_layer != null and _grass_layer.get_cell_tile_data(cell) != null
+	return _grass_layer != null and _grass_layer.get_cell_tile_data(cell) != null 			and not is_covered(cell)
+
+
+## Is something standing on this cell's ground? A tree or stump, or any tile
+## painted on a layer above the grass -- a flower, a fence, the house.
+func is_covered(cell: Vector2i) -> bool:
+	if tree_at(cell) != null:
+		return true
+	for layer in _cover_layers:
+		if layer.get_cell_source_id(cell) != -1:
+			return true
+	return false
+
+
+## The tree standing in `cell`, or null. Trees are nodes with their own
+## animation rather than tiles, so they are found through their group.
+func tree_at(cell: Vector2i) -> ChoppableTree:
+	var layer := _grid()
+	if layer == null:
+		return null
+	for node in get_tree().get_nodes_in_group(&"choppable"):
+		var tree := node as ChoppableTree
+		if tree != null and tree.cell_on(layer) == cell:
+			return tree
+	return null
+
+
+## The layer holding a breakable tile at `cell`, topmost first, or null.
+## A tile is breakable when the tileset's "breakable" data says so.
+func breakable_layer_at(cell: Vector2i) -> TileMapLayer:
+	for layer in _map_layers:
+		var data := layer.get_cell_tile_data(cell)
+		if data != null and data.has_custom_data("breakable") and data.get_custom_data("breakable"):
+			return layer
+	return null
+
+
+## A tree to chop, a decoration to break, or soil this player hoed with nothing
+## planted in it.
+func _can_axe(cell: Vector2i) -> bool:
+	var tree := tree_at(cell)
+	if tree != null:
+		return tree.can_chop()
+	return breakable_layer_at(cell) != null or _can_regrow(cell)
+
+
+## Only ground the hoe dug can be grown back, and never from under a crop.
+func _can_regrow(cell: Vector2i) -> bool:
+	if not _hoed.has(cell) or _grass_layer == null:
+		return false
+	return _farm == null or not _farm.has_crop(cell)
+
+
+func _land_axe_hit() -> void:
+	_hit_landed = true
+	var cell := facing_cell()
+	var tree := tree_at(cell)
+	if tree != null and tree.can_chop():
+		var drops := tree.chop()
+		if drops.is_empty():
+			_react("sweat")
+			return
+		for i in drops.size():
+			_collect(cell, drops[i]["item"], drops[i]["amount"], i)
+		_react("sparkle")
+		return
+	var layer := breakable_layer_at(cell)
+	if layer != null:
+		_break_tile(layer, cell)
+		return
+	if _can_regrow(cell):
+		_regrow_grass(cell)
+		_react("sweat")
+		return
+	_react("question")
+
+
+## Knocks a decoration off its layer. A tile that joins its neighbours, like a
+## fence, is cleared through its terrain so the run re-fits around the gap
+## instead of leaving rails pointing at nothing. Its "drop" data, if any, is
+## what it gives up.
+func _break_tile(layer: TileMapLayer, cell: Vector2i) -> void:
+	var data := layer.get_cell_tile_data(cell)
+	var drop := str(data.get_custom_data("drop")) if data.has_custom_data("drop") else ""
+	_clear_tile(layer, cell)
+	_broken.append([String(layer.name), cell])
+	if not drop.is_empty():
+		_collect(cell, drop, 1)
+		_react("sparkle")
+	else:
+		_react("sweat")
+
+
+func _clear_tile(layer: TileMapLayer, cell: Vector2i) -> void:
+	var data := layer.get_cell_tile_data(cell)
+	if data == null:
+		return
+	if data.terrain_set >= 0:
+		layer.set_cells_terrain_connect([cell], data.terrain_set, -1, false)
+	else:
+		layer.erase_cell(cell)
+
+
+## Puts the map back the way the player left it. The scene file only knows how
+## it started, so what was dug and broken since is replayed over the top.
+## Trees and the farm keep their own records and restore themselves.
+func _restore_world() -> void:
+	if _grass_layer != null:
+		for cell: Vector2i in _hoed:
+			var was: Dictionary = _hoed[cell]
+			_dig(cell, was["terrain_set"])
+			if _soil_layer != null and was.has("stamp"):
+				_soil_layer.set_cell(cell, tilled_soil_source, was["stamp"], 0)
+	for entry: Array in _broken:
+		var layer := get_parent().get_node_or_null(NodePath(entry[0])) as TileMapLayer
+		if layer != null:
+			_clear_tile(layer, entry[1])
+	# Trees grown from seed aren't in the scene file: paint them back. This also
+	# covers a seed planted where a painted tree was cleared.
+	if _trees_layer != null:
+		var trees: Dictionary = PlayerState.world_for(get_parent())["trees"]
+		for cell: Vector2i in trees:
+			var tree: Dictionary = trees[cell]
+			if tree.has("planted") and not tree["gone"]:
+				_trees_layer.set_cell(cell, _tree_source_id(), Vector2i.ZERO, tree["planted"])
+
+
+## Puts a drop in the bag. Whatever does not fit is lost rather than leaving
+## the tree standing, since it is already on its way down. `order` fans out the
+## pop-ups when one swing gives several things.
+func _collect(cell: Vector2i, item: String, amount: int, order: int = 0) -> void:
+	if _hud != null and _hud.inventory != null:
+		_hud.inventory.add(item, amount)
+	if _farm != null:
+		_farm.float_icon(cell, item, amount, order)
+
+
+## Undoes a hoe: the soil goes back to the tile it was, and the grass is painted
+## back in with its own terrain so its edges close over the hole again.
+func _regrow_grass(cell: Vector2i) -> void:
+	var was: Dictionary = _hoed[cell]
+	_hoed.erase(cell)
+	if _soil_layer != null:
+		if was["soil_source"] >= 0:
+			_soil_layer.set_cell(cell, was["soil_source"], was["soil_atlas"], was["soil_alt"])
+		else:
+			_soil_layer.erase_cell(cell)
+	if refit_grass_edges and was["terrain_set"] >= 0:
+		_grass_layer.set_cells_terrain_connect([cell], was["terrain_set"], was["terrain"], false)
+	else:
+		_grass_layer.set_cell(cell, was["grass_source"], was["grass_atlas"], was["grass_alt"])
+	untilled.emit(cell)
 
 
 func _land_water() -> void:
@@ -498,13 +789,35 @@ func _land_hoe_hit() -> void:
 		return
 	var cell := facing_cell()
 	var data := _grass_layer.get_cell_tile_data(cell)
-	if data == null:
+	if data == null or is_covered(cell):
 		_react("question")
-		return                                   # already bare soil
+		return                                   # bare soil, or something in the way
 	# Read the terrain set off the tile we are about to remove, so the re-fit
 	# works for whatever terrain the layer was painted with.
-	var terrain_set := data.terrain_set
+	_remember_ground(cell, data)
+	_dig(cell, data.terrain_set)
+	var stamp := _stamp_tilled_soil(cell)
+	if stamp != Vector2i(-1, -1):
+		_hoed[cell]["stamp"] = stamp
+	tilled.emit(cell)
+	_react("sweat")
 
+## Notes what is about to be dug up, so the axe can put it back.
+func _remember_ground(cell: Vector2i, grass: TileData) -> void:
+	var has_soil := _soil_layer != null
+	_hoed[cell] = {
+		"terrain_set": grass.terrain_set,
+		"terrain": grass.terrain,
+		"grass_source": _grass_layer.get_cell_source_id(cell),
+		"grass_atlas": _grass_layer.get_cell_atlas_coords(cell),
+		"grass_alt": _grass_layer.get_cell_alternative_tile(cell),
+		"soil_source": _soil_layer.get_cell_source_id(cell) if has_soil else -1,
+		"soil_atlas": _soil_layer.get_cell_atlas_coords(cell) if has_soil else Vector2i(-1, -1),
+		"soil_alt": _soil_layer.get_cell_alternative_tile(cell) if has_soil else 0,
+	}
+
+## Takes the grass off a cell.
+func _dig(cell: Vector2i, terrain_set: int) -> void:
 	if refit_grass_edges and terrain_set >= 0:
 		# Painting the cell with terrain -1 clears it *and* re-runs the solver
 		# over its neighbours, so the grass closes around the hole with its own
@@ -514,16 +827,16 @@ func _land_hoe_hit() -> void:
 	else:
 		_grass_layer.erase_cell(cell)
 
-	_stamp_tilled_soil(cell)
-	tilled.emit(cell)
-	_react("sweat")
 
 ## Swap the exposed ground for one of the plain soil variants, so a hoed patch
 ## reads as turned earth instead of whatever the terrain happened to paint.
-func _stamp_tilled_soil(cell: Vector2i) -> void:
+## Returns the variant used, or (-1, -1) when nothing was stamped.
+func _stamp_tilled_soil(cell: Vector2i) -> Vector2i:
 	if _soil_layer == null or tilled_soil_tiles.is_empty():
-		return
-	_soil_layer.set_cell(cell, tilled_soil_source, tilled_soil_tiles.pick_random(), 0)
+		return Vector2i(-1, -1)
+	var tile: Vector2i = tilled_soil_tiles.pick_random()
+	_soil_layer.set_cell(cell, tilled_soil_source, tile, 0)
+	return tile
 
 func _on_sprite_frame_changed() -> void:
 	if _hit_landed:
@@ -532,16 +845,21 @@ func _on_sprite_frame_changed() -> void:
 		_land_hoe_hit()
 	elif _action == "water" and sprite.frame >= water_impact_frame:
 		_land_water()
+	elif _action == "axe" and sprite.frame >= axe_impact_frame:
+		_land_axe_hit()
 
 func _on_sprite_animation_finished() -> void:
 	if _action.is_empty():
 		return
 	# A very short swing can finish before frame_changed reports the impact.
 	if not _hit_landed:
-		if _action == "hoe":
-			_land_hoe_hit()
-		else:
-			_land_water()
+		match _action:
+			"hoe":
+				_land_hoe_hit()
+			"axe":
+				_land_axe_hit()
+			_:
+				_land_water()
 	_action = ""
 	_play("idle")
 
@@ -568,3 +886,4 @@ func _apply_animation_speeds() -> void:
 		frames.set_animation_speed("run_%s" % direction, run_fps)
 		frames.set_animation_speed("hoe_%s" % direction, hoe_fps)
 		frames.set_animation_speed("water_%s" % direction, water_fps)
+		frames.set_animation_speed("axe_%s" % direction, axe_fps)

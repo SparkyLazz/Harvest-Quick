@@ -26,7 +26,7 @@ func _initialize() -> void:
 	var names := []
 	for i in ts.get_custom_data_layers_count():
 		names.append(ts.get_custom_data_layer_name(i))
-	check(names == ["interact", "frames", "step", "frame"], "data layers are %s" % [names])
+	check(names == ["interact", "frames", "step", "frame", "breakable", "drop"], "data layers are %s" % [names])
 
 	# --- the chest is a tileset source, not a node ---------------------------
 	var chest := ts.get_source(CHEST_SOURCE) as TileSetAtlasSource

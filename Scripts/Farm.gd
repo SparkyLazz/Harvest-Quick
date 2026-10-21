@@ -11,6 +11,10 @@ extends Node2D
 ##
 ## Plants are added as siblings of this node so they depth-sort against the
 ## player (the parent needs y_sort_enabled).
+##
+## The plots outlast the scene: on the way out they are written to PlayerState's
+## record of this map, and on the way back in they are planted again. Time
+## stands still while the player is away, so a crop picks up where it was.
 
 signal crop_planted(cell: Vector2i, crop: String)
 signal cell_watered(cell: Vector2i)
@@ -63,13 +67,44 @@ func _ready() -> void:
 	var player := get_node_or_null(player_path)
 	if player and player.has_signal("tilled"):
 		player.connect("tilled", _on_tilled)
+	if player and player.has_signal("untilled"):
+		player.connect("untilled", _on_untilled)
+	# Deferred: the plants go in beside this node, and the parent is still
+	# busy adding its own children while they are readied.
+	_restore.call_deferred(PlayerState.world_for(get_parent())["farm"])
 
 
 func _exit_tree() -> void:
+	_save(PlayerState.world_for(get_parent())["farm"])
 	for cell in _crops:
 		var sprite: Sprite2D = _crops[cell]["sprite"]
 		if is_instance_valid(sprite):
 			sprite.queue_free()
+
+
+## Writes the plots into the map's record. Sprites are not kept; they are
+## rebuilt from crop and stage when the farm comes back.
+func _save(record: Dictionary) -> void:
+	var crops := {}
+	for cell: Vector2i in _crops:
+		var state: Dictionary = _crops[cell]
+		crops[cell] = {"crop": state["crop"], "stage": state["stage"], "progress": state["progress"]}
+	record["tilled"] = _tilled.duplicate()
+	record["wet"] = _wet.duplicate()
+	record["crops"] = crops
+
+
+func _restore(record: Dictionary) -> void:
+	if record.is_empty():
+		return
+	_tilled.merge(record["tilled"])
+	_wet.merge(record["wet"])
+	var crops: Dictionary = record["crops"]
+	for cell: Vector2i in crops:
+		var saved: Dictionary = crops[cell]
+		_crops[cell] = {"crop": saved["crop"], "stage": saved["stage"],
+				"progress": saved["progress"], "sprite": _make_sprite(cell)}
+		_refresh_sprite(cell)
 
 
 func _process(delta: float) -> void:
@@ -153,7 +188,7 @@ func harvest(cell: Vector2i) -> Dictionary:
 	var sprite: Sprite2D = _crops[cell]["sprite"]
 	sprite.queue_free()
 	_crops.erase(cell)
-	_float_icon(cell, yield_["item"], yield_["amount"])
+	float_icon(cell, yield_["item"], yield_["amount"])
 	crop_harvested.emit(cell, yield_["item"], yield_["amount"])
 	return yield_
 
@@ -257,20 +292,22 @@ func _drop_at(mark: Vector2) -> void:
 
 
 ## The harvested item hops up off the plot and fades, so a pickup is visible even
-## though the hotbar may not have a slot on screen for it.
-func _float_icon(cell: Vector2i, item: String, amount: int) -> void:
+## though the hotbar may not have a slot on screen for it. The axe borrows it for
+## wood, which is why it is public. `order` fans out several pops from one cell
+## so they don't land on top of each other. Uses the item's drop icon.
+func float_icon(cell: Vector2i, item: String, amount: int, order: int = 0) -> void:
 	var entry := ItemDB.info(item)
 	if entry.is_empty():
 		return
 	var holder := Node2D.new()
 	holder.z_index = 10
-	holder.position = _cell_center(cell)
+	holder.position = _cell_center(cell) + Vector2(order * 12, -order * 3)
 	add_child(holder)
 	var icon := Sprite2D.new()
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var atlas := AtlasTexture.new()
-	atlas.atlas = entry["sheet"]
-	atlas.region = entry["region"]
+	atlas.atlas = entry["drop_sheet"]
+	atlas.region = entry["drop_region"]
 	icon.texture = atlas
 	holder.add_child(icon)
 	var label := Label.new()
@@ -291,3 +328,9 @@ func _float_icon(cell: Vector2i, item: String, amount: int) -> void:
 
 func _on_tilled(cell: Vector2i) -> void:
 	_tilled[cell] = true
+
+
+## Grass has grown back over the cell, so it is no longer a plot.
+func _on_untilled(cell: Vector2i) -> void:
+	_tilled.erase(cell)
+	_wet.erase(cell)

@@ -28,6 +28,8 @@ var day: int = 1
 var _started := false
 ## Every wardrobe's contents, keyed by scene and cell -- see `storage_for`.
 var _stores: Dictionary = {}
+## What has been done to each map, keyed by scene path -- see `world_for`.
+var _worlds: Dictionary = {}
 
 
 ## The inventory to use, made to `fill`'s measurements the first time anyone
@@ -81,6 +83,23 @@ static func storage_key(scene: Node, cell: Vector2i) -> String:
 	return "%s:%d,%d" % [where, cell.x, cell.y]
 
 
+## Everything the player has changed on one map, so it is still changed when
+## they come back: a scene file only knows how the map started.
+##
+## `map` is the scene's root. The dictionary is handed out live, so whoever
+## changes the map writes straight into it, and on the way back in reads what
+## to put back. What each part holds is up to its owner:
+##   hoed    cell -> what the hoe dug up            (Player)
+##   broken  [[layer name, cell], ...] in order     (Player)
+##   trees   cell -> {hits, stump, gone}            (ChoppableTree)
+##   farm    {tilled, wet, crops}                   (Farm)
+func world_for(map: Node) -> Dictionary:
+	var key := map.scene_file_path if map != null else ""
+	if not _worlds.has(key):
+		_worlds[key] = {"hoed": {}, "broken": [], "trees": {}, "farm": {}}
+	return _worlds[key]
+
+
 ## Turns in for the night: a day passes and the gauge comes back full.
 func sleep() -> int:
 	day += 1
@@ -95,4 +114,5 @@ func reset() -> void:
 	stamina = 0.0
 	day = 1
 	_stores.clear()
+	_worlds.clear()
 	_started = false
