@@ -34,6 +34,9 @@ shape = SubResource("RectangleShape2D_HallEnd")
 [node name="FrontDoor" type="Marker2D" parent="." unique_id=1570320937]
 position = Vector2(144, 190)
 
+[node name="Bed" type="Marker2D" parent="." unique_id=1408813357]
+position = Vector2(120, 136)
+
 [node name="Door" parent="." unique_id=908729520 instance=ExtResource("2_hdjk7")]
 position = Vector2(144, 205)
 target_scene = "res://Scenes/Dev.tscn"

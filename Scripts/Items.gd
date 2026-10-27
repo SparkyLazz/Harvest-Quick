@@ -107,8 +107,8 @@ static func describe(id: String) -> String:
 			return TOOL_TEXT.get(id, "")
 		"seed":
 			var crop: String = entry["crop"]
-			var seconds := (CropDB.stage_count(crop) - 1) * CropDB.seconds_per_stage(crop)
-			return "Plant in tilled soil and keep it watered. Ripens after about %d seconds of watering." 					% roundi(seconds)
+			return "Plant in tilled soil and water it every day. Ripens after %d days." \
+					% CropDB.days_to_ripen(crop)
 		"crop":
 			return "Fresh from the field."
 		"material":

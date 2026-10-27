@@ -4,17 +4,19 @@ extends Node2D
 ## Everything that lives on tilled soil: seeds, watering, growth and harvest.
 ##
 ## Soil counts as tilled once the player's hoe reports it. Watering wets a cell
-## for `wet_seconds`, and a crop only grows while its cell is wet, so the loop
-## is: hoe, plant, water, wait, harvest. A watered crop swaps to the pack's
-## watered version of its sprite; the soil is part of that sprite, so bare
-## soil shows nothing but the splash.
+## until the next morning, and crops grow overnight: each night a crop's soil
+## was wet counts as one day grown, and then every cell dries out for the new
+## day. So the loop is: hoe, plant, water, sleep, water, sleep... harvest. A
+## watered crop swaps to the pack's watered version of its sprite; the soil is
+## part of that sprite, so bare soil shows nothing but the splash.
 ##
 ## Plants are added as siblings of this node so they depth-sort against the
 ## player (the parent needs y_sort_enabled).
 ##
 ## The plots outlast the scene: on the way out they are written to PlayerState's
-## record of this map, and on the way back in they are planted again. Time
-## stands still while the player is away, so a crop picks up where it was.
+## record of this map, stamped with the day, and on the way back in they are
+## planted again. Nights slept while the map was not loaded are caught up then:
+## the first of them grows whatever was watered, and the rest find dry soil.
 
 signal crop_planted(cell: Vector2i, crop: String)
 signal cell_watered(cell: Vector2i)
@@ -25,12 +27,6 @@ signal crop_harvested(cell: Vector2i, crop: String, amount: int)
 @export var ground_layer_path: NodePath = ^"../Grass Layer"
 ## Player whose `tilled` signal marks soil as farmable.
 @export var player_path: NodePath = ^"../Player"
-
-@export_group("Growth")
-## How long a watering keeps the soil wet, in seconds.
-@export_range(1.0, 300.0, 1.0, "or_greater") var wet_seconds: float = 25.0
-## Scales every crop's growth time. 2 grows twice as fast.
-@export_range(0.1, 10.0, 0.1, "or_greater") var growth_speed: float = 1.0
 
 @export_group("Look")
 ## Playback speed of the water drops, in frames per second.
@@ -55,8 +51,8 @@ static var _drops_frames: SpriteFrames
 var _layer: TileMapLayer
 var _tile := Vector2.ONE * 16.0
 var _tilled := {}      # Vector2i -> true
-var _crops := {}       # Vector2i -> {crop, stage, progress, sprite}
-var _wet := {}         # Vector2i -> seconds of wetness left
+var _crops := {}       # Vector2i -> {crop, stage, grown, sprite}
+var _wet := {}         # Vector2i -> true, until the next morning
 
 func _ready() -> void:
 	_layer = get_node_or_null(ground_layer_path) as TileMapLayer
@@ -69,6 +65,7 @@ func _ready() -> void:
 		player.connect("tilled", _on_tilled)
 	if player and player.has_signal("untilled"):
 		player.connect("untilled", _on_untilled)
+	PlayerState.day_changed.connect(_on_day_changed)
 	# Deferred: the plants go in beside this node, and the parent is still
 	# busy adding its own children while they are readied.
 	_restore.call_deferred(PlayerState.world_for(get_parent())["farm"])
@@ -88,10 +85,11 @@ func _save(record: Dictionary) -> void:
 	var crops := {}
 	for cell: Vector2i in _crops:
 		var state: Dictionary = _crops[cell]
-		crops[cell] = {"crop": state["crop"], "stage": state["stage"], "progress": state["progress"]}
+		crops[cell] = {"crop": state["crop"], "grown": state["grown"]}
 	record["tilled"] = _tilled.duplicate()
 	record["wet"] = _wet.duplicate()
 	record["crops"] = crops
+	record["day"] = PlayerState.day
 
 
 func _restore(record: Dictionary) -> void:
@@ -102,19 +100,32 @@ func _restore(record: Dictionary) -> void:
 	var crops: Dictionary = record["crops"]
 	for cell: Vector2i in crops:
 		var saved: Dictionary = crops[cell]
-		_crops[cell] = {"crop": saved["crop"], "stage": saved["stage"],
-				"progress": saved["progress"], "sprite": _make_sprite(cell)}
+		var crop: String = saved["crop"]
+		_crops[cell] = {"crop": crop, "grown": saved["grown"],
+				"stage": CropDB.stage_after(crop, saved["grown"]), "sprite": _make_sprite(cell)}
+	# One night is enough to catch up on: after it everything is dry, and dry
+	# soil grows nothing, so any further nights away change nothing.
+	if PlayerState.day > record["day"]:
+		_pass_night(false)
+	for cell: Vector2i in _crops:
 		_refresh_sprite(cell)
 
 
-func _process(delta: float) -> void:
-	for cell in _wet.keys():
-		_wet[cell] -= delta
-		if _crops.has(cell):
-			_grow(cell, delta * growth_speed)
-		if _wet[cell] <= 0.0:
-			_wet.erase(cell)
-			_refresh_sprite(cell)
+## A night goes by: every watered crop grows a day, and all the soil dries out
+## for the morning. `animate` gives each crop that moved up a stage the little
+## stretch, for nights that pass with the farm on screen.
+func _pass_night(animate: bool) -> void:
+	for cell: Vector2i in _crops:
+		if not _wet.has(cell):
+			continue
+		var state: Dictionary = _crops[cell]
+		state["grown"] += 1
+		var stage := CropDB.stage_after(state["crop"], state["grown"])
+		if stage != state["stage"]:
+			state["stage"] = stage
+			if animate:
+				_squash(state["sprite"])
+	_wet.clear()
 
 
 ## How the plots stand right now: {tilled, watered, growing, ripe}. Nothing in
@@ -155,7 +166,7 @@ func is_ripe(cell: Vector2i) -> bool:
 func plant(cell: Vector2i, crop: String) -> bool:
 	if not CropDB.CROPS.has(crop) or not is_tilled(cell) or has_crop(cell):
 		return false
-	_crops[cell] = {"crop": crop, "stage": 0, "progress": 0.0, "sprite": _make_sprite(cell)}
+	_crops[cell] = {"crop": crop, "stage": 0, "grown": 0, "sprite": _make_sprite(cell)}
 	_refresh_sprite(cell)
 	crop_planted.emit(cell, crop)
 	return true
@@ -165,7 +176,7 @@ func plant(cell: Vector2i, crop: String) -> bool:
 func water(cell: Vector2i) -> bool:
 	if not is_tilled(cell):
 		return false
-	_wet[cell] = wet_seconds
+	_wet[cell] = true
 	_refresh_sprite(cell)
 	_spawn_drops(cell)
 	cell_watered.emit(cell)
@@ -193,19 +204,10 @@ func harvest(cell: Vector2i) -> Dictionary:
 	return yield_
 
 
-func _grow(cell: Vector2i, delta: float) -> void:
-	var state: Dictionary = _crops[cell]
-	var crop: String = state["crop"]
-	var last := CropDB.stage_count(crop) - 1
-	if state["stage"] >= last:
-		return
-	state["progress"] += delta
-	var per_stage := CropDB.seconds_per_stage(crop)
-	while state["progress"] >= per_stage and state["stage"] < last:
-		state["progress"] -= per_stage
-		state["stage"] += 1
+func _on_day_changed(_day: int) -> void:
+	_pass_night(true)
+	for cell: Vector2i in _crops:
 		_refresh_sprite(cell)
-		_squash(state["sprite"])
 
 
 func _cell_origin(cell: Vector2i) -> Vector2:

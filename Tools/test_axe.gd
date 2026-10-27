@@ -280,8 +280,9 @@ func _initialize() -> void:
 	check(oak.get_node("Trunk").disabled, "a young tree doesn't block the way")
 	check(not player._can_hoe(plot) and not player.can_plant_tree(plot, ItemDB.ACORN),
 			"nor can the cell be hoed or planted again")
+	# Trees grow overnight, a stage a night.
 	for i in oak.YOUNG_STAGES:
-		oak._process(oak.grow_seconds)
+		root.get_node("PlayerState").sleep()
 	await process_frame
 	check(not oak.is_young() and not oak.get_node("Trunk").disabled, "it grows into a full tree that blocks")
 	_face(player, plot, "up")
@@ -310,7 +311,7 @@ func _initialize() -> void:
 	player._try_plant_tree(ItemDB.BIRCH_POD, Vector2.ZERO)
 	await process_frame
 	await process_frame
-	player.tree_at(grove)._process(player.tree_at(grove).grow_seconds)
+	root.get_node("PlayerState").sleep()
 	root.get_node("PlayerState").day += 2
 	root.remove_child(scene)
 	scene.free()

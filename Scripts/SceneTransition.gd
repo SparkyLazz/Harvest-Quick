@@ -37,10 +37,20 @@ func _ready() -> void:
 	add_child(_shade)
 
 
+## True while a fade is running; anything that starts one should wait.
+func is_busy() -> bool:
+	return _busy
+
+
 ## Fades out, swaps to `scene_path`, stands the player on the Marker2D named
 ## `spawn_point` if the destination has one, then fades back in. Calls made
 ## while a move is already running are ignored, so two doors cannot fight.
-func go_to(scene_path: String, spawn_point: StringName = &"") -> void:
+##
+## `during` runs once the screen is black and before the old scene goes, so
+## anything listening in the scene being left still hears it -- passing out on
+## the farm sleeps the night through while the crops can still grow.
+func go_to(scene_path: String, spawn_point: StringName = &"",
+		during: Callable = Callable()) -> void:
 	if _busy:
 		return
 	_busy = true
@@ -48,6 +58,8 @@ func go_to(scene_path: String, spawn_point: StringName = &"") -> void:
 	tree.paused = true
 
 	await _fade_to(1.0, FADE_OUT)
+	if during.is_valid():
+		during.call()
 
 	if tree.change_scene_to_file(scene_path) != OK:
 		push_error("SceneTransition: could not load '%s'." % scene_path)

@@ -126,9 +126,13 @@ var _ready_done := false
 var _pop_tween: Tween
 var _panel: ProfilePanel
 var _storage: StoragePanel
+var _clock: ClockPlate
 
 func _ready() -> void:
 	_ready_done = true
+	_clock = ClockPlate.new()
+	_clock.name = "Clock"
+	$Screen.add_child(_clock)
 	_load_loadout()
 	_panel = ProfilePanel.new()
 	_panel.name = "ProfilePanel"
@@ -141,6 +145,13 @@ func _ready() -> void:
 	_storage.closed.connect(storage_closed.emit)
 	get_viewport().size_changed.connect(_reposition)
 	rebuild()
+
+
+## The day runs on while the player is out in it, and stands still while a
+## window is up. The tree is paused through fades, which holds this too.
+func _process(delta: float) -> void:
+	if not is_inventory_open():
+		PlayerState.pass_time(delta)
 
 
 ## True while the profile panel is on screen; the player stands still then.
@@ -228,6 +239,7 @@ func rebuild() -> void:
 	_refresh_hearts()
 	_refresh_slots()
 	_scaler.scale = Vector2(ui_scale, ui_scale)
+	_clock.ui_scale = ui_scale
 	_reposition()
 
 

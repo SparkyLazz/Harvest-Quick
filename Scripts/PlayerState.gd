@@ -14,9 +14,18 @@ extends Node
 signal stamina_changed(value: float, maximum: float)
 ## Emitted after sleeping, with the day just begun.
 signal day_changed(day: int)
+## Emitted when the clock reaches its next STEP, so a face can redraw.
+signal time_changed(minutes: int)
+## Emitted the moment the clock hits PASS_OUT, before the screen goes dark.
+signal passed_out
 
 ## How many slots a wardrobe holds. Three rows of nine, as chests usually are.
 const STORAGE_SLOTS := 27
+## Where you wake after collapsing, and the marker in it beside the bed.
+const HOUSE_SCENE := "res://Scenes/PlayerHouse.tscn"
+const BED_SPOT := &"Bed"
+## Share of full stamina you wake with after passing out instead of going to bed.
+const PASS_OUT_STAMINA := 0.5
 
 ## The bag. Built on first use from whatever HUD asks for, then kept.
 var inventory: Inventory
@@ -24,8 +33,13 @@ var inventory: Inventory
 var stamina: float = 0.0
 var max_stamina: float = 0.0
 var day: int = 1
+## Minutes since midnight of `day`; see Calendar for why it runs past 24:00.
+var minutes: int = Calendar.DAY_START
 
 var _started := false
+## Real seconds not yet worth a whole game minute.
+var _carry := 0.0
+var _passing_out := false
 ## Every wardrobe's contents, keyed by scene and cell -- see `storage_for`.
 var _stores: Dictionary = {}
 ## What has been done to each map, keyed by scene path -- see `world_for`.
@@ -92,7 +106,7 @@ static func storage_key(scene: Node, cell: Vector2i) -> String:
 ##   hoed    cell -> what the hoe dug up            (Player)
 ##   broken  [[layer name, cell], ...] in order     (Player)
 ##   trees   cell -> {hits, stump, gone}            (ChoppableTree)
-##   farm    {tilled, wet, crops}                   (Farm)
+##   farm    {tilled, wet, crops, day}              (Farm)
 func world_for(map: Node) -> Dictionary:
 	var key := map.scene_file_path if map != null else ""
 	if not _worlds.has(key):
@@ -100,12 +114,49 @@ func world_for(map: Node) -> Dictionary:
 	return _worlds[key]
 
 
-## Turns in for the night: a day passes and the gauge comes back full.
-func sleep() -> int:
+## Runs the clock on by `seconds` of real time. Whoever owns the screen calls
+## this -- the HUD, and only while no window is up -- so the day stands still
+## behind menus and during fades without this node having to know about either.
+func pass_time(seconds: float) -> void:
+	_carry += seconds
+	var before := minutes
+	while _carry >= Calendar.SECONDS_PER_MINUTE and minutes < Calendar.PASS_OUT:
+		_carry -= Calendar.SECONDS_PER_MINUTE
+		minutes += 1
+	if minutes / Calendar.STEP != before / Calendar.STEP:
+		time_changed.emit(minutes)
+	if minutes >= Calendar.PASS_OUT:
+		_carry = 0.0
+		_pass_out()
+
+
+## Turns in for the night: a day passes, the clock goes back to morning and the
+## gauge comes back -- all of it after a proper night in bed, half after
+## dropping where you stood.
+func sleep(rested: bool = true) -> int:
 	day += 1
-	put_stamina(max_stamina)
+	minutes = Calendar.DAY_START
+	_carry = 0.0
+	put_stamina(max_stamina if rested else max_stamina * PASS_OUT_STAMINA)
 	day_changed.emit(day)
+	time_changed.emit(minutes)
 	return day
+
+
+## Two in the morning and still up. The screen goes dark wherever the player is
+## and they wake in bed the next day, short on stamina. Reloading the house even
+## when already in it is what stands them by the bed.
+##
+## A door already mid-swing refuses the move, so this backs off and the next
+## tick of the clock tries again once the screen is free.
+func _pass_out() -> void:
+	if _passing_out or SceneTransition.is_busy():
+		return
+	_passing_out = true
+	passed_out.emit()
+	SceneTransition.go_to(HOUSE_SCENE, BED_SPOT, sleep.bind(false))
+	await SceneTransition.arrived
+	_passing_out = false
 
 
 ## Wipes everything, for a new game.
@@ -113,6 +164,8 @@ func reset() -> void:
 	inventory = null
 	stamina = 0.0
 	day = 1
+	minutes = Calendar.DAY_START
+	_carry = 0.0
 	_stores.clear()
 	_worlds.clear()
 	_started = false

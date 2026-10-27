@@ -17,8 +17,8 @@ extends StaticBody2D
 ##
 ## A tree can also start life as a seed the player planted. It then grows
 ## through four young stages -- planted seed, sprout, sapling, young tree --
-## before it is a full tree that gives wood. A stage takes `grow_seconds` on the
-## map, and every night slept moves it on one more. Young trees have no
+## before it is a full tree that gives wood. Like the crops it grows overnight:
+## every night slept moves it on one stage. Young trees have no
 ## collision, and the axe simply pulls one up, handing the seed back.
 ##
 ## What the axe has done to it, and how far it has grown, is kept in
@@ -85,11 +85,6 @@ const SPECIES := {
 ## Wood the stump gives when it is cleared.
 @export_range(0, 99) var stump_wood: int = 1
 
-@export_group("Growing")
-## Seconds on the map each young stage takes. Each night slept counts as one
-## stage too.
-@export_range(1.0, 600.0, 1.0, "or_greater") var grow_seconds: float = 30.0
-
 @export_group("Look")
 ## Playback speed of the shake when a chop lands, in frames per second.
 @export_range(1.0, 30.0, 0.5) var shake_fps: float = 12.0
@@ -105,7 +100,7 @@ var _stump := false
 var _falling := false
 var _stage := MATURE
 ## This tree's entry in the map's record: {hits, stump, gone}, plus
-## {stage, progress, day, planted} for one grown from a seed.
+## {stage, day, planted} for one grown from a seed.
 var _state: Dictionary = {}
 
 
@@ -139,19 +134,10 @@ func _ready() -> void:
 	add_to_group(&"choppable")
 
 
-func _process(delta: float) -> void:
-	if _stage >= MATURE or not _state.has("stage"):
-		return
-	_state["progress"] += delta
-	if _state["progress"] >= grow_seconds:
-		_state["progress"] = 0.0
-		_grow()
-
-
 ## How the record for a tree planted from a seed starts out. The tile that
 ## spawns it is painted after this goes into the map's record.
 static func planted_state(scene_id: int) -> Dictionary:
-	return {"hits": 0, "stump": false, "gone": false, "stage": 0, "progress": 0.0,
+	return {"hits": 0, "stump": false, "gone": false, "stage": 0,
 			"day": PlayerState.day, "planted": scene_id}
 
 
