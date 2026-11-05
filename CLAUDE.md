@@ -1,3 +1,18 @@
+## Start here
+
+Read these two before working on the game -- they are the project's memory:
+
+- `Docs/GAME_DESIGN.md` -- the story (Mom's gambling debt in the player's name, the
+  weekly debt collector, the lawyer), the debt numbers, the characters, the build plan
+  with what is done and what is next, the clock design, and the asset packs.
+- `Docs/TECH_NOTES.md` -- how the systems work (time, sleep, overnight growth, the
+  clock UI, state), the tools and tests, which tests already failed before, and the
+  traps already found.
+
+Keep them current: when a step of the build plan is done, a design decision is made,
+or a new trap is found, update the matching doc in the same change. Anything marked
+**open** in the design doc is undecided -- ask the developer rather than assume.
+
 ## graphify
 
 There is a knowledge graph at `graphify-out/`, but **it does not cover this project's

@@ -53,7 +53,7 @@ static func week(day: int) -> int:
 	return (day - 1) / DAYS_PER_WEEK + 1
 
 
-## "Mon 1", for the clock plate. The season is shown beside it.
+## "Mon 1", for the clock plate. The season is shown above it.
 static func date_text(day: int) -> String:
 	return "%s %d" % [weekday(day), day_of_season(day)]
 

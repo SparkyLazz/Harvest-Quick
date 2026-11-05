@@ -44,8 +44,56 @@ func _initialize() -> void:
 	state.pass_time(Calendar.SECONDS_PER_MINUTE * 10.0 + 0.001)
 	check(state.minutes == Calendar.DAY_START + 10, "7 seconds is ten minutes (got %d)" % state.minutes)
 	var plate = hud.get_node("Screen/Clock")
-	check(plate._time.text == "6:10 am" and plate._date.text == "Mon 1  Spring",
-			"the plate reads '%s' / '%s'" % [plate._date.text, plate._time.text])
+	check(plate._season.text == "Spring" and plate._date.text == "Mon 1",
+			"the plate reads '%s' over '%s'" % [plate._season.text, plate._date.text])
+	check(plate._season.position.y < plate._date.position.y, "the season is the top line")
+	# Each line has its own row, centred: on no day of the year may either one
+	# be wider than its box, or it would run into the plate's rim.
+	var font: Font = plate._date.get_theme_font("font")
+	var px: int = plate._date.get_theme_font_size("font_size")
+	var room: float = plate._date.size.x
+	var widest := 0.0
+	var worst := ""
+	for day in range(1, 113):
+		for text in [Calendar.date_text(day), Calendar.season(day)]:
+			var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+			if w > widest:
+				widest = w
+				worst = text
+	check(widest <= room, "every date and season fits its line: widest is '%s', %d of %d px"
+			% [worst, widest, room])
+
+	# --- the clock face ------------------------------------------------------
+	var names := []
+	for m in [6 * 60, 8 * 60, 17 * 60, 20 * 60, 24 * 60, 25 * 60 + 50]:
+		names.append(plate.PHASES[plate.phase_at(m)]["name"])
+	check(names == ["dawn", "day", "dusk", "night", "late", "late"],
+			"the window goes dawn, day, dusk, night, late (%s)" % [names])
+	check(plate.arrow_frame_at(Calendar.DAY_START) == 0, "the arrow starts the day pointing up at the sun")
+	check(plate.arrow_frame_at(18 * 60) == 2, "it is level at 6pm, where day meets night")
+	check(plate.arrow_frame_at(Calendar.PASS_OUT - 1) == 4, "and points down at the moon by 2am")
+	var frames := []
+	for m in range(Calendar.DAY_START, Calendar.PASS_OUT, 10):
+		frames.append(plate.arrow_frame_at(m))
+	var sorted_frames := frames.duplicate()
+	sorted_frames.sort()
+	check(frames == sorted_frames, "the arrow only ever moves down through the day")
+	check(plate.heat_at(29, 13 * 60) < plate.heat_at(1, 13 * 60)
+			and plate.heat_at(1, 13 * 60) < plate.heat_at(85, 13 * 60),
+			"summer reads hotter than spring, and spring hotter than winter")
+	check(plate.heat_at(1, 13 * 60) < plate.heat_at(1, 22 * 60),
+			"an afternoon is warmer than the night")
+	check(plate.phase_name() == "dawn", "the window opens on dawn")
+	state.minutes = 8 * 60
+	plate.refresh()
+	check(plate.phase_name() == "day" and plate._leaving.visible,
+			"at 8:00 the dawn picture starts to sink out")
+	# Real seconds, not frames: headless runs frames far faster than 60 a second.
+	await create_timer(plate.SWAP_TIME + 0.6).timeout
+	check(not plate._leaving.visible and plate._picture.position.y <= 0.0
+			and is_equal_approx(plate._sky.modulate.a, 1.0),
+			"and the sun has risen into place once the swap is over (leaving %s, y %s, sky %s)"
+			% [plate._leaving.visible, plate._picture.position.y, plate._sky.modulate.a])
 
 	var before: int = state.minutes
 	hud._panel.toggle()
