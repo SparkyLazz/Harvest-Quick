@@ -14,10 +14,10 @@ signal storage_closed(key: String)
 ## Fires whenever what the player is holding changes, by id ("" when empty).
 signal held_item_changed(item: String)
 
-# The pack ships the light palette split across files: the plate lives in the
-# Everything is cut from this one sheet. It carries two palettes side by side:
-# the x=1 column of plates is the lighter pair, the x=113 column is the warmer
-# one the pack's own example composite uses, so that is the one taken here.
+# Slots and hearts are cut from this one sheet. It carries two palettes side by
+# side: the x=1 column of plates is the lighter pair, the x=113 column is the
+# warmer one the pack's own example composite uses, so that is the one taken
+# here. The plates behind the bars are their own file, PLATE below.
 const SHEET := preload("res://Assets/UI/Inventory_Spritesheet.png")
 
 # What an item id means (name, icon, stacking) lives in ItemDB, and the stacks
@@ -283,11 +283,9 @@ func _apply_plate(plate: NinePatchRect, sheet: Texture2D, region: Rect2,
 	plate.patch_margin_bottom = patch if bottom < 0 else bottom
 
 
+## Shared cut-outs (see UISkin.atlas), so redrawing an unchanged row costs nothing.
 func _atlas(region: Rect2, sheet: Texture2D) -> AtlasTexture:
-	var t := AtlasTexture.new()
-	t.atlas = sheet
-	t.region = region
-	return t
+	return UISkin.atlas(sheet, region)
 
 
 func _refresh_hearts() -> void:
@@ -315,7 +313,8 @@ func _refresh_slots() -> void:
 		# Scale pivots from the top-left by default, which would shove the slot
 		# sideways instead of swelling it in place.
 		icon.pivot_offset = icon.custom_minimum_size * 0.5
-		_refresh_item(icon, held_item_at(i), inventory.count_at(i) if inventory else 0)
+		_refresh_item(icon, held_item_at(i), inventory.count_at(i) if inventory else 0,
+				i == selected_slot)
 	_animate_selection()
 
 
@@ -353,50 +352,28 @@ func _on_inventory_changed(_slot: int) -> void:
 	held_item_changed.emit(held_item())
 
 
-## The icon lives inside its slot, so it inherits the slot's swell and shrink
-## for free instead of needing its own tween.
-func _refresh_item(slot: TextureRect, item: String, count: int) -> void:
-	var icon := slot.get_node_or_null("Item") as TextureRect
-	var label := slot.get_node_or_null("Count") as Label
-	var entry := ItemDB.info(item)
-	if entry.is_empty():
-		if icon:
-			icon.queue_free()
-		if label:
-			label.queue_free()
-		return
-	if icon == null:
-		icon = TextureRect.new()
-		icon.name = "Item"
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon.stretch_mode = TextureRect.STRETCH_SCALE
-		# A TextureRect takes its minimum size from its texture, so without
-		# this it snaps straight back to the sprite's full size.
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		slot.add_child(icon)
-	var region: Rect2 = entry["region"]
-	icon.texture = _atlas(region, entry["sheet"])
-	var size := (region.size * item_icon_scale * float(entry["scale"])).round()
-	icon.size = size
-	icon.position = ((slot.custom_minimum_size - size) * 0.5).round()
-	if count <= 1:
-		if label:
-			label.queue_free()
-		return
-	if label == null:
-		label = Label.new()
-		label.name = "Count"
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		label.add_theme_font_override("font", UIFont.title())
-		label.add_theme_font_size_override("font_size", UIFont.SIZE)
-		label.add_theme_constant_override("outline_size", 3)
-		label.add_theme_color_override("font_outline_color", Color("5a3d3d"))
-		label.add_theme_color_override("font_color", Color("fff4dc"))
-		label.size = Vector2(28, 14)
-		label.position = Vector2(slot.custom_minimum_size.x - 31, slot.custom_minimum_size.y - 15)
-		slot.add_child(label)
-	label.text = str(count)
+## What a slot holds is drawn by an InventorySlot laid over the slot plate --
+## the very drawing the profile and storage grids use, so an item and its count
+## look the same wherever they appear. It lives inside the plate, so it swells
+## and shrinks with the selection for free instead of needing its own tween.
+##
+## The child is made once and kept: an empty slot simply draws nothing. (The
+## icon used to be freed when a slot emptied, and a slot can empty and fill
+## again inside one frame -- crafting does -- so the new item went to a node
+## already on its way out, and the slot went blank while it held three seeds.)
+func _refresh_item(slot: TextureRect, item: String, count: int, held: bool) -> void:
+	var content := slot.get_node_or_null("Item") as InventorySlot
+	if content == null:
+		content = InventorySlot.new()
+		content.name = "Item"
+		content.show_background = false
+		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(content)
+	content.icon_scale = item_icon_scale
+	content.item = item
+	content.count = count
+	# The held slot's plate is the dark shade; its count's halo follows it.
+	content.held = held
 
 
 ## Swell the held slot and shrink the rest. TRANS_BACK overshoots and settles,

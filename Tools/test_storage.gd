@@ -1,9 +1,12 @@
 extends SceneTree
 
-## Opens a wardrobe and a chest for real and saves the frames, so the window's
-## shape and placement can be measured off the screen rather than worked out on
-## paper. Run this one windowed -- `--headless` draws with the dummy renderer
-## and hands back a null frame.
+## Opens a wardrobe and a chest for real and checks the window's shape and
+## placement. Run windowed to also save the frames (Tools/storage_*.png), so
+## they can be measured off the screen; headless draws with the dummy renderer,
+## which hands back no frame, so the checks run and the pictures are skipped.
+
+var _failures := 0
+
 
 func _initialize() -> void:
 	await process_frame
@@ -16,12 +19,15 @@ func _initialize() -> void:
 	var hud: Node = scene.find_child("HUD", true, false)
 
 	var wardrobe := _first(props, "wardrobe")
+	if wardrobe == Vector2i(-1, -1):
+		# The house paints no dresser at the moment; put one in for the test.
+		wardrobe = _paint_dresser(scene, props)
 	var chest := _first(props, "chest")
 	print("wardrobe cell ", wardrobe, "  chest cell ", chest)
 
 	await _use(player, props, wardrobe)
 	_check(hud.is_storage_open(), "the wardrobe opens the window")
-	root.get_texture().get_image().save_png("res://Tools/storage_wardrobe.png")
+	_save("storage_wardrobe")
 
 	hud.close_storage()
 	_check(not hud.is_storage_open(), "the window closes")
@@ -29,7 +35,7 @@ func _initialize() -> void:
 
 	await _use(player, props, chest)
 	_check(hud.is_storage_open(), "the chest opens the window too")
-	root.get_texture().get_image().save_png("res://Tools/storage_chest.png")
+	_save("storage_chest")
 
 	# The bug this guards: Esc took the window away and left the lid standing
 	# open, with nothing on screen to shut it again.
@@ -69,13 +75,51 @@ func _initialize() -> void:
 	_check(hud._storage._window.get_global_rect().has_point(
 			x_button.get_global_transform() * (x_button.size * 0.5)),
 			"and it sits inside the window")
-	await _click(x_button)
-	_check(not hud.is_storage_open(), "clicking the X closes the window")
+	# A real click needs a real pointer: headless delivers the button events
+	# but never moves a mouse over the X, so it is never pressed. Checked
+	# windowed only, where it passes; faking it with `pressed.emit()` would
+	# prove the wiring and not that the X can be reached.
+	if DisplayServer.get_name() == "headless":
+		print("  SKIP  clicking the X (needs a window for a real pointer)")
+		hud.close_storage()
+	else:
+		await _click(x_button)
+		_check(not hud.is_storage_open(), "clicking the X closes the window")
 	if player._prop_anim.is_moving(chest):
 		await player._prop_anim.finished
 	_check(not player._prop_anim.is_open(props, chest), "and the lid shuts with it too")
-	print("done")
-	quit()
+	print("\nFAILURES: %d" % _failures)
+	quit(1 if _failures > 0 else 0)
+
+
+## Saves the frame when there is a real renderer to take it from.
+func _save(file: String) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	root.get_texture().get_image().save_png("res://Tools/%s.png" % file)
+
+
+## Paints the tileset's dresser on a free floor cell with free floor below it
+## to stand on, and returns that cell.
+func _paint_dresser(scene: Node, props: TileMapLayer) -> Vector2i:
+	var floor_layer := scene.get_node("Floor") as TileMapLayer
+	var tiles := props.tile_set
+	for i in tiles.get_source_count():
+		var id := tiles.get_source_id(i)
+		var source := tiles.get_source(id) as TileSetAtlasSource
+		if source == null:
+			continue
+		for t in source.get_tiles_count():
+			var coords := source.get_tile_id(t)
+			if str(source.get_tile_data(coords, 0).get_custom_data("interact")) != "wardrobe":
+				continue
+			for cell in floor_layer.get_used_cells():
+				var below := cell + Vector2i.DOWN
+				if props.get_cell_tile_data(cell) == null and props.get_cell_tile_data(below) == null \
+						and floor_layer.get_cell_tile_data(below) != null:
+					props.set_cell(cell, id, coords)
+					return cell
+	return Vector2i(-1, -1)
 
 
 ## Clicks a control where it is drawn. The window is scaled, so the point has
@@ -114,7 +158,7 @@ func _first(props: TileMapLayer, verb: String) -> Vector2i:
 		var data := props.get_cell_tile_data(cell)
 		if data != null and str(data.get_custom_data("interact")) == verb:
 			return cell
-	return Vector2i.ZERO
+	return Vector2i(-1, -1)
 
 
 func _use(player: Node2D, props: TileMapLayer, cell: Vector2i) -> void:
@@ -141,6 +185,8 @@ func _settle(player: Node2D, cell: Vector2i) -> void:
 
 func _check(ok: bool, what: String) -> void:
 	print("  %s  %s" % ["PASS" if ok else "FAIL", what])
+	if not ok:
+		_failures += 1
 
 
 ## Reports the two halves' rects. The point of the split is that both reach the

@@ -68,10 +68,11 @@ func go_to(scene_path: String, spawn_point: StringName = &"",
 		_busy = false
 		return
 
-	# The swap is deferred to the end of the frame, so the new tree is only
-	# there to be adjusted on the frame after that.
-	await tree.process_frame
-	await tree.process_frame
+	# The swap is deferred to the end of the frame. scene_changed fires the
+	# moment the new scene is in the tree and readied -- the earliest it can be
+	# adjusted, and before its first physics step, so a door there never sees
+	# the player anywhere but on the spawn point.
+	await tree.scene_changed
 	_place_player(spawn_point)
 
 	tree.paused = false
@@ -99,11 +100,9 @@ func fade_through(during: Callable, hold: float = 0.35) -> void:
 	arrived.emit()
 
 
+## A scene-tree timer keeps counting through the pause it is waiting out.
 func _hold(seconds: float) -> void:
-	var tween := create_tween()
-	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-	tween.tween_interval(seconds)
-	await tween.finished
+	await get_tree().create_timer(seconds, true).timeout
 
 
 func _fade_to(alpha: float, seconds: float) -> void:

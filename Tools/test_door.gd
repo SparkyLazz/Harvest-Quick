@@ -56,14 +56,19 @@ func _initialize() -> void:
 			"player stands on the FrontDoor marker")
 	check(trans._shade.modulate.a == 0.0, "screen has faded back in")
 	check(not paused, "tree is running again")
+	var cam: Camera2D = inside.find_child("Camera2D", true, false) if inside else null
+	check(cam != null and cam.get_screen_center_position().distance_to(cam.global_position) < 1.0,
+			"the camera starts on the player rather than sweeping in")
 
 	# The exit door must not fire while we are standing on the spawn point.
 	await settle(10)
 	check(current_scene.scene_file_path.ends_with("PlayerHouse.tscn"),
 			"spawning indoors does not bounce us straight back")
 
-	# Now walk out.
-	inside.global_position = Vector2(144, 175)
+	# Now walk out, into the exit door wherever it stands. A fixed point here
+	# went stale when the house was redrawn and the door moved down the hall.
+	var exit_door: Node2D = current_scene.get_node("Door")
+	inside.global_position = exit_door.global_position
 	await settle(8)
 	for i in 90:
 		await process_frame

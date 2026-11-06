@@ -12,9 +12,17 @@ signal hover_ended(index: int)
 # Slot art comes off the same sheet as the hotbar: light, a mid shade for
 # hover, and the darkest shade for the held slot.
 const HOVER_REGION := Rect2(281, 121, 30, 32)
-const COUNT_COLOR := Color("fff4dc")
-const OUTLINE_COLOR := Color("5a3d3d")
+## Stack counts are set like the clock plate's date: dark ink, no outline.
+const COUNT_COLOR := Color("5a3d3d")
+## Each slot shade's face where the count sits, measured off the sheet. The
+## count's halo is the face under it, so the halo vanishes on the slot and only
+## shows where the digits cross the icon.
+const FACE_COLOR := Color("e8cfa6")
+const FACE_HOVER_COLOR := Color("dcb98a")
+const FACE_HELD_COLOR := Color("c49a6c")
 const KEY_COLOR := Color("90625d")
+## How far down the slot the hotkey number's top edge sits, in slot pixels.
+const HOTKEY_TOP := 4
 
 var index: int = 0
 var item: String = "": set = set_item
@@ -59,15 +67,17 @@ func _draw() -> void:
 		draw_texture_rect_region(entry["sheet"],
 				Rect2(((size - icon_size) * 0.5).round(), icon_size), region)
 	if count > 1:
-		var font := UIFont.title()
-		var at := Vector2(0, size.y - 4)
-		draw_string_outline(font, at, str(count), HORIZONTAL_ALIGNMENT_RIGHT,
-				size.x - 3, UIFont.SIZE, 3, OUTLINE_COLOR)
-		draw_string(font, at, str(count), HORIZONTAL_ALIGNMENT_RIGHT,
-				size.x - 3, UIFont.SIZE, COUNT_COLOR)
+		# Dark ink even on the dark held slot: it still reads better there
+		# (3.8:1) than the cream it used to be (2.4:1).
+		var face := FACE_HELD_COLOR if held else (FACE_HOVER_COLOR if _hover else FACE_COLOR)
+		UIFont.draw_haloed(self, Vector2(0, size.y - 4), str(count),
+				HORIZONTAL_ALIGNMENT_RIGHT, size.x - 3, COUNT_COLOR, face)
 	if hotkey > 0 and show_background:
-		draw_string(UIFont.body(), Vector2(4, 11), str(hotkey),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, UIFont.SIZE, KEY_COLOR)
+		# Hung from the top-left corner: the baseline follows the face's ascent
+		# so the number's top edge stays HOTKEY_TOP pixels down the slot.
+		var key_font := UIFont.body()
+		draw_string(key_font, Vector2(4, HOTKEY_TOP + key_font.get_ascent(UIFont.SIZE)),
+				str(hotkey), HORIZONTAL_ALIGNMENT_LEFT, -1, UIFont.SIZE, KEY_COLOR)
 
 
 func _set_hover(on: bool) -> void:

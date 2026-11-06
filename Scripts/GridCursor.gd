@@ -22,6 +22,8 @@ var player: Player
 var _cell := Vector2i.ZERO
 var _valid := false
 var _time := 0.0
+## How far the brackets stand out this frame, in whole pixels.
+var _out := 0
 
 func _ready() -> void:
 	# Positioned in world space so it does not ride along with the player.
@@ -34,19 +36,25 @@ func _process(delta: float) -> void:
 	if player == null:
 		return
 	_time += delta
-	_cell = player.facing_cell()
-	_valid = player.can_use_at(_cell)
-	global_position = player.cell_center(_cell).round()
-	queue_redraw()
+	var cell := player.facing_cell()
+	var valid := player.can_use_at(cell)
+	var out := roundi(absf(sin(_time * 4.0)) * pulse)
+	global_position = player.cell_center(cell).round()
+	# Moving is free; only a new colour, cell or bracket step needs a redraw.
+	# The pulse moves in whole pixels, so most frames change nothing at all.
+	if cell != _cell or valid != _valid or out != _out:
+		_cell = cell
+		_valid = valid
+		_out = out
+		queue_redraw()
 
 
 func _draw() -> void:
 	var color := valid_color if _valid else invalid_color
 	var half := 8
 	# Brackets sit inside the tile and swing out by the pulse.
-	var out := roundi(absf(sin(_time * 4.0)) * pulse)
-	var lo := -half - out
-	var hi := half + out
+	var lo := -half - _out
+	var hi := half + _out
 	draw_rect(Rect2(-half, -half, half * 2, half * 2), Color(color, fill_alpha))
 	var arm := arm_length
 	for corner in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:

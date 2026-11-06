@@ -8,7 +8,7 @@ extends SceneTree
 ## really is the bag and the right grid really is the furniture, and that a
 ## stack can cross between them without being duplicated or eaten.
 ##
-## Run windowed; the window has to be up for its slots to exist.
+## Runs headless too; windowed, it also saves Tools/storage_in_use.png.
 
 var _checks := 0
 var _failures := 0
@@ -123,10 +123,12 @@ func _initialize() -> void:
 	panel._player_slots[21].pressed.emit(21, MOUSE_BUTTON_LEFT)
 	for i in 5:
 		await process_frame
-	root.get_texture().get_image().save_png("res://Tools/storage_in_use.png")
+	# Headless draws with the dummy renderer, which hands back no frame.
+	if DisplayServer.get_name() != "headless":
+		root.get_texture().get_image().save_png("res://Tools/storage_in_use.png")
 
 	print("\nFAILURES: %d of %d" % [_failures, _checks])
-	quit()
+	quit(1 if _failures > 0 else 0)
 
 
 func _first(props: TileMapLayer, verb: String) -> Vector2i:

@@ -3,7 +3,7 @@
 How the game is put together, how to run and check it, and the traps already
 found. The game design (story, numbers, plan) is in `Docs/GAME_DESIGN.md`.
 
-Last updated: 2026-11-05.
+Last updated: 2026-11-06.
 
 ---
 
@@ -33,20 +33,20 @@ Last updated: 2026-11-05.
 | Script | What it is |
 |---|---|
 | `PlayerState.gd` | **Autoload.** What survives scene changes: inventory, stamina, day, clock minutes, storage contents, each map's changes. Sleep and pass-out live here. |
-| `SceneTransition.gd` | **Autoload.** Fade-to-black scene changes (`go_to`, `fade_through`). Pauses the tree during the fade. |
-| `MouseCursor.gd` | **Autoload.** Cursor icon by context. |
+| `SceneTransition.gd` | **Autoload.** Fade-to-black scene changes (`go_to`, `fade_through`). Pauses the tree during the fade; places the player on `SceneTree.scene_changed` (built in since 4.5), not after a guessed number of frames. |
+| `MouseCursor.gd` | **Autoload.** Cursor icon by context: arrow, paw over usable furniture (never over an open window), closed paw while a panel carries a stack. |
 | `Calendar.gd` | Day number → season, weekday, week, date text; clock constants (`DAY_START`, `PASS_OUT`, `SECONDS_PER_MINUTE`). |
 | `ClockPlate.gd` | The top-left clock UI (see §6). |
-| `HUD.gd` | Hearts + hotbar; owns the profile and storage windows and the clock; **ticks the clock** each frame while no window is open. |
+| `HUD.gd` | Hearts + hotbar; owns the profile and storage windows and the clock; **ticks the clock** each frame while no window is open. A hotbar slot's item and count are drawn by an `InventorySlot` laid over the plate, the same drawing as the panels' grids. |
 | `Player.gd` | Movement, tools, stamina, planting, harvesting, interacting via the tileset's `interact` custom data (`bed`, `chest`, `wardrobe`). |
 | `Farm.gd` | Tilled soil, crops, watering, overnight growth, harvest. |
 | `Crops.gd` (`CropDB`) | Crop table: sprite row, stages, **days to ripen**. |
 | `ChoppableTree.gd` | Trees: chopping, stumps, saplings that grow a stage per night. |
-| `Items.gd` (`ItemDB`) | Item ids, names, icons, tooltips. Tools, seeds, produce, wood, tree seeds. |
+| `Items.gd` (`ItemDB`) | Item ids, names, icons, tooltips. Tools, seeds, produce, wood, tree seeds. `info()` is worked out once per id and handed out **read-only** and shared. |
 | `Recipes.gd` (`RecipeDB`) | Crafting recipes (only produce → seeds so far). |
-| `Inventory.gd`, `InventorySlot.gd`, `CarriedStack.gd` | Bag data, slot UI, the stack on the cursor. |
-| `ProfilePanel.gd`, `StoragePanel.gd` | The E screen and the chest/wardrobe window. |
-| `UIFont.gd`, `UISkin.gd`, `PixelBar.gd` | Pixel fonts, shared window look, bars. |
+| `Inventory.gd`, `InventorySlot.gd`, `CarriedStack.gd` | Bag data, slot UI, the stack on the cursor (one per panel, same rules). |
+| `ProfilePanel.gd`, `StoragePanel.gd` | The E screen and the chest/wardrobe window. Closing never destroys the carried stack: bag, then chest, else the window stays up. |
+| `UIFont.gd`, `UISkin.gd`, `PixelBar.gd` | The one pixel face and `draw_haloed()` (see §7), shared window look and shared `UISkin.atlas()` cut-outs, bars. |
 | `Door.gd`, `PropAnimator.gd`, `GridCursor.gd`, `EmoteBubble.gd` | Doors, opening props, the tile cursor, reaction bubbles. |
 
 ## 4. State and persistence
@@ -71,9 +71,11 @@ Last updated: 2026-11-05.
   when `rested` is false), emits `day_changed`.
 - Bed → `Player._sleep()` → `SceneTransition.fade_through(PlayerState.sleep)`.
 - 2 am → `PlayerState._pass_out()` →
-  `SceneTransition.go_to(PlayerHouse, "Bed" marker, sleep(false))`. The
+  `await SceneTransition.go_to(PlayerHouse, "Bed" marker, sleep(false))`. The
   `during` callback runs while the screen is black **before** the old scene is
-  freed, so a farm on screen still hears `day_changed` and grows.
+  freed, so a farm on screen still hears `day_changed` and grows. It awaits
+  `go_to` itself, not `arrived`, so a house that failed to load cannot leave
+  the pass-out flag stuck.
 - **Crops** store `grown` (watered nights). `CropDB.stage_after(crop, grown)`
   picks the sprite stage. A loaded farm grows on `day_changed`. A farm that
   was not loaded catches up on load from its record's `day`: one night grows
@@ -87,12 +89,19 @@ Last updated: 2026-11-05.
   (48px cells: rows 0–2 icons with backdrop, 3–5 without, 6–8 bare
   backdrops; green = day, orange = dusk, blue = night).
 - `cut_clock.py` cuts the frame by its **pixel outline**, not its box (a box
-  catches a corner of the dial); bakes all 5 arrows onto one pivot; and seals
+  catches a corner of the dial); bakes all 5 arrows onto one pivot; seals
   the thermometer so no background shows through (holes only where liquid
-  goes, an empty-tube piece behind the fill).
-  Re-run: `python Tools/cut_clock.py "<UI pack>/emojis/emoji style ui/weather" Assets/UI/Clock.png`
-- Layers, back to front: window (sky, picture) → dial → empty tube → fill →
-  frame → arrow → text.
+  goes, an empty-tube piece behind the fill); and **bleeds** everything drawn
+  behind the frame — dial, tube and bulb, the three skies, the liquid
+  sideways — one pixel under the rim (`ClockPlate.BLEED`), so no seam can open
+  at a fractional window scale (see §9). The skies are cut from
+  `Weather_Icons_Big.png` into the atlas for that; only the pictures still come
+  from the big icon sheet.
+  Re-run (the zip extracted into a folder of the same name, hence the double):
+  `python -I Tools/cut_clock.py "C:/Users/Rui/Downloads/Sprout Lands - UI Pack - Premium pack/Sprout Lands - UI Pack - Premium pack/emojis/emoji style ui/weather" Assets/UI/Clock.png`,
+  then re-import.
+- Layers, back to front: skies (unclipped, bled) → window (pictures, clipped
+  at the sill) → dial → empty tube → fill → frame → arrow → text.
 - Static rules (tested): `phase_at(minutes)`, `arrow_frame_at(minutes)`,
   `heat_at(day, minutes)`.
 - Placed top-left, 10px from the edges, scaled by the HUD's `ui_scale` (2).
@@ -103,20 +112,34 @@ Last updated: 2026-11-05.
 
 ## 7. Fonts
 
-| Font | Use | Size |
-|---|---|---|
-| `UIFont.title()` — pixelFont-4 7×7 | Headings, stack counts | `UIFont.SIZE` = 10 |
-| `UIFont.body()` — pixelFont-3 7×5 | Descriptions | 10 |
-| `UIFont.small()` — pixelFont-2 5×5 | Tight spots (clock plate) | `UIFont.SMALL_SIZE` = 8 |
+**One face for all text** (since 2026-11-06): pixelFont-2 5×5, the clock
+plate's font, at `UIFont.SIZE` = 8 — HUD, every panel, tooltips, the clock and
+the pop-ups in the world. `UIFont.title()`, `body()` and `small()` are kept
+as roles and all return that face; a heading differs from a description by
+colour (`TEXT_COLOR` over `MUTED_COLOR`), the way the plate sets the date
+under the season. To give headings their own face again, change `title()`.
 
-Each pixel font is only crisp at one size. The 5×5 face doubles some strokes
-at 10; 8 was found by rendering several sizes.
+- It is only crisp at 8 (at 10 it doubles some strokes). Never ask for another
+  size; scale the node by whole numbers instead.
+- Crispness comes from the import settings (antialiasing None, subpixel
+  positioning Disabled), not from code.
+- **Text over things** (stack counts over icons, "+3" over grass) uses
+  `UIFont.draw_haloed()`: dark ink, ringed one pixel wide in the colour of
+  what it normally sits on, so the ring only shows where it crosses something.
+  Slot counts take the slot's face colour (`InventorySlot.FACE_*`); pop-ups
+  take the drop sprites' cream halo, `#f3f4e7`.
+- **In the world** the camera zooms 4×, so world text is scaled by a multiple
+  of 0.25 to keep each font pixel on whole screen pixels (pop-ups: 0.75).
+- The retired 7×7 and 7×5 faces are still in `Assets/Fonts` for the font
+  comparison tools.
 
 ## 8. Tools
 
 | Tool | Purpose |
 |---|---|
+| `test_regressions.gd` | Bugs from the 2026-11-05 review, pinned: hotbar icon surviving an empty-and-refill in one frame, closing with a full bag, crafting while carrying, grab cursor, per-frame allocations, read-only item info, failed scene loads. |
 | `test_clock.gd` | Calendar, clock ticking/pausing, clock face rules and swap, plate fit for every day, overnight growth, catch-up, passing out. |
+| `test_clock_seams.gd` | **Windowed** (SKIP headless): draws the clock over magenta at 8 window scales × 3 skies and counts any background showing through its openings. Fails on the pre-bleed clock, passes now. |
 | `test_axe.gd` | Axe, trees, saplings (grown by sleeping), grass regrowth, persistence. |
 | `test_props`, `test_autotile`, `test_interior`, `test_door`, `test_cursor`, `test_storage`, `test_storage_moves`, `test_craft_card`, `test_panel` | Older suites. |
 | `shoot_clock.gd` | Renders the clock at each part of the day + a winter night + a swap animation strip (Mon 15 Summer, the widest date). |
@@ -127,14 +150,18 @@ at 10; 8 was found by rendering several sizes.
 | `strip_halo.py` | Makes plain inventory icons from outlined drop icons. |
 | `sweep.py` | Measures a tile's true draw position by diffing two renders. |
 
-**Known failures that predate the clock work** (seen on clean `main`, not
-caused by recent changes):
-- `test_interior`: "the 8 dressers read as wardrobes (got 0)".
-- `test_door`: 3 checks about walking out of the house.
-- `test_cursor`: script error (`get_custom_data` on null).
-- `test_storage`, `test_storage_moves`, `test_craft_card`, `test_panel`: they
-  save screenshots, which fails headless (`save_png` on null), so they stop
-  early; `test_storage` also fails "the wardrobe opens the window".
+**All thirteen suites pass headless** (as of 2026-11-06) and exit non-zero on
+a failure, so they can be run in a loop. The old "known failures" were stale
+tests, not game bugs: the house was redrawn (two chests, no dresser, the exit
+moved down the hall) and three suites still pointed at the old cells; the
+screenshot suites crashed headless on `save_png`. Now:
+- Tests find furniture **by its verb**, never by a hard-coded cell, and walk
+  into the actual `Door` node. `test_interior`/`test_storage` paint the
+  tileset's dresser in themselves, since the house has none at the moment.
+- Screenshots are saved only when windowed (`DisplayServer.get_name() !=
+  "headless"`), so the same suite runs both ways.
+- `test_storage`'s real click on the window's X needs a pointer, which
+  headless never has: it prints `SKIP` there and is checked windowed.
 
 ## 9. Traps already found
 
@@ -159,4 +186,42 @@ caused by recent changes):
 - **A headless `ResourceSaver.save()` strips every `uid://`** from the saved
   file. Check `git diff` after any headless save of `.tres`/`.tscn`.
 - **graphify doesn't read GDScript** — don't use `graphify query` for this
-  code; read or grep the scripts.
+  code; read or grep the scripts. The PreToolUse hook in
+  `.claude/settings.json` still prints "MANDATORY: run graphify query" on every
+  search and read; that predates this finding, so ignore it here.
+- **Don't free a UI node you might look up again in the same frame.**
+  `queue_free()` only happens at the end of the frame; until then
+  `get_node("Item")` still finds the dying node, hands it new content, and it
+  vanishes anyway. A slot can empty and refill inside one frame (crafting does
+  exactly that), which blanked hotbar slots. Hide and reuse instead.
+- **A closing window must not drop the carried stack.** `spill_into()` returns
+  what did not fit and leaves it on the cursor; the storage window tries the
+  bag, then the chest, and otherwise refuses to close. The profile screen puts
+  the stack back when you leave the inventory tab, because crafting can fill
+  the very slot it was lifted from.
+- **Shared, read-only data.** `ItemDB.info()` returns one cached dictionary per
+  id, made read-only — `duplicate()` it before changing anything.
+  `UISkin.atlas()` textures are shared between every node that shows that
+  cut-out — never change one in place; ask for the region you want.
+- **Headless can't click a Control.** Mouse events parsed in a headless run do
+  not press buttons (no pointer moves over them). Key/action events work.
+- **Tests: find things by what they are, not where they are.** Three suites
+  broke when the house was redrawn because they named cells like `(11, 4)`.
+- **Never use a font's `outline_size` on the 5×5 face.** Godot strokes the
+  glyph's vector shape: at 1 it is half a pixel a side and breaks into dots,
+  at 2 it chips the corners, at 3 it fills the one-pixel gaps between letters
+  and a count turns into a dark block. Any outline also fills those gaps, so
+  "+3" merges. Use `UIFont.draw_haloed()` (§7). Found by rendering 0–3.
+- **Layers that meet edge to edge open seams at fractional window sizes.**
+  The stretch mode is `canvas_items`, so any window that is not a whole
+  multiple of 1152×648 scales the UI by a fraction, and each layer then rounds
+  to screen pixels on its own. Where the piece behind a hole ended exactly at
+  the hole's edge, a one-pixel line of background showed (the clock's
+  thermometer, window and dial; 443 pixels across 8 scales). Whole-number
+  renders never show it, which is why it got past every test. Give anything
+  seen through a hole a pixel of spare art under the rim (bleed), and check
+  at a fractional `content_scale_factor` — `test_clock_seams.gd` does.
+- **The hotbar slots are scaled by the selection pop** (0.88 shrunk, 1.25
+  held), so what is drawn in them lands on 1.76 or 2.5 screen pixels per
+  source pixel — strokes come out a little uneven there, unlike the panels'
+  clean 2×. Check hotbar art and text at those scales, not only at 2×.

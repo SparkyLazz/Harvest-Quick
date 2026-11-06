@@ -21,19 +21,31 @@ tube's inner ring. An empty tube in the pack's tan goes behind the liquid, so
 whatever the fill doesn't reach still reads as glass, not as a hole. The rungs
 stay on the frame and so cross over the liquid, as they do in the pack.
 
+Everything drawn behind the frame is BLED: cut with a pixel of spare art all
+round, copied outward from its own edge, so it reaches under the frame's rim.
+At a window size that scales the clock by a whole number this changes nothing
+on screen -- the rim covers the spare pixel. At any other size the rim and the
+piece behind it round to screen pixels separately, and where their edges met
+exactly a one-pixel seam opened onto whatever was behind the clock: a dark line
+down the left of the tube, specks round the picture window and the dial. The
+spare pixel is what the rounding lands on instead. The frame's holes are worked
+out before anything is bled, so the holes themselves do not grow.
+
     python Tools/cut_clock.py "<UI pack>/emojis/emoji style ui/weather" Assets/UI/Clock.png
 
 Layout of the atlas (all sizes in pixels):
     frame    (0, 0)     98x99   frame, thermometer and date plate, as one piece
-    dial     (100, 0)   22x34   day above, night below
-    tube     (124, 0)   8x28    the empty tube, drawn behind a fill
+    dial     (100, 0)   24x36   day above, night below; bled
+    tube     (124, 0)   10x30   the empty tube and the bulb, drawn behind a fill; bled
     arrows   (100, 40)  5 cells of 24x24 across, tail at PIVOT in each
-    fills    (0, 104)   9 cells of 8x28 across, hottest first
+    skies    (100, 66)  3 cells of 36x36 across: day, dusk, night; bled
+    fills    (0, 104)   9 cells of 8x28 across, hottest first; liquid bled sideways
 """
 import sys
 
 from PIL import Image
 
+ATLAS_SIZE = (220, 132)
 # A pixel on the frame's left edge; the frame, thermometer and plate are one blob.
 FRAME = (10, 37)
 DIAL = (67, 103, 22, 34)
@@ -54,6 +66,7 @@ FILLS = [
     (12, 119, 8, 14), (44, 121, 8, 12), (76, 125, 8, 8), (108, 125, 8, 8),
 ]
 FILL_CELL = (8, 28)
+FILLS_AT = (0, 104)
 # Where a fill cell sits on the frame, and so where its liquid lands.
 FILL_AT = (7, 61)
 # The liquid's columns in a fill cell, and the rows of the tube above the bulb.
@@ -65,6 +78,18 @@ EMPTY = (220, 185, 138, 255)
 # The thermometer's corner of the frame: the hollow is the see-through pixels
 # in here that the outside can't reach.
 THERMOMETER = (0, 56, 22, 43)
+
+# The spare art round everything drawn behind the frame, in pixels.
+BLEED = 1
+DIAL_CELL = (100, 0)
+TUBE_CELL = (124, 0)
+# The bare skies on Weather_Icons_Big (48px cells, the 34px picture inset 7 in
+# each): its columns for day (green), dusk (orange) and night (blue), in the
+# order they are laid into the atlas.
+SKY_ROW = 6
+SKY_COLUMNS = [0, 4, 7]
+ICON_CELL, ICON_INSET, WINDOW_SIZE = 48, 7, 34
+SKIES_AT = (100, 66)
 
 
 def blob(im: Image.Image, seed: tuple[int, int]) -> Image.Image:
@@ -92,22 +117,35 @@ def rect(im: Image.Image, r: tuple[int, int, int, int]) -> Image.Image:
 def cut(sheets: str, dst: str) -> None:
     ui = Image.open(f"{sheets}/Weather_UI.png").convert("RGBA")
     therm = Image.open(f"{sheets}/Thermometer_UI_Seperated.png").convert("RGBA")
-    atlas = Image.new("RGBA", (220, 132))
+    icons = Image.open(f"{sheets}/Weather_Icons_Big.png").convert("RGBA")
+    atlas = Image.new("RGBA", ATLAS_SIZE)
     atlas.alpha_composite(blob(ui, FRAME), (0, 0))
-    atlas.alpha_composite(rect(ui, DIAL), (100, 0))
-    tube = Image.new("RGBA", FILL_CELL)
-    for x in LIQUID_X:
-        for y in LIQUID_ROWS:
-            tube.putpixel((x, y), EMPTY)
-    atlas.alpha_composite(tube, (124, 0))
+    atlas.alpha_composite(rect(ui, DIAL), (DIAL_CELL[0] + BLEED, DIAL_CELL[1] + BLEED))
     for i, (x, y, w, h, tail) in enumerate(ARROWS):
         cell = (100 + i * ARROW_CELL, 40)
         atlas.alpha_composite(rect(ui, (x, y, w, h)),
                               (cell[0] + PIVOT[0] - tail[0], cell[1] + PIVOT[1] - tail[1]))
     for i, (x, y, w, h) in enumerate(FILLS):
-        cx, cy = i * FILL_CELL[0], 104
+        cx, cy = FILLS_AT[0] + i * FILL_CELL[0], FILLS_AT[1]
         atlas.alpha_composite(rect(therm, (x, y, w, h)), (cx, cy + FILL_CELL[1] - h))
+    for i, column in enumerate(SKY_COLUMNS):
+        sky = rect(icons, (column * ICON_CELL + ICON_INSET, SKY_ROW * ICON_CELL + ICON_INSET,
+                           WINDOW_SIZE, WINDOW_SIZE))
+        atlas.alpha_composite(sky, (SKIES_AT[0] + i * (WINDOW_SIZE + 2 * BLEED) + BLEED,
+                                    SKIES_AT[1] + BLEED))
+    # The holes first, from the art as drawn; only then is anything bled.
     seal(atlas, liquid_mask(atlas))
+    paint_tube(atlas)
+    bleed(atlas, (*DIAL_CELL, DIAL[2] + 2 * BLEED, DIAL[3] + 2 * BLEED))
+    bleed(atlas, (*TUBE_CELL, FILL_CELL[0] + 2 * BLEED, FILL_CELL[1] + 2 * BLEED))
+    for i in range(len(SKY_COLUMNS)):
+        # Twice: the skies have rounded corners, and the first pass only
+        # squares them off.
+        size = WINDOW_SIZE + 2 * BLEED
+        bleed(atlas, (SKIES_AT[0] + i * size, SKIES_AT[1], size, size), passes=2)
+    for i in range(len(FILLS)):
+        # Sideways only: up or down would move the liquid's visible level.
+        bleed(atlas, (FILLS_AT[0] + i * FILL_CELL[0], FILLS_AT[1], *FILL_CELL), sideways=True)
     atlas.save(dst)
 
 
@@ -119,7 +157,7 @@ def liquid_mask(atlas: Image.Image) -> set[tuple[int, int]]:
     px = atlas.load()
     for x in range(FILL_CELL[0]):
         for y in range(LIQUID_ROWS.stop, FILL_CELL[1]):
-            if px[x, 104 + y][3]:
+            if px[FILLS_AT[0] + x, FILLS_AT[1] + y][3]:
                 mask.add((fx + x, fy + y))
     return mask
 
@@ -141,6 +179,45 @@ def seal(atlas: Image.Image, keep: set[tuple[int, int]]) -> None:
                 stack.append(n)
     for p in clear - outside - keep:
         px[p] = RING
+
+
+def paint_tube(atlas: Image.Image) -> None:
+    """The piece behind every fill: empty glass up the tube, and the bulb as the
+    fills draw it. The bulb is always full, so it is only ever seen here at the
+    edges -- which is the point: rounding there now lands on bulb, not on
+    whatever is behind the clock."""
+    px = atlas.load()
+    tx, ty = TUBE_CELL[0] + BLEED, TUBE_CELL[1] + BLEED
+    for x in LIQUID_X:
+        for y in LIQUID_ROWS:
+            px[tx + x, ty + y] = EMPTY
+    for x in range(FILL_CELL[0]):
+        for y in range(LIQUID_ROWS.stop, FILL_CELL[1]):
+            p = px[FILLS_AT[0] + x, FILLS_AT[1] + y]
+            if p[3]:
+                px[tx + x, ty + y] = p
+
+
+def bleed(atlas: Image.Image, box: tuple[int, int, int, int], passes: int = 1,
+          sideways: bool = False) -> None:
+    """Grows the art inside `box` outward by one pixel per pass, each new pixel
+    copying an opaque neighbour -- straight neighbours before diagonal ones --
+    so the spare edge is the art's own edge colour, carried on."""
+    x0, y0, w, h = box
+    steps = [(-1, 0), (1, 0)]
+    if not sideways:
+        steps += [(0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)]
+    px = atlas.load()
+    for _ in range(passes):
+        was = {(x, y): px[x, y] for x in range(x0, x0 + w) for y in range(y0, y0 + h)}
+        for (x, y), p in was.items():
+            if p[3]:
+                continue
+            for dx, dy in steps:
+                n = was.get((x + dx, y + dy))
+                if n is not None and n[3] == 255:
+                    px[x, y] = n
+                    break
 
 
 if __name__ == "__main__":

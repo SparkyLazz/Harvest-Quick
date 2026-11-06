@@ -22,10 +22,23 @@ const ATLAS := preload("res://Assets/UI/Clock.png")
 const ICONS := preload("res://Assets/UI/Weather/Weather_Icons_Big.png")
 
 const FRAME_REGION := Rect2(0, 0, 98, 99)
-const DIAL_REGION := Rect2(100, 0, 22, 34)
-## An empty tube, drawn behind the fill so whatever it doesn't reach reads as
-## glass. The frame's thermometer only has holes where liquid shows.
-const TUBE_REGION := Rect2(124, 0, 8, 28)
+## Everything drawn behind the frame -- dial, tube, skies -- is cut with this
+## many pixels of spare art round its edge (Tools/cut_clock.py) and drawn that
+## far up and left of its spot, so it reaches under the frame's rim. At a
+## window size that scales the clock by a whole number the rim hides the spare
+## pixel; at any other, the rim and the piece behind round to screen pixels
+## separately, and where their edges met exactly the background showed through
+## as a one-pixel seam -- a dark line down the left of the thermometer.
+const BLEED := 1
+const DIAL_REGION := Rect2(100, 0, 24, 36)
+## An empty tube and the bulb, drawn behind the fill so whatever it doesn't
+## reach reads as glass. The frame's thermometer only has holes where liquid
+## shows.
+const TUBE_REGION := Rect2(124, 0, 10, 30)
+## The three skies behind the window's picture -- 0 green day, 1 orange dusk,
+## 2 blue night -- each a bled 36px square.
+const SKY_ORIGIN := Vector2(100, 66)
+const SKY_SIZE := 36
 ## Five arrow cells across, steepest-up first, each with its tail on ARROW_TAIL.
 const ARROW_ORIGIN := Vector2(100, 40)
 const ARROW_CELL := 24
@@ -60,19 +73,19 @@ const SIZE := Vector2(98, 99)
 ## square in the middle of its cell -- the size of the window.
 const ICON_CELL := 48
 const ICON_INSET := 7
-## Rows on the icon sheet: pictures without their backdrop, and bare backdrops.
+## The icon sheet's row of pictures without their backdrop. (The bare
+## backdrops behind them come from the atlas now, bled -- see SKY_ORIGIN.)
 const PICTURE_ROW := 3
-const BACKDROP_ROW := 6
 
 ## The parts of the day, latest start last. `icon` is the picture's column on the
-## sheet, `sky` the column of the backdrop it sits on (green day, orange dusk,
-## blue night).
+## sheet, `sky` the backdrop it sits on in the atlas: 0 green day, 1 orange
+## dusk, 2 blue night.
 const PHASES: Array[Dictionary] = [
-	{"name": "dawn", "from": 6 * 60, "icon": 6, "sky": 4},
+	{"name": "dawn", "from": 6 * 60, "icon": 6, "sky": 1},
 	{"name": "day", "from": 8 * 60, "icon": 0, "sky": 0},
-	{"name": "dusk", "from": 17 * 60, "icon": 4, "sky": 4},
-	{"name": "night", "from": 20 * 60, "icon": 8, "sky": 7},
-	{"name": "late", "from": 24 * 60, "icon": 9, "sky": 7},
+	{"name": "dusk", "from": 17 * 60, "icon": 4, "sky": 1},
+	{"name": "night", "from": 20 * 60, "icon": 8, "sky": 2},
+	{"name": "late", "from": 24 * 60, "icon": 9, "sky": 2},
 ]
 
 ## How warm each season runs, as a thermometer level: 0 is the hottest fill.
@@ -147,23 +160,33 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	size = SIZE
 
-	# The window comes first so the frame's rim draws over the pictures' edges,
-	# and it clips so a picture sinking out of it is cut off at the sill.
+	# The skies come first, behind everything, and reach a BLEED under the rim
+	# on every side. They only ever fade, never move, so unlike the pictures
+	# they need no clipping and stand outside the window.
+	var skies := Control.new()
+	skies.position = WINDOW.position - Vector2.ONE * BLEED
+	skies.size = WINDOW.size + Vector2.ONE * BLEED * 2
+	skies.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(skies)
+	_sky_back = _rect(skies, ATLAS, Rect2(), Vector2.ZERO)
+	_sky = _rect(skies, ATLAS, Rect2(), Vector2.ZERO)
+
+	# Then the window, so the frame's rim draws over the pictures' edges; it
+	# clips, so a picture sinking out of it is cut off at the sill.
 	_window = Control.new()
 	_window.position = WINDOW.position
 	_window.size = WINDOW.size
 	_window.clip_contents = true
 	_window.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_window)
-	_sky_back = _rect(_window, ICONS, Rect2(), Vector2.ZERO)
-	_sky = _rect(_window, ICONS, Rect2(), Vector2.ZERO)
 	_leaving = _rect(_window, ICONS, Rect2(), Vector2.ZERO)
 	_picture = _rect(_window, ICONS, Rect2(), Vector2.ZERO)
 
 	# The dial sits behind the frame: the knob on the divider overlaps it. So
 	# does the thermometer's liquid, which the frame's glass and rungs cover.
-	_rect(self, ATLAS, DIAL_REGION, DIAL_AT)
-	_rect(self, ATLAS, TUBE_REGION, FILL_AT)
+	# Both bled pieces are drawn a BLEED up and left, so their art lines up.
+	_rect(self, ATLAS, DIAL_REGION, DIAL_AT - Vector2.ONE * BLEED)
+	_rect(self, ATLAS, TUBE_REGION, FILL_AT - Vector2.ONE * BLEED)
 	_fill = _rect(self, ATLAS, Rect2(), FILL_AT)
 	# Springs from its bulb, so a change of level squashes up out of it.
 	_fill.pivot_offset = Vector2(FILL_SIZE.x * 0.5, FILL_SIZE.y)
@@ -239,7 +262,7 @@ func phase_name() -> String:
 func _show_phase(phase: int, animate: bool) -> void:
 	var entry: Dictionary = PHASES[phase]
 	var picture := _icon_region(PICTURE_ROW, entry["icon"])
-	var sky := _icon_region(BACKDROP_ROW, entry["sky"])
+	var sky := _sky_region(entry["sky"])
 	_phase = phase
 	if _swap != null:
 		_swap.kill()
@@ -288,6 +311,11 @@ func _pop(node: Control, peak: Vector2, seconds: float, trans: Tween.TransitionT
 	node.scale = peak
 	create_tween().tween_property(node, "scale", Vector2.ONE, seconds) \
 			.set_trans(trans).set_ease(Tween.EASE_OUT)
+
+
+## One of the atlas's bled skies (see PHASES' `sky`).
+func _sky_region(index: int) -> Rect2:
+	return Rect2(SKY_ORIGIN + Vector2(index * SKY_SIZE, 0), Vector2.ONE * SKY_SIZE)
 
 
 func _icon_region(row: int, column: int) -> Rect2:

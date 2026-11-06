@@ -2,14 +2,21 @@ extends SceneTree
 
 ## Draws the storage panel stylebox at sizes it was never authored at -- wider
 ## and narrower than the 106x122 art -- and saves the frame, so the nine-slice
-## can be measured instead of assumed.
+## can be measured instead of assumed. Windowed only for the picture; headless
+## it just checks the box loads.
 
-const BOX := "res://Assets/UI/Panel_Storage.tres"
+## The storage window's plate (StoragePanel.PANEL_BOX). It was Panel_Storage
+## once; that file is gone, which left this test failing to load anything.
+const BOX := "res://Assets/UI/Panel_Plate.tres"
 
 
 func _initialize() -> void:
 	await process_frame
-	var style: StyleBoxTexture = load(BOX)
+	var style := load(BOX) as StyleBoxTexture
+	print("  %s  the storage plate loads as a StyleBoxTexture" % ("PASS" if style else "FAIL"))
+	if style == null or DisplayServer.get_name() == "headless":
+		quit(0 if style else 1)
+		return
 	var holder := Control.new()
 	holder.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(holder)

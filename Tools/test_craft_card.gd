@@ -4,7 +4,8 @@ extends SceneTree
 ## size for each one. The card jumping as you move down the list is the whole
 ## bug, so the test is simply: does that number ever change?
 ##
-## Run windowed, so the frames it saves are real.
+## Runs headless; windowed, it also saves Tools/craft_longest.png and
+## craft_shortest.png.
 
 func _initialize() -> void:
 	await process_frame
@@ -44,13 +45,14 @@ func _initialize() -> void:
 	print("  %s no recipe overflows the space reserved for it" % ["PASS" if overflow == 0
 			else "FAIL (%d)" % overflow])
 
-	panel._select_recipe(longest)
-	for f in 10:
-		await process_frame
-	root.get_texture().get_image().save_png("res://Tools/craft_longest.png")
-	panel._select_recipe(0)
-	for f in 10:
-		await process_frame
-	root.get_texture().get_image().save_png("res://Tools/craft_shortest.png")
-	print("done")
-	quit()
+	# Headless draws with the dummy renderer, which hands back no frame.
+	if DisplayServer.get_name() != "headless":
+		panel._select_recipe(longest)
+		for f in 10:
+			await process_frame
+		root.get_texture().get_image().save_png("res://Tools/craft_longest.png")
+		panel._select_recipe(0)
+		for f in 10:
+			await process_frame
+		root.get_texture().get_image().save_png("res://Tools/craft_shortest.png")
+	quit(0 if sizes.size() == 1 and overflow == 0 else 1)

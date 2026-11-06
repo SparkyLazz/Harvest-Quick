@@ -35,14 +35,12 @@ func _initialize() -> void:
 	var props := current_scene.get_node("Props") as TileMapLayer
 
 	# With no scene mouse to drive, the hover test is checked at the cell level
-	# by asking what the layer holds where the pointer would be.
-	var dresser := Vector2i(11, 4)
-	var bare := Vector2i(10, 5)
-	check(str(props.get_cell_tile_data(dresser).get_custom_data("interact")) != "",
-			"a dresser cell reports a verb")
-	check(props.get_cell_tile_data(bare) == null
-			or str(props.get_cell_tile_data(bare).get_custom_data("interact")) == "",
-			"a bare floor cell reports none")
+	# by asking what the layer holds where the pointer would be. Cells are found
+	# by what is on them, not hard-coded, so rearranging the room is safe.
+	var usable := _first_with_verb(props)
+	var bare := _bare_floor(current_scene.get_node("Floor") as TileMapLayer, props)
+	check(usable != Vector2i(-1, -1), "a furniture cell reports a verb")
+	check(bare != Vector2i(-1, -1), "a bare floor cell reports none")
 
 	# Carrying wins over whatever is underneath.
 	cursor.set_carrying(true)
@@ -65,3 +63,18 @@ func _initialize() -> void:
 	check(not cursor.hovering_usable(), "outdoors, with no Props layer, it stays idle")
 
 	done()
+
+
+func _first_with_verb(props: TileMapLayer) -> Vector2i:
+	for cell in props.get_used_cells():
+		if str(props.get_cell_tile_data(cell).get_custom_data("interact")) != "":
+			return cell
+	return Vector2i(-1, -1)
+
+
+## A floor cell with no furniture painted over it.
+func _bare_floor(floor_layer: TileMapLayer, props: TileMapLayer) -> Vector2i:
+	for cell in floor_layer.get_used_cells():
+		if props.get_cell_tile_data(cell) == null:
+			return cell
+	return Vector2i(-1, -1)

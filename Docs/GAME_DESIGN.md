@@ -4,7 +4,7 @@ The agreed design for the game: story, rules, numbers, and the build plan with
 what is done. Decisions here were made with the developer (Rui); anything
 marked **open** has not been decided yet, so ask before assuming.
 
-Last updated: 2026-11-05.
+Last updated: 2026-11-06.
 
 ---
 
@@ -80,6 +80,10 @@ reinvested in seeds/tools/animals):
 | Casual | 100% | 23 (summer of year 2) |
 | Struggling | 0% | still in debt at week 32 |
 
+No skill level loses in the simulation (0% bad endings, even struggling): the
+sim's player always pays when they can, so only a player who stops paying
+reaches the collector's third strike.
+
 **Why it's fair:**
 - **Winter is the real test**, as in Stardew: winter income ≈ 60–80 a week
   against a ≈150 minimum. A player who enters winter with nothing misses three
@@ -150,6 +154,13 @@ reinvested in seeds/tools/animals):
   `Docs/TECH_NOTES.md`).
 - Stamina refills by itself over a few seconds of rest. Stardew only refills
   it by sleeping or eating — **open** whether to change that.
+  *Review note (2026-11-05), facts to decide with:* this one choice also sets
+  the economy. With today's refill, stamina limits nothing — even the
+  pass-out penalty (wake on half) is back to full about 5 seconds after
+  waking. `econ_sim.py` assumes up to 80 watered tiles a day; Stardew-style
+  stamina (100, at 5 a watering) allows about 20. Rerun with `TILE_CAP = 20`
+  and only experts ever afford the lawyer (median week 26); casual and good
+  players never do. Decide this before pricing crops in step 2.
 - Neutral ending (§5).
 
 ## 10. The clock (built) — what the player sees
@@ -169,6 +180,18 @@ Top-left corner of the screen, built from the UI pack's weather frame:
   ("SUMMER", softer brown) over the date ("MON 15", dark brown), both
   centred in the pack's small 5px font.
 
+## 12. Text
+
+- **All game text uses the clock plate's font** — the pack's 5×5 capitals —
+  chosen by the developer (2026-11-06) as the easiest to read. That covers
+  the hotbar, the profile screen, storage, tooltips, the clock and the "+3"
+  pop-ups over harvests and chopped trees.
+- One face means headings and descriptions differ by **colour**, as on the
+  plate: dark brown for names and values, softer brown for labels.
+- Stack counts and pop-ups are **dark ink, no outline**, like the plate; a
+  one-pixel halo in the colour behind them keeps them clear where they cross
+  an icon or the grass.
+
 ## 11. Asset packs
 
 All by Cup Nooble (Sprout Lands). Originals are in the developer's Downloads:
@@ -176,7 +199,7 @@ All by Cup Nooble (Sprout Lands). Originals are in the developer's Downloads:
 | Pack | Path | Highlights |
 |---|---|---|
 | Sprites — premium | `C:\Users\Rui\Downloads\Sprout Lands - Sprites - premium pack` | Chickens/cows in 5 colours + babies, eggs, coops, barn, fruit trees (apple/orange/peach/pear), work station, well, boats, signs, mailbox animation, animated doors and fence gates, tilesets |
-| UI — premium | `C:\Users\Rui\Downloads\Sprout Lands - UI Pack - Premium pack` | Coins, hearts, stars, stamina circle, thermometer and weather icons, dialogue boxes, portrait frames, speech bubbles, settings menu, sliders, buttons, cursors, emotes, fonts (TTF in `fonts/Font files TTF`) |
+| UI — premium | `C:\Users\Rui\Downloads\Sprout Lands - UI Pack - Premium pack\Sprout Lands - UI Pack - Premium pack` (extracted into a folder of the same name) | Coins, hearts, stars, stamina circle, thermometer and weather icons, dialogue boxes, portrait frames, speech bubbles, settings menu, sliders, buttons, cursors, emotes, fonts (TTF in `fonts/Font files TTF`) |
 | Sorry pack (early access) | `C:\Users\Rui\Downloads\Sprout Sorry pack` | **Fishing** (casting animations, rods, ~40 fish, junk, treasure), crops v2 + jams/juices/pickles, bread/honey, **bees**, **mines** (pickaxe, ores, gems, carts, bats, slimes), **village houses**, birch/cherry/pine biomes, frogs, new furniture and chests, **winter** (snow, ice, campfire, presents) |
 
 Imported into `Assets/` so far: tiles, crops, trees, house, furniture, chest,

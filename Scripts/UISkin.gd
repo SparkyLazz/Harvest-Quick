@@ -23,6 +23,26 @@ const RULE_COLOR := Color("c9a376")
 ## their own, so whoever builds a scroll area has to say this.
 const SCROLLBAR_WIDTH := 11
 
+## Every cut-out handed out by `atlas`, keyed by [sheet, region].
+static var _atlases := {}
+
+
+## One shared AtlasTexture per piece of a sheet. The hotbar and the panels draw
+## the same handful of cut-outs over and over; handing back the same object
+## means a redraw that changes nothing allocates nothing, and a TextureRect
+## given the texture it already has skips the redraw entirely.
+##
+## Shared, so never change one in place: ask for the region you want instead.
+static func atlas(sheet: Texture2D, region: Rect2) -> AtlasTexture:
+	var key := [sheet, region]
+	var cut: AtlasTexture = _atlases.get(key)
+	if cut == null:
+		cut = AtlasTexture.new()
+		cut.atlas = sheet
+		cut.region = region
+		_atlases[key] = cut
+	return cut
+
 
 ## A plate that stretches: the corners stay put while the edges and middle grow.
 ## `edge` is how much of the texture is border; `pad` is the space inside it.

@@ -5,10 +5,11 @@ extends RefCounted
 ## rules for what a click does to it.
 ##
 ## These rules are the fiddly part of an inventory screen, so they live here
-## rather than in any one panel: the wardrobe and the profile screen share this
-## object, which is also what lets a single cursor carry a stack out of one
-## inventory and drop it into another. Every method takes the inventory that was
-## clicked, so nothing here knows or cares which panel it belongs to.
+## rather than in any one panel: the storage window and the profile screen each
+## keep one of these, and both follow exactly the same rules. Every method takes
+## the inventory that was clicked, which is what lets one cursor carry a stack
+## out of the bag and drop it in a chest -- nothing here knows or cares which
+## panel it belongs to.
 
 signal changed
 
@@ -78,9 +79,11 @@ func quick_move(from: Inventory, index: int, to: Inventory) -> bool:
 	return true
 
 
-## Puts whatever is on the cursor back, so closing a screen never eats a stack.
-func spill_into(inv: Inventory) -> void:
-	if is_empty():
-		return
-	inv.add(item, count)
-	set_to("", 0)
+## Puts whatever is on the cursor back into `inv`, as much as fits, and returns
+## how many did not. Those stay on the cursor -- a full bag must never quietly
+## eat a stack -- so the caller can try another container, or refuse to close.
+func spill_into(inv: Inventory) -> int:
+	if is_empty() or inv == null:
+		return count
+	set_to(item, inv.add(item, count))
+	return count

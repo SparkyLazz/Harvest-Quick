@@ -64,12 +64,31 @@ const TREE_SEEDS := {
 	PINECONE: {"name": "Pinecone", "drop": Vector2i(0, 3), "tree": "pine", "tree_name": "a pine"},
 }
 
+## Every id asked about so far, worked out once. `info` sits under every stack
+## count, every slot redraw and the tile cursor's per-frame check, so building
+## a fresh dictionary per call was the busiest allocation in the game.
+static var _info_cache := {}
+
+
 ## Returns {name, sheet, region, scale, drop_sheet, drop_region, max_stack, kind,
 ## crop} or {} for an unknown id. `sheet`/`region`/`scale` are the slot icon and
 ## `drop_*` the one shown when the item pops out of the world.
 ## `kind` is "tool", "seed", "crop", "material" or "tree_seed"; `crop` is only
 ## set for seeds and crops, and `tree` -- the species it grows -- for tree seeds.
+##
+## The dictionary is shared between callers and read-only: copy it with
+## `duplicate()` before changing anything in it.
 static func info(id: String) -> Dictionary:
+	var cached: Variant = _info_cache.get(id)
+	if cached != null:
+		return cached
+	var entry := _look_up(id)
+	entry.make_read_only()
+	_info_cache[id] = entry
+	return entry
+
+
+static func _look_up(id: String) -> Dictionary:
 	if TOOLS.has(id):
 		var tool: Dictionary = TOOLS[id]
 		return _entry(tool["name"], EMOJI, tool["region"], 1, "tool", "", tool["scale"])

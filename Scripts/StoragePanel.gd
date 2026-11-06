@@ -1,12 +1,9 @@
 class_name StoragePanel
 extends Control
 
-## The window a wardrobe or a chest opens behind.
-##
-## Only the frame so far: the plate, dimmed world behind it, and the rules for
-## how big it is and where it sits. The slots that will live inside it are the
-## next job -- what this fixes now is the shape they get to fill, because that
-## is what every later measurement is taken from.
+## The window a wardrobe or a chest opens behind: the bag on the left, the
+## furniture's own contents on the right, and the same click rules as the
+## profile screen (CarriedStack) for moving stacks between them.
 ##
 ## The shape is 16:10 and stays 16:10. A storage window is read as a grid, and a
 ## grid wants a stable frame: if the window followed the screen's aspect the
@@ -43,9 +40,9 @@ const SLOT_GAP := 4
 ##
 ## Sized for nine slots across when it was one undivided space. Split in two it
 ## no longer holds nine to a half -- `columns_per_half` reports what it does
-## hold, which is four. Worth knowing before the slots are built, because the
-## shape is the part that cannot bend: the ratio is fixed, so more columns means
-## a wider window rather than a different proportion.
+## hold, which is three. The shape is the part that cannot bend: the ratio is
+## fixed, so more columns means a wider window rather than a different
+## proportion.
 const BASE_SIZE := Vector2(336, 210)
 
 ## What the window calls itself.
@@ -77,7 +74,7 @@ const MAX_FILL := 0.82
 const DIM_COLOR := Color(0.1, 0.06, 0.04, 0.45)
 
 ## Which piece of furniture is open, as `PlayerState.storage_key` spells it.
-## Nothing reads it yet; it is what the slots will be filled from.
+## The right-hand grid is filled from `PlayerState.storage_for` this key.
 var storage_key := ""
 
 var hud: HUD
@@ -139,25 +136,30 @@ func open(key: String) -> void:
 	_recenter()
 
 
-func close() -> void:
+## Shuts the window. Returns false, and stays open, only when the stack on the
+## cursor fits in neither the bag nor the chest -- a split stack swapped into a
+## completely full pair can do that. Closing is never a way to destroy items.
+func close() -> bool:
 	# Only a window that was actually up has anything to announce; closing one
 	# that is already shut would shut the furniture a second time.
 	if not visible:
-		return
+		return true
+	# Whatever is on the cursor goes back: into the bag first, and whatever the
+	# bag has no room for into the chest, which is usually where it came from.
+	# This used to try the bag alone and drop the rest on the floor -- with a
+	# full bag, picking a stack out of the chest and pressing Esc deleted it.
+	if _carry_stack.spill_into(_bag()) > 0 and _carry_stack.spill_into(_store) > 0:
+		return false
 	# The X keeps whatever tint the mouse left on it otherwise, and wears it
 	# the next time the window opens.
 	if _close_button != null:
 		_close_button.self_modulate = Color.WHITE
-	# Whatever is on the cursor goes back in the bag. Closing a window is not
-	# a way to destroy a stack, and the bag is the one container that is always
-	# there to put it in.
-	if _bag() != null:
-		_carry_stack.spill_into(_bag())
 	var was := storage_key
 	visible = false
 	storage_key = ""
 	_unbind_store()
 	closed.emit(was)
+	return true
 
 
 ## Lets go of the furniture's inventory. Left connected, a closed window would
@@ -259,7 +261,9 @@ func _build() -> void:
 		_carry.icon_scale = hud.item_icon_scale
 	_carry.visible = false
 	add_child(_carry)
-	_carry_stack.changed.connect(_sync_carry)
+	# The stack outlives a rebuild, so it may already be wired to this window.
+	if not _carry_stack.changed.is_connected(_sync_carry):
+		_carry_stack.changed.connect(_sync_carry)
 
 
 ## One side of the window: a lighter plate that fills its share of the width,
@@ -352,8 +356,10 @@ func _bag() -> Inventory:
 	return hud.inventory if hud != null else null
 
 
-## Draws the stack on the cursor, and keeps it under the mouse.
+## Draws the stack on the cursor, and keeps it under the mouse. The system
+## cursor closes its paw for as long as something is being carried.
 func _sync_carry() -> void:
+	MouseCursor.set_carrying(not _carry_stack.is_empty())
 	if _carry == null:
 		return
 	_carry.item = _carry_stack.item

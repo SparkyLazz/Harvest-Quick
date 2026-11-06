@@ -176,6 +176,10 @@ var _farm: Farm
 
 var _recipes: Array[Dictionary] = []
 var _recipe_rows: Array[Button] = []
+## Each row's name and cost labels, kept from the build so a refresh does not
+## search every row for them again.
+var _recipe_name_labels: Array[Label] = []
+var _recipe_cost_labels: Array[Label] = []
 var _recipe_index := 0
 var _craft_icon: InventorySlot
 var _craft_name: Label
@@ -234,12 +238,17 @@ func open() -> void:
 	_recenter()
 
 
-## Closing puts whatever is on the cursor back in the inventory.
-func close() -> void:
-	_carry_stack.spill_into(inventory)
+## Closing puts whatever is on the cursor back in the inventory. A stack the
+## bag has no room for keeps the window up instead of being thrown away (a
+## split stack swapped into a full bag can do that); the player can still put
+## it down. Returns whether the window closed.
+func close() -> bool:
+	if _carry_stack.spill_into(inventory) > 0:
+		return false
 	_hide_tooltip()
 	_hover_slot = -1
 	visible = false
+	return true
 
 
 func _process(delta: float) -> void:
@@ -272,6 +281,8 @@ func _build() -> void:
 	_tabs.clear()
 	_stat_values.clear()
 	_recipe_rows.clear()
+	_recipe_name_labels.clear()
+	_recipe_cost_labels.clear()
 
 	var dim := ColorRect.new()
 	dim.color = Color(0.1, 0.06, 0.04, 0.45)
@@ -324,7 +335,9 @@ func _build() -> void:
 	_carry.scale = Vector2.ONE * pixel_scale
 	_carry.visible = false
 	add_child(_carry)
-	_carry_stack.changed.connect(_sync_carry)
+	# The stack outlives a rebuild, so binding again must not wire it twice.
+	if not _carry_stack.changed.is_connected(_sync_carry):
+		_carry_stack.changed.connect(_sync_carry)
 
 	_build_tooltip()
 
@@ -586,6 +599,8 @@ func _build_crafting_page() -> Control:
 		var entry := _build_recipe_row(_recipes[i], i)
 		list.add_child(entry)
 		_recipe_rows.append(entry)
+		_recipe_name_labels.append(entry.find_child("Name", true, false) as Label)
+		_recipe_cost_labels.append(entry.find_child("Cost", true, false) as Label)
 
 	var detail := PanelContainer.new()
 	detail.custom_minimum_size.x = DETAIL_WIDTH
@@ -944,17 +959,22 @@ func _scroll_theme() -> Theme:
 
 
 
+## Shared cut-outs (see UISkin.atlas): the rail redraws every frame while the
+## window is up, and an unchanged heart should cost nothing.
 func _atlas(region: Rect2, sheet: Texture2D) -> AtlasTexture:
-	var t := AtlasTexture.new()
-	t.atlas = sheet
-	t.region = region
-	return t
+	return UISkin.atlas(sheet, region)
 
 
 # --- tabs -------------------------------------------------------------------
 
 func _show_tab(index: int) -> void:
 	_tab = clampi(index, 0, _pages.size() - 1)
+	# Only the inventory page has slots to put a stack down in, so a stack
+	# carried onto another page goes back first. Left on the cursor it could be
+	# squeezed out: crafting can fill the very slot it was lifted from, and the
+	# bag then had no room for it when the window closed.
+	if _tab != TAB_INVENTORY:
+		_carry_stack.spill_into(inventory)
 	_hide_tooltip()
 	_hover_slot = -1
 	for i in _pages.size():
@@ -1124,7 +1144,11 @@ func _recenter() -> void:
 	_window.position = (free * 0.5).round()
 
 
+## Draws the stack on the cursor; the system cursor closes its paw meanwhile.
 func _sync_carry() -> void:
+	MouseCursor.set_carrying(not _carry_stack.is_empty())
+	if _carry == null:
+		return
 	_carry.item = _carry_stack.item
 	_carry.count = _carry_stack.count
 	_carry.visible = not _carry_stack.is_empty()
@@ -1148,10 +1172,9 @@ func _refresh_recipes() -> void:
 	if _recipes.is_empty() or _craft_button == null:
 		return
 	for i in _recipe_rows.size():
-		var row := _recipe_rows[i]
 		var recipe := _recipes[i]
-		var cost_label := row.find_child("Cost", true, false) as Label
-		var name_label := row.find_child("Name", true, false) as Label
+		var cost_label := _recipe_cost_labels[i]
+		var name_label := _recipe_name_labels[i]
 		var makeable := RecipeDB.can_make(recipe, inventory)
 		cost_label.text = _cost_text(recipe)
 		cost_label.add_theme_color_override("font_color",

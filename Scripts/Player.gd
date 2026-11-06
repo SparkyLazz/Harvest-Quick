@@ -154,8 +154,14 @@ var _prop_anim: PropAnimator
 ## The prop whose window is up, so its lid can be shut again when the window
 ## goes. Unset between times rather than left pointing at the last chest used.
 var _open_prop: Variant = null
-var _hud: Node
+## The hotbar and windows. Optional: with none, the player still walks and hoes.
+var _hud: HUD
 var _farm: Farm
+## The trees tileset's scene-collection source, and species -> scene tile id
+## on it, looked up once: the tile cursor asks every frame a seed is held.
+var _tree_source := -1
+var _tree_ids := {}
+var _tree_ids_read := false
 var _emote: EmoteBubble
 var _just_denied: bool = false
 ## What each hoed cell looked like before, so the axe can put it back, and
@@ -182,9 +188,9 @@ func _ready() -> void:
 	if _props != null:
 		_prop_anim = PropAnimator.new()
 		add_child(_prop_anim)
-	_hud = get_node_or_null(hud_path)
-	if _hud != null and _hud.has_signal("storage_closed"):
-		_hud.connect("storage_closed", _on_storage_closed)
+	_hud = get_node_or_null(hud_path) as HUD
+	if _hud != null:
+		_hud.storage_closed.connect(_on_storage_closed)
 	_farm = get_node_or_null(farm_path) as Farm
 	if get_parent() != null:
 		for node in get_parent().get_children():
@@ -220,7 +226,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# The inventory is a menu: while it is open the character stands still.
-	var blocked: bool = _hud != null and _hud.has_method("is_inventory_open") 			and _hud.call("is_inventory_open")
+	var blocked := _hud != null and _hud.is_inventory_open()
 	var input := Vector2.ZERO if blocked else _read_input()
 
 	if not blocked and Input.is_action_just_pressed("use") and _use_held_item(input):
@@ -261,9 +267,7 @@ func _facing_for(input: Vector2) -> String:
 	return "down" if input.y > 0.0 else "up"
 
 func _held() -> String:
-	if _hud == null or not _hud.has_method("held_item"):
-		return ""
-	return _hud.call("held_item")
+	return _hud.held_item() if _hud != null else ""
 
 
 ## The hotbar decides what the key does. With no HUD wired up the player still
@@ -316,7 +320,7 @@ func _dispatch_use(input: Vector2) -> bool:
 func interaction_ahead() -> String:
 	if _props == null or not _action.is_empty():
 		return ""
-	if _hud != null and _hud.has_method("is_inventory_open") and _hud.call("is_inventory_open"):
+	if _hud != null and _hud.is_inventory_open():
 		return ""
 	var data := _props.get_cell_tile_data(prop_in_reach())
 	return str(data.get_custom_data("interact")) if data != null else ""
@@ -378,18 +382,18 @@ func _try_interact(input: Vector2) -> bool:
 ## furniture's identity -- painted props have no node to name -- so the window
 ## comes back to the same contents every time that one is opened.
 func _open_storage(cell: Vector2i) -> bool:
-	if _hud == null or not _hud.has_method("open_storage"):
+	if _hud == null:
 		return false
 	_play("idle")
 	velocity = Vector2.ZERO
 	_open_prop = cell
-	_hud.call("open_storage", PlayerState.storage_key(get_tree().current_scene, cell))
+	_hud.open_storage(PlayerState.storage_key(get_tree().current_scene, cell))
 	return true
 
 
 func _close_storage() -> void:
-	if _hud != null and _hud.has_method("close_storage"):
-		_hud.call("close_storage")
+	if _hud != null:
+		_hud.close_storage()
 
 
 ## The window has gone, so the furniture goes back to how it was found. Esc and
@@ -461,29 +465,43 @@ func _try_plant_tree(seed_item: String, input: Vector2) -> bool:
 
 ## The tileset's scene-collection source, the one trees are painted from.
 func _tree_source_id() -> int:
-	if _trees_layer == null or _trees_layer.tile_set == null:
-		return -1
-	var tiles := _trees_layer.tile_set
-	for i in tiles.get_source_count():
-		var id := tiles.get_source_id(i)
-		if tiles.get_source(id) is TileSetScenesCollectionSource:
-			return id
-	return -1
+	_read_tree_tiles()
+	return _tree_source
 
 
 ## Which scene tile grows `species`, read off the scenes themselves so the
 ## tileset can be reordered freely. -1 if no tile grows it.
 func _tree_scene_id(species: String) -> int:
-	var source_id := _tree_source_id()
-	if source_id < 0 or species.is_empty():
-		return -1
-	var source := _trees_layer.tile_set.get_source(source_id) as TileSetScenesCollectionSource
+	_read_tree_tiles()
+	return _tree_ids.get(species, -1)
+
+
+## Reads which scene tile grows which species, once. Unpacking every tree scene
+## to find its species was being done on every frame a seed was held.
+func _read_tree_tiles() -> void:
+	if _tree_ids_read:
+		return
+	_tree_ids_read = true
+	if _trees_layer == null or _trees_layer.tile_set == null:
+		return
+	var tiles := _trees_layer.tile_set
+	for i in tiles.get_source_count():
+		var id := tiles.get_source_id(i)
+		if tiles.get_source(id) is TileSetScenesCollectionSource:
+			_tree_source = id
+			break
+	if _tree_source < 0:
+		return
+	var source := tiles.get_source(_tree_source) as TileSetScenesCollectionSource
 	for i in source.get_scene_tiles_count():
 		var id := source.get_scene_tile_id(i)
 		var scene := source.get_scene_tile_scene(id)
-		if scene != null and _species_of(scene) == species:
-			return id
-	return -1
+		if scene == null:
+			continue
+		var kind := _species_of(scene)
+		# The first tile of a species wins, as the old search did.
+		if not _tree_ids.has(kind):
+			_tree_ids[kind] = id
 
 
 static func _species_of(scene: PackedScene) -> String:
@@ -591,7 +609,8 @@ func can_use_at(cell: Vector2i) -> bool:
 	if item == axe_item and not axe_item.is_empty():
 		return _can_axe(cell) and stamina >= axe_cost
 	if ItemDB.is_seed(item):
-		return _farm != null and _farm.is_tilled(cell) and not _farm.has_crop(cell) 				and stamina >= plant_cost
+		return _farm != null and _farm.is_tilled(cell) and not _farm.has_crop(cell) \
+				and stamina >= plant_cost
 	if ItemDB.is_tree_seed(item):
 		return can_plant_tree(cell, item) and stamina >= plant_cost
 	return false
@@ -622,7 +641,8 @@ func _regen(delta: float) -> void:
 
 
 func _can_hoe(cell: Vector2i) -> bool:
-	return _grass_layer != null and _grass_layer.get_cell_tile_data(cell) != null 			and not is_covered(cell)
+	return _grass_layer != null and _grass_layer.get_cell_tile_data(cell) != null \
+			and not is_covered(cell)
 
 
 ## Is something standing on this cell's ground? A tree or stump, or any tile

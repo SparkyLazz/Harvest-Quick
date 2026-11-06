@@ -45,6 +45,15 @@ const DROPS_GROUND := Vector2(18, 34)
 const DROPS_AIR_FRAMES := 3
 # How far above its mark a drop starts, in pixels.
 const DROPS_FALL := 7.0
+# The "+3" beside a popped item: its scale (3 screen pixels per font pixel
+# under the 4x camera), its top-left in world pixels from the icon's centre,
+# its ink, and its halo -- the cream outline colour of the drop sprites.
+const POP_TEXT_SCALE := 0.75
+# Measured off renders: centres the text on the same line the old, taller "+3"
+# was centred on, beside the item's middle.
+const POP_TEXT_AT := Vector2(6, -4)
+const POP_INK := Color("5a3d3d")
+const POP_HALO := Color("f3f4e7")
 
 static var _drops_frames: SpriteFrames
 
@@ -312,15 +321,21 @@ func float_icon(cell: Vector2i, item: String, amount: int, order: int = 0) -> vo
 	atlas.region = entry["drop_region"]
 	icon.texture = atlas
 	holder.add_child(icon)
-	var label := Label.new()
-	label.text = "+%d" % amount
-	# Drawn big and scaled down so the glyphs stay sharp under the 4x camera.
-	label.add_theme_font_size_override("font_size", 32)
-	label.add_theme_constant_override("outline_size", 8)
-	label.add_theme_color_override("font_outline_color", Color("3a2a4a"))
-	label.scale = Vector2.ONE * 0.18
-	label.position = Vector2(6, -6)
-	holder.add_child(label)
+	# The game's one face at its one crisp size, like every other bit of text:
+	# dark ink in the cream halo the drop sprites wear, so the "+3" reads as part
+	# of the item it pops out beside. The world is seen through the camera's 4x
+	# zoom, so the text is scaled to POP_TEXT_SCALE, which lands each of the
+	# face's pixels on exactly three screen pixels; a scale that does not come
+	# out whole draws uneven strokes.
+	var text := Node2D.new()
+	text.scale = Vector2.ONE * POP_TEXT_SCALE
+	text.position = POP_TEXT_AT
+	var said := "+%d" % amount
+	var baseline := Vector2(0, UIFont.title().get_ascent(UIFont.SIZE))
+	text.draw.connect(func() -> void:
+		UIFont.draw_haloed(text, baseline, said, HORIZONTAL_ALIGNMENT_LEFT, -1,
+				POP_INK, POP_HALO))
+	holder.add_child(text)
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(holder, "position:y", holder.position.y - 14.0, 0.7) \
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

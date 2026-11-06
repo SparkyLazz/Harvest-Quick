@@ -33,8 +33,11 @@ func count_at(slot: int) -> int:
 func set_slot(slot: int, item: String, count: int) -> void:
 	if slot < 0 or slot >= items.size():
 		return
-	items[slot] = item if count > 0 else ""
-	counts[slot] = count if item != "" else 0
+	# No item or no count is an empty slot, both halves of it -- a slot left
+	# with "" and a negative count would poison every total taken over it.
+	var empty := item == "" or count <= 0
+	items[slot] = "" if empty else item
+	counts[slot] = 0 if empty else count
 	changed.emit(slot)
 
 

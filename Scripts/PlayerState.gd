@@ -154,8 +154,10 @@ func _pass_out() -> void:
 		return
 	_passing_out = true
 	passed_out.emit()
-	SceneTransition.go_to(HOUSE_SCENE, BED_SPOT, sleep.bind(false))
-	await SceneTransition.arrived
+	# Awaiting the move itself rather than its `arrived` signal: a house that
+	# fails to load never arrives, and this flag would then block every
+	# pass-out after it.
+	await SceneTransition.go_to(HOUSE_SCENE, BED_SPOT, sleep.bind(false))
 	_passing_out = false
 
 
@@ -166,6 +168,7 @@ func reset() -> void:
 	day = 1
 	minutes = Calendar.DAY_START
 	_carry = 0.0
+	_passing_out = false
 	_stores.clear()
 	_worlds.clear()
 	_started = false

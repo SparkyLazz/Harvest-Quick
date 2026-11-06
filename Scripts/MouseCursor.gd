@@ -49,6 +49,13 @@ func _process(_delta: float) -> void:
 		_apply(Shape.POINT if hovering_usable() else Shape.IDLE)
 
 
+## The system holds on to the custom cursor's texture. Hand it back while the
+## renderer is still up, or freeing it at exit errors with a null server.
+func _exit_tree() -> void:
+	Input.set_custom_mouse_cursor(null)
+	_scaled.clear()
+
+
 ## Switches to the closed paw, for when a stack is picked up.
 func set_carrying(value: bool) -> void:
 	_carrying = value
@@ -61,6 +68,9 @@ func set_carrying(value: bool) -> void:
 func hovering_usable() -> bool:
 	var scene := get_tree().current_scene
 	if scene == null:
+		return false
+	# A window under the pointer owns it, whatever furniture is painted behind.
+	if get_viewport().gui_get_hovered_control() != null:
 		return false
 	var props := scene.get_node_or_null(PROPS) as TileMapLayer
 	if props == null:

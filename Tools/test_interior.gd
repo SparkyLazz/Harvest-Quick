@@ -43,19 +43,32 @@ func _initialize() -> void:
 	check(narrow > 0, "%d wall cells use a hitbox narrower than their cell" % narrow)
 
 	# --- furniture carries its own verb --------------------------------------
-	var wardrobes: Array[Vector2i] = []
+	# Found by verb rather than by cell, so moving the furniture around the
+	# room does not break the test (the old one expected 8 dressers that the
+	# redesigned house no longer has).
+	var containers: Array[Vector2i] = []
 	var beds: Array[Vector2i] = []
 	var rugs := 0
 	for c in props.get_used_cells():
 		var d := props.get_cell_tile_data(c)
 		match str(d.get_custom_data("interact")):
-			"wardrobe": wardrobes.append(c)
+			"chest", "wardrobe": containers.append(c)
 			"bed": beds.append(c)
 		if d.get_collision_polygons_count(0) == 0:
 			rugs += 1
-	check(wardrobes.size() == 8, "the 8 dressers read as wardrobes (got %d)" % wardrobes.size())
+	check(containers.size() >= 2, "the house has %d storage props" % containers.size())
 	check(beds.size() == 2, "the bed's 2 cells read as a bed (got %d)" % beds.size())
 	check(rugs > 0, "%d props stay walk-over (rugs, pictures)" % rugs)
+	# The house paints no dresser at the moment, but the tileset still tags
+	# one: paint it somewhere and make sure the verb comes with it.
+	var dresser := _tile_with_verb(props.tile_set, "wardrobe")
+	check(dresser.size() == 2, "the tileset carries a tile tagged as a wardrobe")
+	if dresser.size() == 2:
+		var spot := Vector2i(-40, -40)
+		props.set_cell(spot, dresser[0], dresser[1])
+		check(str(props.get_cell_tile_data(spot).get_custom_data("interact")) == "wardrobe",
+				"a painted dresser reads as a wardrobe")
+		props.erase_cell(spot)
 
 	# --- each wardrobe is its own container ----------------------------------
 	var state := root.get_node_or_null("/root/PlayerState")
@@ -66,15 +79,15 @@ func _initialize() -> void:
 		quit(1)
 		return
 	scene.scene_file_path = "res://Scenes/PlayerHouse.tscn"
-	var k1: String = state.storage_key(scene, wardrobes[0])
-	var k2: String = state.storage_key(scene, wardrobes[1])
-	check(k1 != k2, "two wardrobes get different keys (%s vs %s)" % [k1, k2])
+	var k1: String = state.storage_key(scene, containers[0])
+	var k2: String = state.storage_key(scene, containers[1])
+	check(k1 != k2, "two containers get different keys (%s vs %s)" % [k1, k2])
 	var a: Inventory = state.storage_for(k1)
 	var b: Inventory = state.storage_for(k2)
 	a.set_slot(0, "wheat", 5)
-	check(b.item_at(0) == "", "filling one wardrobe does not fill the other")
-	check(state.storage_for(k1) == a, "asking again returns the same wardrobe")
-	check(a.size() == 27, "a wardrobe holds 27 slots")
+	check(b.item_at(0) == "", "filling one container does not fill the other")
+	check(state.storage_for(k1) == a, "asking again returns the same container")
+	check(a.size() == 27, "a container holds 27 slots")
 
 	# --- sleeping ------------------------------------------------------------
 	state.max_stamina = 100.0
@@ -119,6 +132,30 @@ func _initialize() -> void:
 	check(box.item_at(4) == "" and bag.count_of("wheat") == 4 + stashed,
 			"and the whole stack arrives")
 
+	# A stack with nowhere to go stays on the cursor instead of vanishing.
+	var full := Inventory.new(1)
+	full.set_slot(0, "wood", 99)
+	cursor.set_to("carrot", 3)
+	check(cursor.spill_into(full) == 3 and cursor.item == "carrot" and cursor.count == 3,
+			"spilling into a full bag keeps the stack on the cursor")
+	check(cursor.spill_into(box) == 0 and cursor.is_empty(), "and the next container takes it")
+
+	scene.free()
 	print("")
 	print("FAILURES: ", _fails)
 	quit(1 if _fails > 0 else 0)
+
+
+## The first [source id, atlas coords] in `tiles` whose "interact" is `verb`.
+func _tile_with_verb(tiles: TileSet, verb: String) -> Array:
+	for i in tiles.get_source_count():
+		var id := tiles.get_source_id(i)
+		var source := tiles.get_source(id) as TileSetAtlasSource
+		if source == null:
+			continue
+		for t in source.get_tiles_count():
+			var coords := source.get_tile_id(t)
+			var data := source.get_tile_data(coords, 0)
+			if data != null and str(data.get_custom_data("interact")) == verb:
+				return [id, coords]
+	return []
