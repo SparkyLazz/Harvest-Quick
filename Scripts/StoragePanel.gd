@@ -5,6 +5,13 @@ extends Control
 ## furniture's own contents on the right, and the same click rules as the
 ## profile screen (CarriedStack) for moving stacks between them.
 ##
+## Two more things open in it. The shipping bin is a chest like any other,
+## except that it only takes what can be sold and its half says what that will
+## fetch overnight. The seed shop swaps the right half for the stall's stock:
+## one slot per packet, priced, and a click buys -- one, or BUY_BATCH with
+## Shift -- as many as the purse and the bag both allow. The purse itself is
+## always in the title row.
+##
 ## The shape is 16:10 and stays 16:10. A storage window is read as a grid, and a
 ## grid wants a stable frame: if the window followed the screen's aspect the
 ## same chest would be a different shape on every machine, and the row and
@@ -45,8 +52,13 @@ const SLOT_GAP := 4
 ## proportion.
 const BASE_SIZE := Vector2(336, 210)
 
-## What the window calls itself.
+## What the window calls itself; and as the seed shop.
 const TITLE := "STORAGE"
+const SHOP_TITLE := "SEED SHOP"
+## Packets bought by one Shift-click on the stall's side.
+const BUY_BATCH := 5
+## The purse turns this colour for a moment when it cannot cover a purchase.
+const SHORT_INK := UISkin.SHORT_COLOR
 
 ## The close button's mark. The pack's own X -- the same one the settings page
 ## uses for "off" -- so the window shuts with a glyph the game already speaks.
@@ -93,6 +105,14 @@ var _store: Inventory
 ## exactly as it does there.
 var _carry_stack := CarriedStack.new()
 var _carry: InventorySlot
+var _title: Label
+var _right_heading: Label
+var _wallet: Label
+var _wallet_tween: Tween
+## What the right half is called while it is up.
+var _heading := RIGHT_TITLE
+## True while the right half is the seed shop's stock rather than furniture.
+var _shop := false
 
 
 func _ready() -> void:
@@ -100,6 +120,7 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	visible = false
 	get_viewport().size_changed.connect(_recenter)
+	PlayerState.coins_changed.connect(_on_coins_changed)
 
 
 ## Hooks the panel to a HUD, which is where its zoom comes from.
@@ -123,17 +144,48 @@ func is_open() -> bool:
 
 ## Opens on one piece of furniture. `key` identifies it -- see
 ## `PlayerState.storage_key` -- so reopening the same chest later comes back to
-## the same contents once there are contents to come back to.
-func open(key: String) -> void:
+## the same contents once there are contents to come back to. `heading` names
+## its half; the shipping bin's key puts that in the title row instead and has
+## the half say what its contents will sell for.
+func open(key: String, heading: String = RIGHT_TITLE) -> void:
 	_unbind_store()
+	_shop = false
 	storage_key = key
 	# Which chest this is only becomes known now, so the right-hand grid is
 	# pointed at its contents here rather than at build time.
 	_store = PlayerState.storage_for(key)
 	_store.changed.connect(_refresh)
+	_heading = heading
+	_title.text = heading if key == PlayerState.SHIPPING_KEY else TITLE
+	_show_store_slots(_store.size())
 	visible = true
 	_refresh()
 	_recenter()
+
+
+## Opens as the seed shop: the right half is `stock`, one slot per packet with
+## its price, under `heading`. It is a list to buy from, not a container: it
+## takes nothing back, and nothing is left in it when the window goes.
+func open_shop(stock: Array[String], heading: String) -> void:
+	_unbind_store()
+	_shop = true
+	storage_key = ""
+	_store = Inventory.new(maxi(stock.size(), 1))
+	for i in stock.size():
+		_store.set_slot(i, stock[i], 1)
+	_heading = heading
+	_title.text = SHOP_TITLE
+	_show_store_slots(stock.size())
+	visible = true
+	_refresh()
+	_recenter()
+
+
+## The stall's grid shows only as many slots as it has packets; a chest shows
+## all of its own.
+func _show_store_slots(count: int) -> void:
+	for slot in _store_slots:
+		slot.visible = slot.index < count
 
 
 ## Shuts the window. Returns false, and stays open, only when the stack on the
@@ -148,8 +200,12 @@ func close() -> bool:
 	# bag has no room for into the chest, which is usually where it came from.
 	# This used to try the bag alone and drop the rest on the floor -- with a
 	# full bag, picking a stack out of the chest and pressing Esc deleted it.
-	if _carry_stack.spill_into(_bag()) > 0 and _carry_stack.spill_into(_store) > 0:
+	# A shop's stock is no container: anything spilled into it would vanish
+	# with the window, so there the bag is the only place.
+	var fallback: Inventory = null if _shop else _store
+	if _carry_stack.spill_into(_bag()) > 0 and _carry_stack.spill_into(fallback) > 0:
 		return false
+	_shop = false
 	# The X keeps whatever tint the mouse left on it otherwise, and wears it
 	# the next time the window opens.
 	if _close_button != null:
@@ -208,14 +264,29 @@ func _build() -> void:
 	var head := HBoxContainer.new()
 	box.add_child(head)
 
-	var title := Label.new()
-	title.text = TITLE
-	title.add_theme_font_override("font", UIFont.title())
-	title.add_theme_font_size_override("font_size", UIFont.SIZE)
-	title.add_theme_color_override("font_color", INK)
-	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	head.add_child(title)
+	_title = Label.new()
+	_title.text = TITLE
+	_title.add_theme_font_override("font", UIFont.title())
+	_title.add_theme_font_size_override("font_size", UIFont.SIZE)
+	_title.add_theme_color_override("font_color", INK)
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_title.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_title)
+
+	# The purse, before the X: what you can spend at the stall, and what the
+	# bin's takings will be added to.
+	var coin := TextureRect.new()
+	coin.texture = UISkin.atlas(UISkin.COINS, UISkin.COIN)
+	coin.stretch_mode = TextureRect.STRETCH_KEEP
+	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_child(coin)
+	_wallet = Label.new()
+	_wallet.add_theme_font_override("font", UIFont.body())
+	_wallet.add_theme_font_size_override("font_size", UIFont.SIZE)
+	_wallet.add_theme_color_override("font_color", INK)
+	_wallet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head.add_child(_wallet)
 
 	_close_button = TextureButton.new()
 	_close_button.texture_normal = CROSS
@@ -289,6 +360,10 @@ func _half(title: String, into: Array[InventorySlot], slots: int,
 	heading.add_theme_font_size_override("font_size", UIFont.SIZE)
 	heading.add_theme_color_override("font_color", UISkin.MUTED_COLOR)
 	column.add_child(heading)
+	if is_store:
+		# Renamed for whatever is open: a chest, a wardrobe, the bin's takings,
+		# the stall's season.
+		_right_heading = heading
 
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -339,7 +414,17 @@ func _on_slot_pressed(index: int, button: int, from_store: bool) -> void:
 	var there: Inventory = _bag() if from_store else _store
 	if here == null:
 		return
-	if Input.is_key_pressed(KEY_SHIFT):
+	if _shop:
+		# The stall's side sells and takes nothing back: a click there buys,
+		# and only with empty hands, so a carried stack is never in the way.
+		if from_store:
+			if _carry_stack.is_empty():
+				_buy(index, BUY_BATCH if Input.is_key_pressed(KEY_SHIFT) else 1)
+			return
+		# The bag's side still sorts as usual; there is nowhere to Shift-send to.
+		if Input.is_key_pressed(KEY_SHIFT):
+			return
+	elif Input.is_key_pressed(KEY_SHIFT):
 		# Only with empty hands: shift-clicking while carrying something would
 		# have to guess whether the stack on the cursor or the one in the slot
 		# was meant, and guessing wrong loses items.
@@ -350,6 +435,42 @@ func _on_slot_pressed(index: int, button: int, from_store: bool) -> void:
 		_carry_stack.left_click(here, index)
 	elif button == MOUSE_BUTTON_RIGHT:
 		_carry_stack.right_click(here, index)
+
+
+## Buys up to `amount` packets from stock slot `index`: as many as both the
+## purse and the bag can take. If that is none, nothing changes and the purse
+## blinks.
+func _buy(index: int, amount: int) -> void:
+	var item := _store.item_at(index)
+	var cost := ItemDB.buy_price(item)
+	var bag := _bag()
+	if item == "" or cost <= 0 or bag == null:
+		return
+	var n := mini(amount, PlayerState.coins / cost)
+	while n > 0 and not bag.can_add(item, n):
+		n -= 1
+	if n <= 0:
+		_blink_wallet()
+		return
+	PlayerState.spend(cost * n)
+	bag.add(item, n)
+
+
+func _blink_wallet() -> void:
+	if _wallet == null:
+		return
+	if _wallet_tween != null and _wallet_tween.is_valid():
+		_wallet_tween.kill()
+	_wallet.add_theme_color_override("font_color", SHORT_INK)
+	_wallet_tween = create_tween()
+	_wallet_tween.tween_interval(0.45)
+	_wallet_tween.tween_callback(func() -> void:
+		_wallet.add_theme_color_override("font_color", INK))
+
+
+func _on_coins_changed(_coins: int) -> void:
+	if visible:
+		_refresh()
 
 
 func _bag() -> Inventory:
@@ -377,15 +498,24 @@ func _process(_delta: float) -> void:
 
 ## Draws both grids from whatever they are standing for right now.
 func _refresh(_slot: int = 0) -> void:
-	_fill(_player_slots, hud.inventory if hud != null else null)
-	_fill(_store_slots, _store)
+	_fill(_player_slots, hud.inventory if hud != null else null, false)
+	_fill(_store_slots, _store, _shop)
+	if _right_heading != null:
+		# The bin says what is in it is worth, live, as stacks go in and out.
+		_right_heading.text = ("SELLS FOR %d" % ItemDB.value_of(_store)
+				if storage_key == PlayerState.SHIPPING_KEY else _heading)
+	if _wallet != null:
+		_wallet.text = str(PlayerState.coins)
 
 
-func _fill(slots: Array[InventorySlot], from: Inventory) -> void:
+## Draws `slots` from `from`. `priced` marks the stall's stock: a price where a
+## stack count would go, since the stall has no count to show.
+func _fill(slots: Array[InventorySlot], from: Inventory, priced: bool) -> void:
 	for slot in slots:
 		var has: bool = from != null and slot.index < from.size()
 		slot.item = from.item_at(slot.index) if has else ""
-		slot.count = from.count_at(slot.index) if has else 0
+		slot.count = 0 if priced else (from.count_at(slot.index) if has else 0)
+		slot.price = ItemDB.buy_price(slot.item) if priced and has else -1
 
 
 ## How many slots fit across one half, at the window's authored size.

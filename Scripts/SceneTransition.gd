@@ -42,6 +42,14 @@ func is_busy() -> bool:
 	return _busy
 
 
+## Blacks the screen out at once, with no fade, for a move that starts from a
+## scene nobody should see -- the farm the game boots into before a save puts
+## the player back in bed. The next go_to fades in from it as usual.
+func cover() -> void:
+	_shade.visible = true
+	_shade.modulate.a = 1.0
+
+
 ## Fades out, swaps to `scene_path`, stands the player on the Marker2D named
 ## `spawn_point` if the destination has one, then fades back in. Calls made
 ## while a move is already running are ignored, so two doors cannot fight.

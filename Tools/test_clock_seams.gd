@@ -11,6 +11,10 @@ extends SceneTree
 ## every layer a pixel under the rim. This draws the clock over magenta at a
 ## spread of fractional scales and counts magenta inside each opening.
 ##
+## The status sign in the opposite corner is checked the same way: it is two
+## plates hung on two posts, and a post that only touched its plates would
+## open the same seam where they meet.
+##
 ## Needs a window to render; headless it prints SKIP and passes.
 ##   godot --path . --script Tools/test_clock_seams.gd
 
@@ -67,9 +71,52 @@ func _initialize() -> void:
 			var total: int = found.values().reduce(func(a, b): return a + b, 0)
 			check(total == 0, "%s at x%.2f: nothing shows through %s"
 					% [Calendar.time_text(minutes), factor, found if total else "any opening"])
+
+	# --- the status sign: plates hung on posts -----------------------------------
+	clock.queue_free()
+	var sign: Control = load("res://Scripts/StatusSign.gd").new()
+	root.add_child(sign)
+	for factor: float in FACTORS:
+		root.content_scale_factor = factor
+		for i in 6:
+			await process_frame
+		sign._place()
+		await process_frame
+		await process_frame
+		var image := root.get_texture().get_image()
+		var low_w: int = sign._low_width()
+		var top_w: int = sign._top_width()
+		# In the sign's own pixels. The post strips run from the top plate's last
+		# row to the lower plate's first, kept half a pixel inside the post's
+		# sides; the plates are checked inside their chamfered corners.
+		var areas := {
+			"left post": Rect2(6.5, 30, 2, 5),
+			"right post": Rect2(low_w - 10 + 0.5, 30, 2, 5),
+			"top plate": Rect2(3, 3, top_w - 6, 25),
+			"lower plate": Rect2(3, 37, low_w - 6, 14),
+		}
+		var found := {}
+		for name: String in areas:
+			found[name] = _magenta_in_sign(image, sign, areas[name], factor)
+		var total: int = found.values().reduce(func(a, b): return a + b, 0)
+		check(total == 0, "status sign at x%.2f: nothing shows through %s"
+				% [factor, found if total else "its posts or plates"])
 	root.content_scale_factor = 1.0
 	print("\n%s (%d failed)" % ["ALL PASSED" if _fails == 0 else "FAILURES", _fails])
 	quit(1 if _fails > 0 else 0)
+
+
+## Magenta pixels on screen inside `area`, given in the sign's own pixels.
+func _magenta_in_sign(image: Image, sign: Control, area: Rect2, factor: float) -> int:
+	var a: Vector2 = (sign.position + area.position * sign.scale) * factor
+	var b: Vector2 = (sign.position + area.end * sign.scale) * factor
+	var count := 0
+	for y in range(int(a.y), mini(int(b.y), image.get_height())):
+		for x in range(int(ceil(a.x)), mini(int(b.x), image.get_width())):
+			var c := image.get_pixel(x, y)
+			if c.r > 0.85 and c.g < 0.15 and c.b > 0.85:
+				count += 1
+	return count
 
 
 ## Magenta pixels on screen inside `area`, given in clock pixels.

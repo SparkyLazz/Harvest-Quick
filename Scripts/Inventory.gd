@@ -10,12 +10,21 @@ signal changed(slot: int)
 
 var items: Array[String] = []
 var counts: Array[int] = []
+## What this inventory will hold, as `func(item: String) -> bool`; unset holds
+## anything. The shipping bin sets it to "can be sold", so a hoe cannot be
+## dropped in and lost overnight. Adding and the click rules both ask `takes`.
+var accepts: Callable = Callable()
 
 
 func _init(slot_total: int = 24) -> void:
 	for i in maxi(slot_total, 1):
 		items.append("")
 		counts.append(0)
+
+
+## Will this inventory hold `item` at all? (Room is a separate question.)
+func takes(item: String) -> bool:
+	return item == "" or not accepts.is_valid() or accepts.call(item)
 
 
 func size() -> int:
@@ -58,7 +67,7 @@ func can_add(item: String, amount: int = 1) -> bool:
 ## Adds as much as fits, topping up existing stacks before opening new ones, and
 ## returns how many did not fit.
 func add(item: String, amount: int = 1) -> int:
-	if item == "" or amount <= 0:
+	if item == "" or amount <= 0 or not takes(item):
 		return amount
 	var left := amount
 	var cap := ItemDB.max_stack(item)
@@ -94,7 +103,7 @@ func remove_from_slot(slot: int, amount: int = 1) -> bool:
 
 
 func _room_for(item: String) -> int:
-	if item == "":
+	if item == "" or not takes(item):
 		return 0
 	var cap := ItemDB.max_stack(item)
 	var room := 0

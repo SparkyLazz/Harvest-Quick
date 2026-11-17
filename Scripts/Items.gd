@@ -22,6 +22,10 @@ const CELL := 16
 const MAX_STACK := 99
 const SEED_SUFFIX := "_seed"
 
+## What the shipping bin pays for a tree's seed. Kept low: trees drop them for
+## free, and planting them back is the better use.
+const TREE_SEED_PRICE := 5
+
 const HOE := "hoe"
 const WATERING_CAN := "watering_can"
 const AXE := "axe"
@@ -51,7 +55,7 @@ const TOOL_TEXT := {
 # sprite with the halo cleared.
 const MATERIALS := {
 	WOOD: {"name": "Wood", "drop": Vector2i(3, 2), "text": "Logs from a felled tree.",
-			"sheet": EMOJI, "region": Rect2(132, 677, 24, 24), "scale": 0.5},
+			"sheet": EMOJI, "region": Rect2(132, 677, 24, 24), "scale": 0.5, "price": 2},
 }
 
 # Tree seeds, drawn the same way as materials. `tree` is the ChoppableTree
@@ -71,10 +75,12 @@ static var _info_cache := {}
 
 
 ## Returns {name, sheet, region, scale, drop_sheet, drop_region, max_stack, kind,
-## crop} or {} for an unknown id. `sheet`/`region`/`scale` are the slot icon and
-## `drop_*` the one shown when the item pops out of the world.
+## crop, price, cost} or {} for an unknown id. `sheet`/`region`/`scale` are the
+## slot icon and `drop_*` the one shown when the item pops out of the world.
 ## `kind` is "tool", "seed", "crop", "material" or "tree_seed"; `crop` is only
 ## set for seeds and crops, and `tree` -- the species it grows -- for tree seeds.
+## `price` is what the shipping bin pays for one (0: it will not take it) and
+## `cost` what the seed shop charges (0: not sold there).
 ##
 ## The dictionary is shared between callers and read-only: copy it with
 ## `duplicate()` before changing anything in it.
@@ -93,19 +99,29 @@ static func _look_up(id: String) -> Dictionary:
 		var tool: Dictionary = TOOLS[id]
 		return _entry(tool["name"], EMOJI, tool["region"], 1, "tool", "", tool["scale"])
 	if MATERIALS.has(id):
-		return _outlined(MATERIALS[id], "material")
+		var entry := _outlined(MATERIALS[id], "material")
+		entry["price"] = MATERIALS[id].get("price", 0)
+		return entry
 	if TREE_SEEDS.has(id):
 		var entry := _outlined(TREE_SEEDS[id], "tree_seed")
 		entry["tree"] = TREE_SEEDS[id]["tree"]
+		entry["price"] = TREE_SEED_PRICE
 		return entry
 	if id.ends_with(SEED_SUFFIX):
 		var crop := id.trim_suffix(SEED_SUFFIX)
 		if CropDB.CROPS.has(crop):
-			return _entry(CropDB.CROPS[crop]["name"] + " Seeds", SHEET,
+			var entry := _entry(CropDB.CROPS[crop]["name"] + " Seeds", SHEET,
 					_cell_region(0, CropDB.CROPS[crop]["row"]), MAX_STACK, "seed", crop)
+			# Sold back at half what they cost, as in Stardew: unwanted packets
+			# are worth something, and buying to sell can never pay.
+			entry["cost"] = CropDB.CROPS[crop]["seed"]
+			entry["price"] = CropDB.CROPS[crop]["seed"] / 2
+			return entry
 	if CropDB.CROPS.has(id):
-		return _entry(CropDB.CROPS[id]["name"], SHEET,
+		var entry := _entry(CropDB.CROPS[id]["name"], SHEET,
 				_cell_region(1, CropDB.CROPS[id]["row"]), MAX_STACK, "crop", id)
+		entry["price"] = CropDB.CROPS[id]["price"]
+		return entry
 	return {}
 
 
@@ -121,20 +137,40 @@ static func kind_label(id: String) -> String:
 ## A sentence or two of detail for the tooltip.
 static func describe(id: String) -> String:
 	var entry := info(id)
+	var sells := " Sells for %d." % sell_price(id) if sell_price(id) > 0 else ""
 	match entry.get("kind", ""):
 		"tool":
 			return TOOL_TEXT.get(id, "")
 		"seed":
 			var crop: String = entry["crop"]
-			return "Plant in tilled soil and water it every day. Ripens after %d days." \
-					% CropDB.days_to_ripen(crop)
+			return "Plant in tilled soil and water it every day. Ripens after %d days. Grows in %s." \
+					% [CropDB.days_to_ripen(crop), CropDB.seasons_text(crop)]
 		"crop":
-			return "Fresh from the field."
+			return "Fresh from the field." + sells
 		"material":
-			return MATERIALS[id]["text"]
+			return MATERIALS[id]["text"] + sells
 		"tree_seed":
-			return "Plant it in open grass and it grows into %s." % TREE_SEEDS[id]["tree_name"]
+			return "Plant it in open grass and it grows into %s." % TREE_SEEDS[id]["tree_name"] + sells
 	return ""
+
+
+## What the shipping bin pays for one; 0 for things it will not take, like tools.
+static func sell_price(id: String) -> int:
+	return info(id).get("price", 0)
+
+
+## What the seed shop charges for one; 0 for things it does not sell.
+static func buy_price(id: String) -> int:
+	return info(id).get("cost", 0)
+
+
+## What a whole inventory would fetch in the shipping bin.
+static func value_of(inv: Inventory) -> int:
+	var total := 0
+	if inv != null:
+		for i in inv.size():
+			total += sell_price(inv.item_at(i)) * inv.count_at(i)
+	return total
 
 
 static func seed_id(crop: String) -> String:
@@ -180,4 +216,6 @@ static func _entry(item_name: String, sheet: Texture2D, region: Rect2, stack: in
 		"max_stack": stack,
 		"kind": kind,
 		"crop": crop,
+		"price": 0,
+		"cost": 0,
 	}

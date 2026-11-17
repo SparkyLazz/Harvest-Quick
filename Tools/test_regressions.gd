@@ -101,6 +101,18 @@ func _initialize() -> void:
 	await process_frame
 	await process_frame
 	check(heart.texture == drawn, "an unchanged heart keeps its texture between frames")
+
+	# --- the book: the cat has air in its frame, and the window fits the screen --
+	var holder: Control = panel._face_holder
+	var recess := holder.get_parent() as Control
+	var ink: Rect2 = Rect2(holder.position + panel.FACE_INK.position * panel.PORTRAIT_ZOOM,
+			panel.FACE_INK.size * panel.PORTRAIT_ZOOM)
+	var room: float = panel.FRAME_RIM + panel.PORTRAIT_MARGIN
+	var gaps := [ink.position.x, ink.position.y, recess.size.x - ink.end.x, recess.size.y - ink.end.y]
+	check(gaps.all(func(g: float) -> bool: return g >= room - 1),
+			"the cat sits clear of its frame on every side (%s, want %d)" % [str(gaps), room])
+	var book_width: float = panel._window.get_combined_minimum_size().x * 2
+	check(book_width <= 1152, "the profile book fits a 1152px window at zoom 2 (%d)" % book_width)
 	panel.close()
 
 	# --- binding a panel twice does not wire its cursor twice ----------------

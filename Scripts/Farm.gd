@@ -17,6 +17,10 @@ extends Node2D
 ## record of this map, stamped with the day, and on the way back in they are
 ## planted again. Nights slept while the map was not loaded are caught up then:
 ## the first of them grows whatever was watered, and the rest find dry soil.
+##
+## Crops keep to their seasons (CropDB): the morning a new season starts,
+## anything that does not grow in it dies and is gone, leaving the soil tilled.
+## A farm that was not loaded at the turn catches that up too.
 
 signal crop_planted(cell: Vector2i, crop: String)
 signal cell_watered(cell: Vector2i)
@@ -62,6 +66,10 @@ var _tile := Vector2.ONE * 16.0
 var _tilled := {}      # Vector2i -> true
 var _crops := {}       # Vector2i -> {crop, stage, grown, sprite}
 var _wet := {}         # Vector2i -> true, until the next morning
+## This map's farm record in PlayerState, held from the start. A farm on its
+## way out writes here, not to whatever `world_for` hands out by then: after a
+## new game or a load, that would carry the old farm into the new one.
+var _record: Dictionary
 
 func _ready() -> void:
 	_layer = get_node_or_null(ground_layer_path) as TileMapLayer
@@ -75,13 +83,21 @@ func _ready() -> void:
 	if player and player.has_signal("untilled"):
 		player.connect("untilled", _on_untilled)
 	PlayerState.day_changed.connect(_on_day_changed)
+	_record = PlayerState.world_for(get_parent())["farm"]
+	# A save taken while the farm is on screen asks it to write first.
+	add_to_group(&"saves_world")
 	# Deferred: the plants go in beside this node, and the parent is still
 	# busy adding its own children while they are readied.
-	_restore.call_deferred(PlayerState.world_for(get_parent())["farm"])
+	_restore.call_deferred(_record)
+
+
+## Writes the plots into the map's record now (PlayerState.save_game calls it).
+func write_world() -> void:
+	_save(_record)
 
 
 func _exit_tree() -> void:
-	_save(PlayerState.world_for(get_parent())["farm"])
+	_save(_record)
 	for cell in _crops:
 		var sprite: Sprite2D = _crops[cell]["sprite"]
 		if is_instance_valid(sprite):
@@ -116,6 +132,9 @@ func _restore(record: Dictionary) -> void:
 	# soil grows nothing, so any further nights away change nothing.
 	if PlayerState.day > record["day"]:
 		_pass_night(false)
+	# A season that turned while the farm was away still kills what it should.
+	if _season_number(PlayerState.day) != _season_number(record["day"]):
+		_wither_out_of_season()
 	for cell: Vector2i in _crops:
 		_refresh_sprite(cell)
 
@@ -213,10 +232,30 @@ func harvest(cell: Vector2i) -> Dictionary:
 	return yield_
 
 
-func _on_day_changed(_day: int) -> void:
+func _on_day_changed(day: int) -> void:
 	_pass_night(true)
+	if _season_number(day) != _season_number(day - 1):
+		_wither_out_of_season()
 	for cell: Vector2i in _crops:
 		_refresh_sprite(cell)
+
+
+## Pulls up every crop that does not grow in today's season.
+func _wither_out_of_season() -> void:
+	var season := Calendar.season_index(PlayerState.day)
+	for cell: Vector2i in _crops.keys():
+		if CropDB.grows_in(_crops[cell]["crop"], season):
+			continue
+		var sprite: Sprite2D = _crops[cell]["sprite"]
+		if is_instance_valid(sprite):
+			sprite.queue_free()
+		_crops.erase(cell)
+
+
+## Seasons counted from the start of the game, so a whole year away still
+## reads as a change of season.
+static func _season_number(day: int) -> int:
+	return (day - 1) / Calendar.DAYS_PER_SEASON
 
 
 func _cell_origin(cell: Vector2i) -> Vector2:

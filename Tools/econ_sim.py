@@ -1,10 +1,10 @@
 """Debt economy simulator: the numbers behind Docs/GAME_DESIGN.md's debt rules.
 
-Plays the debt rules against a rough income curve for players of four skill
+Plays the debt rules against an income curve for players of four skill
 levels, 300 runs each, and reports how often each one loses and when each one
-can hire the lawyer. The income side is a guess (profit per watered tile per
-day, by season, plus animals and fishing), so rerun this with real prices once
-the shop exists, and retune the rules below if the results drift.
+can hire the lawyer. The farm's side now comes from the game's real crop
+prices (CROPS below, a copy of Scripts/Crops.gd); animals and fishing are
+still a guess until they are built. Retune the rules if the results drift.
 
 Calendar is Stardew's: 4 seasons x 4 weeks = 16 weeks a year; a run is 2 years.
 
@@ -37,7 +37,35 @@ EVIDENCE_WEEK = 12              # story: the earliest week all evidence can be f
 
 # --- income model ---
 REINVEST = 0.45                 # share of income spent on seeds, tools, animals
-TILE_PROFIT = {"Spring": 6, "Summer": 9, "Fall": 10, "Winter": 0}   # per tile per day
+# The crops as Scripts/Crops.gd prices them: (days to ripen, price, seasons).
+# A copy -- keep the two in step. Tools/test_economy.gd checks the game's side
+# against the per-season figures this produces (Spring ~6, Summer ~9, Fall ~10).
+CROPS = {
+    "corn": (10, 95, ("Summer", "Fall")),
+    "carrot": (4, 24, ("Spring",)),
+    "cauliflower": (10, 70, ("Spring",)),
+    "tomato": (8, 72, ("Summer",)),
+    "eggplant": (5, 50, ("Fall",)),
+    "bluebell": (5, 32, ("Spring",)),
+    "lettuce": (5, 30, ("Spring",)),
+    "wheat": (4, 32, ("Summer", "Fall")),
+    "pumpkin": (12, 130, ("Fall",)),
+    "turnip": (4, 22, ("Spring",)),
+    "rose": (7, 63, ("Summer",)),
+    "beet": (6, 60, ("Fall",)),
+    "starfruit": (13, 140, ("Summer",)),
+    "cucumber": (8, 68, ("Summer",)),
+}
+
+
+def tile_profit(season: str) -> float:
+    """What a tile kept planted takes in a day in `season`: the average over that
+    season's crops of price / days. Seeds are paid for out of REINVEST."""
+    rates = [price / days for days, price, seasons in CROPS.values() if season in seasons]
+    return sum(rates) / len(rates) if rates else 0.0
+
+
+TILE_PROFIT = {s: tile_profit(s) for s in ("Spring", "Summer", "Fall", "Winter")}
 START_TILES, TILE_GROWTH, TILE_CAP = 12, 4, 80                     # tiles kept watered
 SIDE = {"Spring": 20, "Summer": 40, "Fall": 50, "Winter": 160}      # animals + fishing a week
 

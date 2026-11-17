@@ -23,6 +23,9 @@ const FACE_HELD_COLOR := Color("c49a6c")
 const KEY_COLOR := Color("90625d")
 ## How far down the slot the hotkey number's top edge sits, in slot pixels.
 const HOTKEY_TOP := 4
+## Where a price tag's coin stands, in from the slot's left edge (the plate's
+## rim is 3 pixels).
+const PRICE_COIN_X := 4
 
 var index: int = 0
 var item: String = "": set = set_item
@@ -31,6 +34,9 @@ var count: int = 0: set = set_count
 var held: bool = false: set = set_held
 ## Number key printed in the corner of hotbar slots. 0 prints nothing.
 var hotkey: int = 0: set = set_hotkey
+## A shop's asking price, drawn with a coin where the stack count goes; -1 for
+## an ordinary slot.
+var price: int = -1: set = set_price
 ## Zoom on top of each item's own icon zoom.
 var icon_scale: float = 1.0
 ## Off for the item that rides on the cursor, which is only an icon.
@@ -66,10 +72,12 @@ func _draw() -> void:
 		var icon_size := (region.size * icon_scale * float(entry["scale"])).round()
 		draw_texture_rect_region(entry["sheet"],
 				Rect2(((size - icon_size) * 0.5).round(), icon_size), region)
-	if count > 1:
-		# Dark ink even on the dark held slot: it still reads better there
-		# (3.8:1) than the cream it used to be (2.4:1).
-		var face := FACE_HELD_COLOR if held else (FACE_HOVER_COLOR if _hover else FACE_COLOR)
+	# Dark ink even on the dark held slot: it still reads better there (3.8:1)
+	# than the cream it used to be (2.4:1).
+	var face := FACE_HELD_COLOR if held else (FACE_HOVER_COLOR if _hover else FACE_COLOR)
+	if price >= 0:
+		_draw_price(face)
+	elif count > 1:
 		UIFont.draw_haloed(self, Vector2(0, size.y - 4), str(count),
 				HORIZONTAL_ALIGNMENT_RIGHT, size.x - 3, COUNT_COLOR, face)
 	if hotkey > 0 and show_background:
@@ -78,6 +86,25 @@ func _draw() -> void:
 		var key_font := UIFont.body()
 		draw_string(key_font, Vector2(4, HOTKEY_TOP + key_font.get_ascent(UIFont.SIZE)),
 				str(hotkey), HORIZONTAL_ALIGNMENT_LEFT, -1, UIFont.SIZE, KEY_COLOR)
+
+
+## A price tag along the bottom of the slot: the price in the count's corner,
+## and the pack's smallest coin in the other, both standing on the same line.
+## Tucked beside the price, the coin sat on the corner of the packet's icon --
+## it is taller than the digits -- and read as clutter; out in the corner it
+## clears the icon.
+func _draw_price(face: Color) -> void:
+	var baseline := Vector2(0, size.y - 4)
+	UIFont.draw_haloed(self, baseline, str(price), HORIZONTAL_ALIGNMENT_RIGHT, size.x - 3,
+			COUNT_COLOR, face)
+	var coin := UISkin.COIN_TINY
+	draw_texture_rect_region(UISkin.COINS,
+			Rect2(Vector2(PRICE_COIN_X, baseline.y - coin.size.y), coin.size), coin)
+
+
+func set_price(value: int) -> void:
+	price = value
+	queue_redraw()
 
 
 func _set_hover(on: bool) -> void:

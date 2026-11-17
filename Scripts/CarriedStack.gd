@@ -28,9 +28,13 @@ func set_to(new_item: String, new_count: int) -> void:
 
 
 ## Whole stack: pick it up, put it down, top up a matching stack, or swap.
+## Nothing goes down into an inventory that will not take it (see
+## Inventory.takes) -- the stack simply stays on the cursor.
 func left_click(inv: Inventory, index: int) -> void:
 	var there := inv.item_at(index)
 	var n := inv.count_at(index)
+	if not is_empty() and not inv.takes(item):
+		return
 	if is_empty():
 		if there != "":
 			set_to(there, n)
@@ -53,6 +57,8 @@ func left_click(inv: Inventory, index: int) -> void:
 func right_click(inv: Inventory, index: int) -> void:
 	var there := inv.item_at(index)
 	var n := inv.count_at(index)
+	if not is_empty() and not inv.takes(item):
+		return
 	if is_empty():
 		if there == "":
 			return

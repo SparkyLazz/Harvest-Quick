@@ -1,12 +1,14 @@
 class_name HUD
 extends CanvasLayer
 
-## Heart bar and hotbar drawn from the Sprout Lands UI pack.
+## The screen furniture drawn from the Sprout Lands UI pack: the hotbar along
+## the bottom, the clock in the top-left corner, and the status sign -- hearts
+## with the purse hung under them -- in the top-right (StatusSign).
 ##
-## The scene holds the two plates and an empty row inside each; this script
-## fills those rows, sizes the plates to fit, and scales the whole thing up to
-## match the zoomed-in pixel art. Hearts read in halves, so 2.5 draws two full
-## hearts and one half.
+## The scene holds the hotbar's plate and an empty row inside it; this script
+## fills that row, sizes the plate to fit, and scales everything up to match
+## the zoomed-in pixel art. Hearts read in halves, so 2.5 draws two full hearts
+## and one half.
 
 signal slot_selected(index: int)
 ## Fires when the wardrobe or chest window closes, with the key it was on.
@@ -23,21 +25,13 @@ const SHEET := preload("res://Assets/UI/Inventory_Spritesheet.png")
 # What an item id means (name, icon, stacking) lives in ItemDB, and the stacks
 # themselves in Inventory; this script only draws the first `slot_count` slots.
 
-# Both bars are nine-sliced so they size to whatever they hold.
-#
-# They used to be cut from the sheet's own 110x28 strips, which are drawn
-# open-bottomed -- flat face colour down to the last row -- so they could stack
-# flush. They are the same rounded plate as every other window now, which has a
-# border on all four sides, so each bar closes itself and the two are given a
-# gap to sit in rather than being butted together.
+# The hotbar is nine-sliced so it sizes to whatever it holds. It is the same
+# rounded plate as every other window, with a border on all four sides.
 #
 # The corner curve runs through rows 0-5, so 6 covers it on every side. That is
 # the one number: the plate is one shape, sliced one way, wherever it appears.
 const PLATE := preload("res://Assets/UI/Panel_Plate.png")
 const PLATE_PATCH := 6
-## Gap between the heart bar and the hotbar, in source pixels. Zero butts two
-## borders against each other and reads as a seam.
-const PLATE_GAP := 2
 
 # Sizes and spacings below are measured off the pack's own example composites,
 # so the bars match the reference artwork.
@@ -47,14 +41,10 @@ const SLOT_REGION := Rect2(233, 121, 30, 32)           # in SHEET
 # The darkest shade of the same 30x32 family, so the held slot reads at a
 # glance with no extra decoration on top.
 const SLOT_SELECTED_REGION := Rect2(329, 121, 30, 32)  # in SHEET
-# The sheet carries two heart palettes side by side. The one at x=0 is rose and
-# washes out against the plate; the one at x=112 is the deeper purple set.
-const HEART_EMPTY_REGION := Rect2(112, 2, 15, 14)       # in SHEET
-const HEART_HALF_REGION := Rect2(128, 2, 15, 14)
-const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
+# Hearts are the status sign's (StatusSign.heart_for), wherever they appear.
 
 @export_group("Hearts")
-## How many heart icons the bar shows.
+## How many hearts the status sign holds; its plate widens to fit.
 @export_range(1, 20) var max_hearts: int = 4: set = set_max_hearts
 ## Current health in hearts. Halves are drawn with the half-heart sprite.
 @export_range(0.0, 20.0, 0.5) var health: float = 4.0: set = set_health
@@ -70,15 +60,10 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 @export_range(1, 8) var ui_scale: int = 2: set = set_ui_scale
 ## Padding between a plate's edge and its contents, in source pixels.
 @export_range(0, 16) var padding: int = 5
-## Gap between hearts, in source pixels.
-@export_range(0, 16) var heart_spacing: int = 2
 ## Gap between slots, in source pixels.
 @export_range(0, 16) var slot_spacing: int = 4
-## How far the heart plate sits right of the hotbar's left edge, in source
-## pixels. The pack's own reference art uses 13.
-@export_range(0, 64) var heart_indent: int = 13: set = set_heart_indent
 ## Distance from the bottom edge of the screen, in screen pixels. 0 stands the
-## bars on the bottom edge; positive floats them, negative hangs them off.
+## bar on the bottom edge; positive floats it, negative hangs it off.
 ##
 ## Floated by default, which the closed plate needs: the old strips were drawn
 ## open-bottomed to sit flush on the edge, but this one has a bottom border, and
@@ -113,9 +98,6 @@ const HEART_FULL_REGION := Rect2(144, 2, 15, 14)
 @export_range(0.05, 1.0, 0.01) var pop_time: float = 0.3
 
 @onready var _scaler: Control = $Screen/Scaler
-@onready var _heart_row: MarginContainer = $Screen/Scaler/Bars/HeartRow
-@onready var _heart_plate: NinePatchRect = $Screen/Scaler/Bars/HeartRow/HeartPlate
-@onready var _hearts: HBoxContainer = $Screen/Scaler/Bars/HeartRow/HeartPlate/Hearts
 @onready var _hotbar_plate: NinePatchRect = $Screen/Scaler/Bars/HotbarPlate
 @onready var _slots: HBoxContainer = $Screen/Scaler/Bars/HotbarPlate/Slots
 
@@ -127,12 +109,17 @@ var _pop_tween: Tween
 var _panel: ProfilePanel
 var _storage: StoragePanel
 var _clock: ClockPlate
+var _sign: StatusSign
 
 func _ready() -> void:
 	_ready_done = true
 	_clock = ClockPlate.new()
 	_clock.name = "Clock"
 	$Screen.add_child(_clock)
+	# Hearts and the purse, hung in the opposite corner to the clock.
+	_sign = StatusSign.new()
+	_sign.name = "Status"
+	$Screen.add_child(_sign)
 	_load_loadout()
 	_panel = ProfilePanel.new()
 	_panel.name = "ProfilePanel"
@@ -167,12 +154,28 @@ func is_storage_open() -> bool:
 ## Opens the storage window on one piece of furniture, named as
 ## `PlayerState.storage_key` spells it. The profile screen steps aside: both
 ## are full-screen windows, so only one of them can be the one you are in.
-func open_storage(key: String) -> void:
+func open_storage(key: String, heading: String = StoragePanel.RIGHT_TITLE) -> void:
 	if _storage == null:
 		return
 	if _panel != null and _panel.is_open():
 		_panel.close()
-	_storage.open(key)
+	_storage.open(key, heading)
+
+
+## Opens the seed shop on this season's packets, in CropDB's order. Nothing
+## grows in Winter, so then the stall is empty and says so.
+func open_shop() -> void:
+	if _storage == null:
+		return
+	if _panel != null and _panel.is_open():
+		_panel.close()
+	var season := Calendar.season_index(PlayerState.day)
+	var stock: Array[String] = []
+	for crop in CropDB.in_season(season):
+		stock.append(ItemDB.seed_id(crop))
+	var heading := ("%s SEEDS" % Calendar.SEASONS[season]).to_upper() if not stock.is_empty() \
+			else "NOTHING GROWS IN WINTER"
+	_storage.open_shop(stock, heading)
 
 
 func close_storage() -> void:
@@ -223,23 +226,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## Rebuilds both rows from scratch. Safe to call at any time.
+## Rebuilds the hotbar from scratch and brings the clock and the status sign
+## up to date. Safe to call at any time.
 func rebuild() -> void:
 	if not _ready_done:
 		return
-	# Each plate closes itself now, so they are spaced rather than butted.
-	(_scaler.get_node("Bars") as VBoxContainer).add_theme_constant_override("separation", PLATE_GAP)
-	_heart_row.add_theme_constant_override("margin_left", heart_indent)
-	_apply_plate(_heart_plate, PLATE, Rect2(), PLATE_PATCH)
 	_apply_plate(_hotbar_plate, PLATE, Rect2(), PLATE_PATCH)
-	_build_row(_hearts, max_hearts, HEART_FULL_REGION, SHEET, heart_spacing)
 	_build_row(_slots, slot_count, SLOT_REGION, SHEET, slot_spacing)
-	_fit(_heart_plate, _hearts, max_hearts, HEART_FULL_REGION.size, heart_spacing)
 	_fit(_hotbar_plate, _slots, slot_count, SLOT_REGION.size, slot_spacing)
-	_refresh_hearts()
 	_refresh_slots()
 	_scaler.scale = Vector2(ui_scale, ui_scale)
 	_clock.ui_scale = ui_scale
+	_sign.ui_scale = ui_scale
+	_sign.hearts = max_hearts
+	_refresh_hearts()
 	_reposition()
 
 
@@ -288,19 +288,12 @@ func _atlas(region: Rect2, sheet: Texture2D) -> AtlasTexture:
 	return UISkin.atlas(sheet, region)
 
 
+## The hearts live on the status sign; it draws a heart full when health covers
+## it entirely, half when it covers the first half, empty otherwise.
 func _refresh_hearts() -> void:
 	if not _ready_done:
 		return
-	for i in _hearts.get_child_count():
-		var icon := _hearts.get_child(i) as TextureRect
-		# A heart is full when health covers it entirely, half when it covers
-		# the first half of it, empty otherwise.
-		var region := HEART_EMPTY_REGION
-		if health >= i + 1:
-			region = HEART_FULL_REGION
-		elif health >= i + 0.5:
-			region = HEART_HALF_REGION
-		icon.texture = _atlas(region, SHEET)
+	_sign.health = health
 
 
 func _refresh_slots() -> void:
@@ -390,19 +383,15 @@ func _animate_selection() -> void:
 				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
-## Centre the scaled bars along the bottom edge. The scaler is anchored to the
-## bottom-centre and draws from its own top-left, so both offsets are measured
-## back from that corner. Sizes come from the plates we just set rather than
-## from the laid-out rect, which is not valid until the next frame.
+## Centre the scaled hotbar along the bottom edge. The scaler is anchored to
+## the bottom-centre and draws from its own top-left, so both offsets are
+## measured back from that corner. Sizes come from the plate we just set rather
+## than from the laid-out rect, which is not valid until the next frame.
 func _reposition() -> void:
 	if not _ready_done:
 		return
-	var w := maxf(_heart_plate.custom_minimum_size.x + heart_indent,
-			_hotbar_plate.custom_minimum_size.x) * ui_scale
-	# The gap between the two plates counts towards the stack's height; leaving
-	# it out hangs that much of the hotbar off the bottom of the screen.
-	var h := (_heart_plate.custom_minimum_size.y + _hotbar_plate.custom_minimum_size.y
-			+ PLATE_GAP) * ui_scale
+	var w := _hotbar_plate.custom_minimum_size.x * ui_scale
+	var h := _hotbar_plate.custom_minimum_size.y * ui_scale
 	# Offsets are measured from the anchors (bottom-centre); `position` would be
 	# measured from the parent's top-left instead and land off-screen. The
 	# scaler is a zero-sized transform holder, so all four match.
@@ -426,11 +415,6 @@ func set_health(value: float) -> void:
 
 func set_slot_count(value: int) -> void:
 	slot_count = maxi(value, 1)
-	rebuild()
-
-
-func set_heart_indent(value: int) -> void:
-	heart_indent = maxi(value, 0)
 	rebuild()
 
 

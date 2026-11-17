@@ -45,13 +45,23 @@ Stardew's calendar:
 - A day runs **6:00 am → 2:00 am**. The clock moves in 10-minute steps, every
   7 real seconds, so a full day is about 14 real minutes.
 - The clock stops while a menu/window is open and during screen fades.
-- **Sleep** in bed: next day at 6:00, full stamina.
+- **Sleep** in bed: next day at 6:00, full stamina — and the game **saves**
+  (§15).
 - **Pass out** at 2:00 am: wake next to the bed next morning with **half**
   stamina. (Later this could also cost money — the collector "helps himself".)
+- **Stamina refills by itself** after a few seconds of rest — decided
+  2026-11-06, instead of Stardew's refill only by sleeping or eating. So
+  stamina never caps a day's farming; the 14-minute day does, which is what
+  `econ_sim.py` assumes (up to 80 watered tiles a day) and why its results in
+  §4 stand. Known side effect: waking on half stamina costs almost nothing,
+  since it is back to full within seconds — if passing out should hurt, the
+  cost has to come from elsewhere (the collector, above).
 - **Crops grow overnight**: each night the soil was watered counts as one day
   grown; all soil is dry again in the morning, so you water every day.
-- **Winter has no crops** (planned; crop seasons are not enforced yet — see
-  §9). Winter income comes from animals and fishing.
+- **Crops keep to their seasons** (built, §13): seeds are only sold and can
+  only be planted in their seasons, and the morning a new season starts,
+  anything that does not grow in it dies (the soil stays tilled). **Winter
+  has no crops**; winter income comes from animals and fishing.
 
 ## 4. The debt (designed, not built yet)
 
@@ -91,9 +101,11 @@ reaches the collector's third strike.
   (e.g. a letter from the friendly neighbour).
 - The player has a real choice: pay extra now to slow interest, or save for
   the lawyer, who wipes out all of Mom's debt in one go.
-- The income side of the simulation is a guess (6–10 profit per tile per day,
-  like Stardew's parsnip/cauliflower). **Rerun the simulation once real crop
-  prices exist.**
+- The farm's side of the simulation now uses the game's real crop prices
+  (§13): a tile kept planted takes in about 6.2 a day in Spring, 9.1 in Summer
+  and 9.7 in Fall. Rerun on 2026-11-06 with them: the results above hold
+  exactly (casual week 23, good 17, expert 12, struggling never). Animals and
+  fishing are still a guess until they are built.
 
 ## 5. Endings
 
@@ -124,7 +136,8 @@ reaches the collector's third strike.
 
 ## 8. Income sources
 
-- **Crops** — built (growing). Selling not built yet.
+- **Crops** — built: grown on the farm, sold through the shipping bin, seeds
+  bought at the seed shop (§13). Wood and tree seeds sell too, for little.
 - **Animals** (chickens, cows: eggs, milk) — planned.
 - **Fishing** — planned.
 - Not planned for now (assets exist): mining, jam/preserves, bees.
@@ -136,9 +149,10 @@ reaches the collector's third strike.
 | — | Farming: hoe, plant, water, harvest; trees and axe; wood; tree seeds | **Done** |
 | — | Inventory (45 slots, 9-slot hotbar), profile screen (inventory/crafting/settings tabs), crafting (produce → seeds) | **Done** |
 | — | Player house: doors, bed, wardrobes and chests with storage | **Done** |
+| — | **Save game**: one slot, saved every night, wake in bed; New Game in Settings (§15) | **Done** |
 | 1 | **Day clock and sleep**: calendar, time, overnight growth, sleep, passing out, clock UI | **Done** |
-| 2 | **Coins, shipping bin / market, seed shop** — first income | **Next** |
-| 3 | **Weekly debt collector + bad ending** — after this the game is playable end to end (small) | Planned |
+| 2 | **Coins, shipping bin / market, seed shop** — first income (and crop seasons) | **Done** |
+| 3 | **Weekly debt collector + bad ending** — after this the game is playable end to end (small) | **Next** |
 | 4 | **Mailbox and Mom's letters** — new debt + story | Planned |
 | 5 | **Dialogue system + the city scene** (dialogue boxes, portrait frames from the UI pack) | Planned |
 | 6 | **Lawyer evidence quests + good ending** | Planned |
@@ -146,21 +160,8 @@ reaches the collector's third strike.
 | 8 | **Fishing** | Planned |
 
 **Open / not done yet:**
-- Crops are not tied to seasons (you can plant anything in winter). Do it
-  with the seed shop (step 2).
 - No evening darkening of the screen.
 - No rain / weather (the clock already has the weather icons ready).
-- No saving to disk: everything lives in memory for one run (see
-  `Docs/TECH_NOTES.md`).
-- Stamina refills by itself over a few seconds of rest. Stardew only refills
-  it by sleeping or eating — **open** whether to change that.
-  *Review note (2026-11-05), facts to decide with:* this one choice also sets
-  the economy. With today's refill, stamina limits nothing — even the
-  pass-out penalty (wake on half) is back to full about 5 seconds after
-  waking. `econ_sim.py` assumes up to 80 watered tiles a day; Stardew-style
-  stamina (100, at 5 a watering) allows about 20. Rerun with `TILE_CAP = 20`
-  and only experts ever afford the lawyer (median week 26); casual and good
-  players never do. Decide this before pricing crops in step 2.
 - Neutral ending (§5).
 
 ## 10. The clock (built) — what the player sees
@@ -180,18 +181,6 @@ Top-left corner of the screen, built from the UI pack's weather frame:
   ("SUMMER", softer brown) over the date ("MON 15", dark brown), both
   centred in the pack's small 5px font.
 
-## 12. Text
-
-- **All game text uses the clock plate's font** — the pack's 5×5 capitals —
-  chosen by the developer (2026-11-06) as the easiest to read. That covers
-  the hotbar, the profile screen, storage, tooltips, the clock and the "+3"
-  pop-ups over harvests and chopped trees.
-- One face means headings and descriptions differ by **colour**, as on the
-  plate: dark brown for names and values, softer brown for labels.
-- Stack counts and pop-ups are **dark ink, no outline**, like the plate; a
-  one-pixel halo in the colour behind them keeps them clear where they cross
-  an icon or the grass.
-
 ## 11. Asset packs
 
 All by Cup Nooble (Sprout Lands). Originals are in the developer's Downloads:
@@ -204,4 +193,105 @@ All by Cup Nooble (Sprout Lands). Originals are in the developer's Downloads:
 
 Imported into `Assets/` so far: tiles, crops, trees, house, furniture, chest,
 items, the player character, UI sheets, fonts, the clock atlas and the big
-weather icons. The Sorry pack is early access — its art may change.
+weather icons; and for step 2 the coins (UI pack), the signs (Sprites pack)
+and the Oak chest from the Sorry pack, as the shipping bin. The Sorry pack
+is early access — its art may change.
+
+The UI pack's own **money-and-hearts sign** (plates hung on posts) exists
+only on its all-in-one sheet, `UI Sprites/ALL UI ASSETS on one sheet.png`,
+around x 721–893, y 430–606 — no separate file. `Tools/cut_status.py` cuts
+it into `Assets/UI/Status.png`; the big hearts come from
+`UI Sprites/Icons/special icons/Hearts.png`, the very same pixels.
+
+## 12. Text
+
+- **All game text uses the clock plate's font** — the pack's 5×5 capitals —
+  chosen by the developer (2026-11-06) as the easiest to read. That covers
+  the hotbar, the profile screen, storage, tooltips, the clock and the "+3"
+  pop-ups over harvests and chopped trees.
+- One face means headings and descriptions differ by **colour**, as on the
+  plate: dark brown for names and values, softer brown for labels.
+- Stack counts and pop-ups are **dark ink, no outline**, like the plate; a
+  one-pixel halo in the colour behind them keeps them clear where they cross
+  an icon or the grass.
+
+## 13. Money: prices, seasons, the bin and the shop (built)
+
+- **Coins**: a new game starts with **200** (as `econ_sim.py` does). The
+  purse is on the status sign in the top-right corner (§14) and in the title
+  row of every storage window.
+- **Shipping bin** — beside the house's front door, cell (12, 6). Put
+  produce in like a chest; whatever is in it at night is **sold overnight** and
+  the coins are there in the morning (bed or passing out alike). It only takes
+  things that sell — no tools — and says what its contents will fetch. One bin
+  for the whole farm, however many are painted (as in Stardew).
+- **Seed shop** — the carrot sign two cells along, (14, 6), standing in for the
+  seed seller until the town exists (step 5). Click a packet to buy one,
+  **Shift**-click for five; it sells only **this season's** seeds, and nothing
+  in Winter. It buys nothing — selling is the bin's job.
+- **Seeds sell back at half** their price, so packets bought by mistake are not
+  wasted and buying to sell can never pay. Wood sells for 2, tree seeds for 5.
+
+Prices are set so a tile kept planted earns what `econ_sim.py` needs (about
+6 / 9 / 10 a day in Spring / Summer / Fall), packets at ~40% of the crop:
+
+| Crop | Seasons | Days | Packet | Sells for |
+|---|---|---|---|---|
+| Turnip | Spring | 4 | 8 | 22 |
+| Carrot | Spring | 4 | 10 | 24 |
+| Lettuce | Spring | 5 | 12 | 30 |
+| Bluebell | Spring | 5 | 14 | 32 |
+| Cauliflower | Spring | 10 | 30 | 70 |
+| Wheat | Summer, Fall | 4 | 12 | 32 |
+| Rose | Summer | 7 | 26 | 63 |
+| Cucumber | Summer | 8 | 26 | 68 |
+| Tomato | Summer | 8 | 28 | 72 |
+| Corn | Summer, Fall | 10 | 38 | 95 |
+| Starfruit | Summer | 13 | 60 | 140 |
+| Eggplant | Fall | 5 | 20 | 50 |
+| Beet | Fall | 6 | 24 | 60 |
+| Pumpkin | Fall | 12 | 52 | 130 |
+
+These live in `Scripts/Crops.gd`; `Tools/econ_sim.py` keeps a copy to
+simulate with, so change both (`test_economy.gd` checks the game's side).
+The season assignments and prices were chosen in building step 2 to hit the
+simulation's targets — they are tunable, not sacred.
+
+## 14. Screen layout (HUD)
+
+Decided by the developer, 2026-11-06:
+
+- **Top-left: the clock** (§10).
+- **Top-right: the status sign** — the UI pack's own design for health and
+  money: the hearts on a wide plate, and the purse (coin and amount) on a
+  smaller plate hung under it on two posts. It mirrors the clock: same 10px
+  margin, same zoom. The hearts plate widens for more hearts, the purse plate
+  for longer amounts.
+- **Bottom: the hotbar**, alone. The heart bar that used to sit on top of it,
+  and the purse plate briefly hung under the clock's date, are gone.
+- The profile screen's left page shows the **same hearts** as the sign (the
+  developer's call, same day), so health looks one way everywhere.
+- **The profile screen is a two-page book** (the developer picked design 5 of
+  5, 2026-11-17, from mock-ups cut from the pack's all-in-one sheet). Left page:
+  the cat in the pack's bolted wooden frame, with name, held item and coins
+  beside it, then hearts, stamina, pack and the farm totals two to a line.
+  Right page: inventory / crafting / settings. The tabs are bookmarks standing
+  up off the book's top edge over the right page, the open one lighter and
+  taller. The developer asked for the frame to be **bigger, with clear space
+  between the cat and the frame** -- 6px of recess all round (`PORTRAIT_MARGIN`).
+  The book must fit a 1152px window at zoom 2 with the 9-slot hotbar row.
+
+## 15. Saving (built)
+
+Decided 2026-11-06, on the developer's go-ahead for "save first, then the
+debt collector":
+
+- **One save slot**, written **every night** — after a sleep in bed or passing
+  out, once the night is over (crops grown, the shipping bin sold), so the
+  save is the morning you wake to. As in Stardew, a day played and not slept
+  on is not kept.
+- **Opening the game** reads the save and you **wake in bed** in the house.
+  With no save, it starts a new game on the farm, as before.
+- **New game**: Settings → GAME → NEW GAME. The button asks once ("SURE?",
+  for 3 seconds), then wipes the save and starts over on the farm, day one.
+- Settings (UI scale, hotkeys, tooltips) are not part of the save yet.

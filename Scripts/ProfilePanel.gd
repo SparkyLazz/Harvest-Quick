@@ -1,16 +1,17 @@
 class_name ProfilePanel
 extends Control
 
-## The player's screen, opened with E. Two columns: who you are on the left, and
-## what you are doing on the right, behind a row of tabs.
+## The player's screen, opened with E. Laid out as a book open on the table: who
+## you are on the left page, what you are doing on the right, and the tabs that
+## pick the right page standing up off its top edge like bookmarks.
 ##
-## The left rail is a readout -- portrait, hearts, stamina, carry weight and a
-## few running totals -- with one thing on it to play with: the cat wears a face
-## from the pack's emote sheet that tracks how worn out you are, and prodding it
-## makes it pull a different one. The right side swaps between pages:
+## The left page is a readout -- portrait, hearts, coins, stamina, carry weight
+## and a few running totals -- with one thing on it to play with: the cat wears a
+## face from the pack's emote sheet that tracks how worn out you are, and
+## prodding it makes it pull a different one. The right page swaps between:
 ##   Inventory  the full grid, with click-to-move stacks and hover tooltips
 ##   Crafting   recipes from RecipeDB, spent and granted against the inventory
-##   Settings   UI scale, hotkey numbers and tooltips, plus the key list
+##   Settings   UI scale, hotkey numbers and tooltips, the key list, and New Game
 ##
 ## Everything is built from Control nodes and measured in source pixels; the
 ## whole window is then scaled by `pixel_scale` to match the zoomed-in pixel art,
@@ -31,12 +32,20 @@ const TOOLTIP_TEXTURE := preload("res://Assets/UI/Panel_Plate_Tip.png")
 const CHECK_TEXTURE := preload("res://Assets/UI/Check.png")
 const CROSS_TEXTURE := preload("res://Assets/UI/Cross.png")
 const EMOJI := preload("res://Assets/UI/Emoji.png")
+## The pack's bolted wooden frame, from its all-in-one sheet, and its two
+## bookmark-shaped buttons: the light one for the open tab, the dark for the rest.
+const FRAME_TEXTURE := preload("res://Assets/UI/Portrait_Frame.png")
+const TAB_ON_TEXTURE := preload("res://Assets/UI/Tab_On.png")
+const TAB_OFF_TEXTURE := preload("res://Assets/UI/Tab_Off.png")
 
 const TEXT_COLOR := Color("5a3d3d")
 const MUTED_COLOR := Color("90625d")
 const SHORT_COLOR := Color("b5513f")
 const RULE_COLOR := Color("c9a376")
-const GRASS_COLOR := Color("a6c877")
+## Writing on a closed bookmark: the dark plate takes light ink, not dark.
+const TAB_OFF_INK := Color("f3e5c2")
+## The book's spine, the shade between the pages.
+const SPINE_COLOR := Color("aa7959")
 
 ## Bar tints, multiplied over the fill sprite's own green.
 const STAMINA_COLOR := Color8(164, 194, 99)
@@ -45,13 +54,26 @@ const WEIGHT_COLOR := Color8(224, 182, 74)
 ## The portrait is one of the pack's cat emote faces rather than the walking
 ## sprite: the sprite is drawn to be read from across a field at 16px, while the
 ## emote sheet is drawn to be read close up, which is what a portrait is.
-const PORTRAIT_SIZE := Vector2(108, 66)
 const PORTRAIT_ZOOM := 2
 ## Cell size on the emote sheet. The same grid EmoteBubble reads.
 const EMOJI_CELL := 32
+## Where the cat actually is in its 32px cell: every face leaves the same blank
+## border, so centring the cell would sit the cat low and to one side.
+const FACE_INK := Rect2(2, 5, 28, 26)
+## Clear space between the cat and the inner rim of its frame, in source pixels.
+## The frame used to fit the face like a collar; this is the air round it.
+const PORTRAIT_MARGIN := 6
+## The frame art is nine-sliced: posts and boards (and the bolts in the corners)
+## stay put, and only the plain lengths between them stretch. 20 is measured --
+## `slice.py measure` calls every margin from 20 up clean.
+const FRAME_EDGE := 20
+## How far in from the frame art's edges its recess starts (left, top, right,
+## bottom), and the 2px darker rim just inside that. Measured off the art.
+const FRAME_INSET := [17, 16, 17, 17]
+const FRAME_RIM := 2
 
 ## The resting faces, as (column, row) on the emote sheet. Which one the cat
-## wears is the rail's quietest readout: you see how tired you are before you
+## wears is the page's quietest readout: you see how tired you are before you
 ## read the bar underneath.
 const FACE_CALM := Vector2i(4, 2)
 const FACE_SWEAT := Vector2i(1, 4)
@@ -76,10 +98,19 @@ const ACTION_LABELS := {
 	"run": "RUN",
 }
 
-## Width of the left rail, in source pixels.
-const RAIL_WIDTH := 124
-## Gap between the two columns, in source pixels.
-const COLUMN_GAP := 8
+## Width of the left page, plate included, in source pixels. The whole book has
+## to fit a 1152px window at zoom 2 with a nine-slot hotbar row on the right
+## page, which leaves this much for the left.
+const LEFT_PAGE_WIDTH := 200
+## Space each side of the spine between the two pages, in source pixels.
+const SPINE_GAP := 5
+const SPINE_WIDTH := 2
+## Bookmark tabs: how wide each is, how tall the open one and the closed ones
+## stand, and how much of each hides behind the book's top edge.
+const TAB_WIDTH := 68
+const TAB_HEIGHT_ON := 26
+const TAB_HEIGHT_OFF := 23
+const TAB_TUCK := 8
 ## Space inside a plate, in source pixels: the dark window frame first, then the
 ## lighter plates it holds. Measured from the plate edge, not from its art, so
 ## raising these is how the whole panel is given more air.
@@ -87,10 +118,14 @@ const WINDOW_PAD_X := 10
 const WINDOW_PAD_Y := 9
 const PLATE_PAD_X := 9
 const PLATE_PAD_Y := 8
-## Space between the stacked blocks down the rail.
+## Space between the stacked blocks down the left page.
 const RAIL_GAP := 7
 ## Side of one UI-scale step button on the settings tab, in source pixels.
 const STEP_SIZE := 14
+## The new-game button's two faces, and how long it waits for the second press.
+const NEW_GAME_IDLE := "START"
+const NEW_GAME_ASK := "SURE?"
+const NEW_GAME_CONFIRM := 3.0
 ## The crafting detail card, in source pixels. Fixed, not fitted: the card used
 ## to be as big as whatever recipe was open, so picking "cauliflower" after
 ## "corn" grew it a line taller and a word wider and shoved the list beside it.
@@ -112,9 +147,9 @@ const TAB_NAMES := ["INVENTORY", "CRAFTING", "SETTINGS"]
 @export_range(1, 8) var pixel_scale: int = 2
 ## Slots per row. The first row is the hotbar.
 @export_range(2, 12) var columns: int = 8
-## Rows visible at once; the rest scroll. Five fills the height the left rail
-## sets, and shows a default 40-slot pack whole.
-@export_range(1, 8) var visible_rows: int = 5
+## Rows visible at once; the rest scroll. Six matches the height the left page
+## sets, and shows a 45-slot pack whole.
+@export_range(1, 8) var visible_rows: int = 6
 ## Gap between slots, in source pixels.
 @export_range(0, 16) var slot_gap: int = 4
 
@@ -131,7 +166,8 @@ const TAB_NAMES := ["INVENTORY", "CRAFTING", "SETTINGS"]
 var hud: HUD
 var inventory: Inventory
 
-var _window: PanelContainer
+## The whole window: the bookmark row, and the book whose top edge covers their feet.
+var _window: VBoxContainer
 var _pages: Array[Control] = []
 var _tabs: Array[Button] = []
 var _tab := TAB_INVENTORY
@@ -165,7 +201,8 @@ var _poke_index := 0
 var _poke_left := 0.0
 var _poke_tween: Tween
 
-var _hearts: HBoxContainer
+var _hearts: HFlowContainer
+var _coins_text: Label
 var _stamina_bar: PixelBar
 var _stamina_text: Label
 var _weight_bar: PixelBar
@@ -289,27 +326,34 @@ func _build() -> void:
 	add_child(dim)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 
-	_window = PanelContainer.new()
+	# The bookmarks come first so the book, drawn after them, covers their feet:
+	# the negative separation is that overlap.
+	_window = VBoxContainer.new()
 	_window.scale = Vector2.ONE * pixel_scale
-	_window.add_theme_stylebox_override("panel", _sliced(PANEL_TEXTURE, 6, WINDOW_PAD_X, WINDOW_PAD_Y))
+	_window.add_theme_constant_override("separation", -TAB_TUCK)
 	_window.resized.connect(_recenter)
 	add_child(_window)
+	_window.add_child(_build_tabs())
 
-	var columns_row := HBoxContainer.new()
-	columns_row.add_theme_constant_override("separation", COLUMN_GAP)
-	_window.add_child(columns_row)
-	columns_row.add_child(_build_rail())
+	var book := PanelContainer.new()
+	book.add_theme_stylebox_override("panel", _sliced(PANEL_TEXTURE, 6, WINDOW_PAD_X, WINDOW_PAD_Y))
+	_window.add_child(book)
 
-	var work := VBoxContainer.new()
-	work.add_theme_constant_override("separation", 4)
-	work.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columns_row.add_child(work)
-	work.add_child(_build_tabs())
+	var spread := HBoxContainer.new()
+	spread.add_theme_constant_override("separation", SPINE_GAP)
+	book.add_child(spread)
+	spread.add_child(_build_left_page())
+
+	var spine := ColorRect.new()
+	spine.color = SPINE_COLOR
+	spine.custom_minimum_size.x = SPINE_WIDTH
+	spine.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	spread.add_child(spine)
 
 	var page_host := PanelContainer.new()
 	page_host.add_theme_stylebox_override("panel", _sliced(INNER_TEXTURE, 6, PLATE_PAD_X, PLATE_PAD_Y))
-	page_host.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	work.add_child(page_host)
+	page_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spread.add_child(page_host)
 
 	# Every page is stacked in the same spot and all but one hidden, so the
 	# window keeps one size and the tabs do not make it jump.
@@ -342,32 +386,56 @@ func _build() -> void:
 	_build_tooltip()
 
 
-## The left rail: portrait, name, hearts, the two bars and the running totals.
-func _build_rail() -> Control:
-	var rail := PanelContainer.new()
-	rail.add_theme_stylebox_override("panel", _sliced(INNER_TEXTURE, 6, PLATE_PAD_X, PLATE_PAD_Y))
-	rail.custom_minimum_size.x = RAIL_WIDTH
-	rail.size_flags_vertical = Control.SIZE_EXPAND_FILL
+## The left page: the framed cat with its name, what it holds, hearts and coins
+## beside it, then the two bars and the running totals.
+func _build_left_page() -> Control:
+	var page := PanelContainer.new()
+	page.add_theme_stylebox_override("panel", _sliced(INNER_TEXTURE, 6, PLATE_PAD_X, PLATE_PAD_Y))
+	page.custom_minimum_size.x = LEFT_PAGE_WIDTH
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", RAIL_GAP)
-	rail.add_child(column)
+	page.add_child(column)
 
-	column.add_child(_build_portrait())
+	var top := HBoxContainer.new()
+	top.add_theme_constant_override("separation", RAIL_GAP + 1)
+	column.add_child(top)
+	top.add_child(_build_portrait())
 
-	var name_row := HBoxContainer.new()
-	column.add_child(name_row)
+	var card := VBoxContainer.new()
+	card.add_theme_constant_override("separation", 4)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	top.add_child(card)
 	var who := _label(UIFont.title(), TEXT_COLOR)
 	who.text = (player_name if player_name != "" else "FARMER").to_upper()
-	who.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_row.add_child(who)
+	card.add_child(who)
 	var held := _label(UIFont.body(), MUTED_COLOR)
 	held.name = "Held"
-	name_row.add_child(held)
+	# A long tool name wraps under itself rather than pushing the page wider.
+	held.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	held.custom_minimum_size.x = 1
+	card.add_child(held)
 	_stat_values["held"] = held
 
-	_hearts = HBoxContainer.new()
-	_hearts.add_theme_constant_override("separation", 2)
+	var purse := HBoxContainer.new()
+	purse.add_theme_constant_override("separation", 3)
+	card.add_child(purse)
+	var coin := TextureRect.new()
+	coin.texture = _atlas(UISkin.COIN, UISkin.COINS)
+	coin.stretch_mode = TextureRect.STRETCH_KEEP
+	coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	coin.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	purse.add_child(coin)
+	_coins_text = _label(UIFont.body(), TEXT_COLOR)
+	_coins_text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	purse.add_child(_coins_text)
+
+	# Under the frame, the page's full width: a flow rather than a row, so hearts
+	# past what fits wrap under instead of running off the page.
+	_hearts = HFlowContainer.new()
+	_hearts.add_theme_constant_override("h_separation", 2)
+	_hearts.add_theme_constant_override("v_separation", 2)
 	_hearts.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(_hearts)
 
@@ -380,8 +448,12 @@ func _build_rail() -> Control:
 
 	column.add_child(_rule())
 
-	var stats := VBoxContainer.new()
-	stats.add_theme_constant_override("separation", 4)
+	# Two to a line: the totals are short, and a column of four made the page
+	# taller than the window has room for.
+	var stats := GridContainer.new()
+	stats.columns = 2
+	stats.add_theme_constant_override("h_separation", 14)
+	stats.add_theme_constant_override("v_separation", 4)
 	column.add_child(stats)
 	for key: String in ["tilled", "watered", "growing", "kinds"]:
 		stats.add_child(_build_stat(key))
@@ -390,40 +462,56 @@ func _build_rail() -> Control:
 	filler.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	filler.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_child(filler)
-	return rail
+	return page
 
 
-## The cat on its patch of grass. It is a control you can press: clicking it
-## pops a different face and bounces it, which is the one thing on this screen
-## that exists purely to be played with.
+## The cat in the pack's wooden frame. The frame is stretched to leave
+## PORTRAIT_MARGIN of clear recess all round the cat, so the face is framed rather
+## than wedged in. It is a control you can press: clicking it pops a different
+## face and bounces it, which is the one thing on this screen that exists purely
+## to be played with.
 func _build_portrait() -> Control:
-	var portrait := Control.new()
-	portrait.custom_minimum_size = PORTRAIT_SIZE
-	portrait.clip_contents = true
+	var ink := FACE_INK.size * PORTRAIT_ZOOM
+	var recess_size := ink + Vector2.ONE * (FRAME_RIM + PORTRAIT_MARGIN) * 2
+	var portrait := NinePatchRect.new()
+	portrait.texture = FRAME_TEXTURE
+	portrait.patch_margin_left = FRAME_EDGE
+	portrait.patch_margin_top = FRAME_EDGE
+	portrait.patch_margin_right = FRAME_EDGE
+	portrait.patch_margin_bottom = FRAME_EDGE
+	portrait.custom_minimum_size = recess_size + Vector2(
+			FRAME_INSET[0] + FRAME_INSET[2], FRAME_INSET[1] + FRAME_INSET[3])
+	portrait.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	portrait.mouse_filter = Control.MOUSE_FILTER_STOP
 	portrait.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	portrait.gui_input.connect(_on_portrait_input)
 	portrait.mouse_entered.connect(_on_portrait_hover.bind(true))
 	portrait.mouse_exited.connect(_on_portrait_hover.bind(false))
 
-	var field := ColorRect.new()
-	field.color = GRASS_COLOR
-	field.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	portrait.add_child(field)
-	field.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# The recess clips, so a bounce or a hover lift can never draw the cat over
+	# the posts.
+	var recess := Control.new()
+	recess.position = Vector2(FRAME_INSET[0], FRAME_INSET[1])
+	recess.size = recess_size
+	recess.clip_contents = true
+	recess.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait.add_child(recess)
 
 	# The face sits in a holder of its own so the bounce scales the holder. The
-	# pivot is the cat's chin, so a squash presses it into the grass rather than
-	# floating it off the ground.
+	# pivot is the cat's chin, so a squash presses it down rather than floating
+	# it off the bottom of the frame.
 	var face_size := Vector2.ONE * EMOJI_CELL * PORTRAIT_ZOOM
 	_face_holder = Control.new()
 	_face_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_face_holder.custom_minimum_size = face_size
 	_face_holder.size = face_size
-	_face_holder.pivot_offset = Vector2(face_size.x * 0.5, face_size.y)
-	_face_rest = ((PORTRAIT_SIZE - face_size) * 0.5).round()
+	var chin := FACE_INK.end * PORTRAIT_ZOOM
+	_face_holder.pivot_offset = Vector2(face_size.x * 0.5, chin.y)
+	# Centre the cat's ink, not its cell, in the recess.
+	var ink_centre := (FACE_INK.position + FACE_INK.size * 0.5) * PORTRAIT_ZOOM
+	_face_rest = (recess_size * 0.5 - ink_centre).round()
 	_face_holder.position = _face_rest
-	portrait.add_child(_face_holder)
+	recess.add_child(_face_holder)
 
 	_face_atlas = AtlasTexture.new()
 	_face_atlas.atlas = EMOJI
@@ -505,6 +593,7 @@ func _build_meter(title: String, tint: Color, into: Container) -> Array:
 
 func _build_stat(key: String) -> Control:
 	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := _label(UIFont.body(), MUTED_COLOR)
 	name_label.text = key.to_upper()
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -516,21 +605,41 @@ func _build_stat(key: String) -> Control:
 	return row
 
 
+## The bookmarks, over the right page whose contents they pick. Bottoms level, so
+## the open one, standing taller, sticks up above the rest.
 func _build_tabs() -> Control:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_right", WINDOW_PAD_X + PLATE_PAD_X)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 3)
+	row.alignment = BoxContainer.ALIGNMENT_END
+	row.add_theme_constant_override("separation", 4)
+	margin.add_child(row)
 	for i in TAB_NAMES.size():
 		var tab := Button.new()
 		tab.text = TAB_NAMES[i]
 		tab.focus_mode = Control.FOCUS_NONE
-		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tab.custom_minimum_size.y = 20
+		tab.size_flags_vertical = Control.SIZE_SHRINK_END
+		tab.custom_minimum_size = Vector2(TAB_WIDTH, TAB_HEIGHT_OFF)
 		tab.add_theme_font_override("font", UIFont.title())
 		tab.add_theme_font_size_override("font_size", UIFont.SIZE)
 		tab.pressed.connect(_show_tab.bind(i))
 		row.add_child(tab)
 		_tabs.append(tab)
-	return row
+	return margin
+
+
+## Dresses a bookmark open or closed. The part tucked behind the book is padding,
+## so the word centres on what is left showing.
+func _style_tab(tab: Button, open: bool) -> void:
+	_style_button(tab, TAB_ON_TEXTURE if open else TAB_OFF_TEXTURE)
+	for state: String in ["normal", "hover", "pressed", "disabled"]:
+		var box := tab.get_theme_stylebox(state) as StyleBoxTexture
+		box.content_margin_top = 3
+		box.content_margin_bottom = TAB_TUCK + 1
+	tab.custom_minimum_size.y = TAB_HEIGHT_ON if open else TAB_HEIGHT_OFF
+	var ink := TEXT_COLOR if open else TAB_OFF_INK
+	for color: String in ["font_color", "font_hover_color", "font_pressed_color"]:
+		tab.add_theme_color_override(color, ink)
 
 
 func _build_inventory_page() -> Control:
@@ -769,8 +878,49 @@ func _build_settings_page() -> Control:
 	for action: String in ACTION_LABELS:
 		keys.append(_key_row(action))
 	page.add_child(_settings_group("CONTROLS", keys))
+	var game: Array[Control] = [_new_game_row()]
+	page.add_child(_settings_group("GAME", game))
 	page.add_child(_filler())
 	return page
+
+
+## Starting over, behind a two-step button: the first press only asks, and the
+## second -- within NEW_GAME_CONFIRM seconds -- wipes the save and goes back to
+## the first morning. The game saves itself each night, so there is nothing to
+## press to save.
+func _new_game_row() -> Control:
+	var row := HBoxContainer.new()
+	row.add_child(_row_label("NEW GAME", TEXT_COLOR))
+	var button := Button.new()
+	button.text = NEW_GAME_IDLE
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(40, STEP_SIZE)
+	button.add_theme_font_override("font", UIFont.body())
+	button.add_theme_font_size_override("font_size", UIFont.SIZE)
+	_style_button(button, PANEL_TEXTURE)
+	_tint_new_game(button, false)
+	button.pressed.connect(_on_new_game_pressed.bind(button))
+	row.add_child(button)
+	return row
+
+
+func _on_new_game_pressed(button: Button) -> void:
+	if button.text != NEW_GAME_ASK:
+		button.text = NEW_GAME_ASK
+		_tint_new_game(button, true)
+		get_tree().create_timer(NEW_GAME_CONFIRM).timeout.connect(func() -> void:
+			if is_instance_valid(button):
+				button.text = NEW_GAME_IDLE
+				_tint_new_game(button, false))
+		return
+	close()
+	PlayerState.new_game()
+
+
+func _tint_new_game(button: Button, asking: bool) -> void:
+	var ink := SHORT_COLOR if asking else TEXT_COLOR
+	for state in ["font_color", "font_hover_color", "font_pressed_color"]:
+		button.add_theme_color_override(state, ink)
 
 
 func _settings_group(title: String, rows: Array[Control]) -> Control:
@@ -959,7 +1109,7 @@ func _scroll_theme() -> Theme:
 
 
 
-## Shared cut-outs (see UISkin.atlas): the rail redraws every frame while the
+## Shared cut-outs (see UISkin.atlas): the left page redraws every frame while the
 ## window is up, and an unchanged heart should cost nothing.
 func _atlas(region: Rect2, sheet: Texture2D) -> AtlasTexture:
 	return UISkin.atlas(sheet, region)
@@ -980,13 +1130,7 @@ func _show_tab(index: int) -> void:
 	for i in _pages.size():
 		_pages[i].visible = i == _tab
 	for i in _tabs.size():
-		# The open tab wears the light plate the page below it is cut from; the
-		# rest wear the dark one, so the pair reads as one surface.
-		_style_button(_tabs[i], INNER_TEXTURE if i == _tab else PANEL_TEXTURE)
-		var tint := TEXT_COLOR if i == _tab else MUTED_COLOR
-		_tabs[i].add_theme_color_override("font_color", tint)
-		_tabs[i].add_theme_color_override("font_hover_color", TEXT_COLOR)
-		_tabs[i].add_theme_color_override("font_pressed_color", TEXT_COLOR)
+		_style_tab(_tabs[i], i == _tab)
 	if _tab == TAB_CRAFTING:
 		_select_recipe(_recipe_index)
 	_refresh_all()
@@ -1025,7 +1169,7 @@ func _refresh_heads() -> void:
 		(_stat_values["head_live"] as Label).text = "APPLIED AT ONCE"
 
 
-## The left rail. Called every frame while the panel is up, because stamina and
+## The left page. Called every frame while the panel is up, because stamina and
 ## the farm keep moving underneath it.
 func _sync_profile(instant: bool = false) -> void:
 	if hud == null:
@@ -1054,6 +1198,7 @@ func _sync_profile(instant: bool = false) -> void:
 		_weight_bar.max_value = float(inventory.size())
 		_weight_bar.value = float(used)
 	_weight_text.text = "%d/%d" % [used, inventory.size()]
+	_coins_text.text = "%d COINS" % PlayerState.coins
 
 	var held := hud.held_item()
 	(_stat_values["held"] as Label).text = (ItemDB.display_name(held).to_upper()
@@ -1061,6 +1206,8 @@ func _sync_profile(instant: bool = false) -> void:
 	_refresh_farm_stats()
 
 
+## The same hearts as the status sign in the corner -- the pack's big ones,
+## full, half and empty by the sign's own rule -- so the two never disagree.
 func _refresh_hearts() -> void:
 	var want := hud.max_hearts
 	while _hearts.get_child_count() > want:
@@ -1071,18 +1218,14 @@ func _refresh_hearts() -> void:
 		var icon := TextureRect.new()
 		icon.stretch_mode = TextureRect.STRETCH_KEEP
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon.custom_minimum_size = HUD.HEART_FULL_REGION.size
+		icon.custom_minimum_size = StatusSign.HEART_FULL.size
 		_hearts.add_child(icon)
 	for i in _hearts.get_child_count():
-		var region := HUD.HEART_EMPTY_REGION
-		if hud.health >= i + 1:
-			region = HUD.HEART_FULL_REGION
-		elif hud.health >= i + 0.5:
-			region = HUD.HEART_HALF_REGION
-		(_hearts.get_child(i) as TextureRect).texture = _atlas(region, HUD.SHEET)
+		(_hearts.get_child(i) as TextureRect).texture = _atlas(
+				StatusSign.heart_for(i, hud.health), StatusSign.ATLAS)
 
 
-## Counts off the farm, so the rail says something about the world rather than
+## Counts off the farm, so the page says something about the world rather than
 ## only about the player. Silently zero when the scene has no Farm.
 func _refresh_farm_stats() -> void:
 	var tilled := 0
@@ -1117,7 +1260,7 @@ func _distinct_items() -> int:
 
 
 ## The Player and the Farm, looked up once per opening rather than held, so a
-## scene that swaps either out does not leave the rail reading a freed node.
+## scene that swaps either out does not leave the page reading a freed node.
 func _find_scene_nodes() -> void:
 	_player = null
 	_farm = null

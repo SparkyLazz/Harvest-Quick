@@ -37,6 +37,11 @@ y_sort_enabled = true
 tile_map_data = PackedByteArray("AAADAAMAGwAAAAAAAQAVAAMAGwAAAAAAAgAEAAwAGwAAAAAAAwAUAAwAGwAAAAAABAAQAAkAGwAAAAAAAgA=")
 tile_set = ExtResource("1_lbjce")
 
+[node name="Props" type="TileMapLayer" parent="."]
+y_sort_enabled = true
+tile_map_data = PackedByteArray("AAAMAAYAHAAAAAAAAAAOAAYAHQACAAAAAAA=")
+tile_set = ExtResource("1_lbjce")
+
 [node name="Farm" type="Node2D" parent="." unique_id=1541056085]
 script = ExtResource("5_farm")
 

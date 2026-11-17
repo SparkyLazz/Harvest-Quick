@@ -23,7 +23,8 @@ Last updated: 2026-11-06.
 |---|---|
 | WASD / arrows | Move |
 | Shift | Run |
-| Space / left mouse | Use the held item, or interact (bed, chest, wardrobe) |
+| Space / left mouse | Use the held item, or interact (bed, chest, wardrobe, shipping bin, seed-shop sign) |
+| Click / Shift-click in the seed shop | Buy one packet / five |
 | 1–9, mouse wheel | Pick hotbar slot |
 | E | Profile screen (inventory, crafting, settings) |
 | Esc | Close the open window |
@@ -32,32 +33,58 @@ Last updated: 2026-11-06.
 
 | Script | What it is |
 |---|---|
-| `PlayerState.gd` | **Autoload.** What survives scene changes: inventory, stamina, day, clock minutes, storage contents, each map's changes. Sleep and pass-out live here. |
+| `PlayerState.gd` | **Autoload, and the save game** (`save_game`/`load_game`/`new_game`, §4). What survives scene changes: inventory, stamina, **coins** (`earn`/`spend`, `coins_changed`), day, clock minutes, storage contents (the **shipping bin** too, under `SHIPPING_KEY`), each map's changes. Sleep, pass-out and the overnight sale (`_ship`) live here. |
 | `SceneTransition.gd` | **Autoload.** Fade-to-black scene changes (`go_to`, `fade_through`). Pauses the tree during the fade; places the player on `SceneTree.scene_changed` (built in since 4.5), not after a guessed number of frames. |
 | `MouseCursor.gd` | **Autoload.** Cursor icon by context: arrow, paw over usable furniture (never over an open window), closed paw while a panel carries a stack. |
 | `Calendar.gd` | Day number → season, weekday, week, date text; clock constants (`DAY_START`, `PASS_OUT`, `SECONDS_PER_MINUTE`). |
 | `ClockPlate.gd` | The top-left clock UI (see §6). |
-| `HUD.gd` | Hearts + hotbar; owns the profile and storage windows and the clock; **ticks the clock** each frame while no window is open. A hotbar slot's item and count are drawn by an `InventorySlot` laid over the plate, the same drawing as the panels' grids. |
-| `Player.gd` | Movement, tools, stamina, planting, harvesting, interacting via the tileset's `interact` custom data (`bed`, `chest`, `wardrobe`). |
-| `Farm.gd` | Tilled soil, crops, watering, overnight growth, harvest. |
-| `Crops.gd` (`CropDB`) | Crop table: sprite row, stages, **days to ripen**. |
+| `StatusSign.gd` | The top-right sign: hearts on a nine-sliced plate, the purse on a smaller one hung under it on two posts (art: `Assets/UI/Status.png`, cut by `Tools/cut_status.py`). One node, everything in one `_draw`; hops the coin when the amount changes. `StatusSign.heart_for(i, health)` is the one full/half/empty rule — the profile book draws its hearts with it too. |
+| `HUD.gd` | The hotbar; owns the profile and storage windows, the clock and the status sign (forwards `max_hearts`/`health` to it); **ticks the clock** each frame while no window is open. A hotbar slot's item and count are drawn by an `InventorySlot` laid over the plate, the same drawing as the panels' grids. |
+| `Player.gd` | Movement, tools, stamina, planting (only in season), harvesting, interacting via the tileset's `interact` custom data (`bed`, `chest`, `wardrobe`, `ship`, `shop`). |
+| `Farm.gd` | Tilled soil, crops, watering, overnight growth, harvest; out-of-season crops die at the season change (live and on catch-up). |
+| `Crops.gd` (`CropDB`) | Crop table: sprite row, stages, **days to ripen**, **seasons**, **price** and **seed** cost (`Tools/econ_sim.py` keeps a copy). |
 | `ChoppableTree.gd` | Trees: chopping, stumps, saplings that grow a stage per night. |
 | `Items.gd` (`ItemDB`) | Item ids, names, icons, tooltips. Tools, seeds, produce, wood, tree seeds. `info()` is worked out once per id and handed out **read-only** and shared. |
 | `Recipes.gd` (`RecipeDB`) | Crafting recipes (only produce → seeds so far). |
 | `Inventory.gd`, `InventorySlot.gd`, `CarriedStack.gd` | Bag data, slot UI, the stack on the cursor (one per panel, same rules). |
-| `ProfilePanel.gd`, `StoragePanel.gd` | The E screen and the chest/wardrobe window. Closing never destroys the carried stack: bag, then chest, else the window stays up. |
+| `ProfilePanel.gd`, `StoragePanel.gd` | The E screen (a two-page book: `_window` is a VBox of the bookmark tabs and the book, overlapped by a negative separation so the book covers the tabs' feet; the portrait is a `NinePatchRect` of `Assets/UI/Portrait_Frame.png`, patch margin 20, sized from `PORTRAIT_MARGIN`, with a clipping recess so the poked cat never draws over the posts; tabs are `Tab_On.png`/`Tab_Off.png`) and the chest/wardrobe window, which is also the shipping bin's window and, with `open_shop()`, the seed shop (priced stock, click buys). Closing never destroys the carried stack: bag, then chest, else the window stays up. |
 | `UIFont.gd`, `UISkin.gd`, `PixelBar.gd` | The one pixel face and `draw_haloed()` (see §7), shared window look and shared `UISkin.atlas()` cut-outs, bars. |
 | `Door.gd`, `PropAnimator.gd`, `GridCursor.gd`, `EmoteBubble.gd` | Doors, opening props, the tile cursor, reaction bubbles. |
 
 ## 4. State and persistence
 
-- **Nothing is saved to disk yet.** `PlayerState` keeps everything in memory
-  for one run. A real save system is still to do.
+- **The save game is `PlayerState` on disk.** Everything below is plain data,
+  so `save_game()` writes it whole with `FileAccess.store_var` (Vector2i keys
+  and typed arrays survive as they are) to `user://save.dat` — on Windows
+  `%APPDATA%\Godot\app_userdata\Harvest Quick\save.dat`. Shape: `{version,
+  day, minutes, coins, stamina, max_stamina, started, inventory: {items,
+  counts}, stores: {key: {items, counts}}, worlds}`.
+  - **When:** the end of `sleep()`, after `day_changed` (crops grown, bin sold)
+    — bed and passing out alike. It first calls the group **`saves_world`**
+    (`write_world()`), so map state held only in memory (the Farm's plots,
+    between visits) is in the record before writing.
+  - **Safely:** written to `save.dat.tmp`, then renamed over the save; a
+    `.tmp` left by a crash between the two is read if the save is missing.
+  - **Loading:** `PlayerState._ready` reads it and, deferred, covers the screen
+    (`SceneTransition.cover()`) and `go_to`s the house's `Bed` marker, so the
+    farm the game boots into is never seen. `get_var(false)`: a save can never
+    make objects. A file whose length disagrees with its header, or of another
+    `SAVE_VERSION`, is refused and the game starts new.
+  - **New game:** `new_game()` deletes the save, `reset()`s, and goes to the
+    main scene (Settings → GAME → NEW GAME, a two-press button).
+  - **Tools and tests never touch it:** launched with `--script`, loading and
+    autosave are off; `test_save.gd` sets `save_path` to a file of its own.
 - Each map's changes live in `PlayerState.world_for(map)`, a dictionary that
   the owners read on load and write on unload:
   `hoed` and `broken` (Player), `trees` (ChoppableTree), `farm` (Farm:
   `{tilled, wet, crops, day}`).
 - Stamina is checked out by the Player on load and handed back as it changes.
+- **Coins** live in `PlayerState.coins` (start 200). The **shipping bin** is
+  `storage_for(SHIPPING_KEY)`: one inventory whatever bin tile is used, whose
+  `Inventory.accepts` filter only takes things with a sell price (adding and
+  every click rule check `Inventory.takes`). `sleep()` sells its contents
+  (`_ship`) after the day turns but **before** `day_changed`, so anything
+  that wakes on it already sees the coins; `shipped(earned)` is emitted then.
 
 ## 5. Time, sleep and growth
 
@@ -139,18 +166,22 @@ under the season. To give headings their own face again, change `title()`.
 |---|---|
 | `test_regressions.gd` | Bugs from the 2026-11-05 review, pinned: hotbar icon surviving an empty-and-refill in one frame, closing with a full bag, crafting while carrying, grab cursor, per-frame allocations, read-only item info, failed scene loads. |
 | `test_clock.gd` | Calendar, clock ticking/pausing, clock face rules and swap, plate fit for every day, overnight growth, catch-up, passing out. |
-| `test_clock_seams.gd` | **Windowed** (SKIP headless): draws the clock over magenta at 8 window scales × 3 skies and counts any background showing through its openings. Fails on the pre-bleed clock, passes now. |
+| `test_clock_seams.gd` | **Windowed** (SKIP headless): draws the clock over magenta at 8 window scales × 3 skies and counts any background showing through its openings (fails on the pre-bleed clock); then the status sign's posts and plates at the same 8 scales (fails on a deliberate 1px gap). |
 | `test_axe.gd` | Axe, trees, saplings (grown by sleeping), grass regrowth, persistence. |
 | `test_props`, `test_autotile`, `test_interior`, `test_door`, `test_cursor`, `test_storage`, `test_storage_moves`, `test_craft_card`, `test_panel` | Older suites. |
 | `shoot_clock.gd` | Renders the clock at each part of the day + a winter night + a swap animation strip (Mon 15 Summer, the widest date). |
 | `shoot*.gd` | Other frame captures for checking art placement. |
 | `cut_clock.py` | Builds `Assets/UI/Clock.png` (§6). |
 | `plate_options.py`, `shoot_plate_options.gd` | Clock plate design gallery (§6). |
-| `econ_sim.py` | Debt economy simulator (`Docs/GAME_DESIGN.md` §4). |
+| `test_save.gd` | The save game: round trip of day, coins, bag, chests, the bin (still refusing tools) and the farm; a save taken with the farm on screen; autosave on sleep; waking in bed at start; damaged and other-version saves refused; new game carrying nothing over. Uses its own save file. |
+| `test_economy.gd` | Step 2: prices and seasons (and that they hit the sim's per-season targets), the purse, the bin (refuses tools, sells overnight), the shop (buy, batch, broke, full bag, Winter), planting in season, crops dying at the season turn, live and on catch-up. |
+| `econ_sim.py` | Debt economy simulator (`Docs/GAME_DESIGN.md` §4). Its farm income comes from a copy of `CropDB`'s prices (`CROPS`). |
+| `cut_status.py` | Builds `Assets/UI/Status.png` for the status sign from the UI pack's all-in-one sheet (two plates, a post) and `Hearts.png` (the three big hearts). |
+| `setup_farm_props.py` | Copies the bin, sign and coin art in from the packs, adds tileset sources 28 (bin, 5 lid frames, `ship`) and 29 (signs, carrot = `shop`) by **text edit**, and paints both on the farm's `Props` layer. Idempotent; re-import after. |
 | `strip_halo.py` | Makes plain inventory icons from outlined drop icons. |
 | `sweep.py` | Measures a tile's true draw position by diffing two renders. |
 
-**All thirteen suites pass headless** (as of 2026-11-06) and exit non-zero on
+**All fifteen suites pass headless** (as of 2026-11-06) and exit non-zero on
 a failure, so they can be run in a loop. The old "known failures" were stale
 tests, not game bugs: the house was redrawn (two chests, no dresser, the exit
 moved down the hall) and three suites still pointed at the old cells; the
@@ -207,6 +238,27 @@ screenshot suites crashed headless on `save_png`. Now:
   not press buttons (no pointer moves over them). Key/action events work.
 - **Tests: find things by what they are, not where they are.** Three suites
   broke when the house was redrawn because they named cells like `(11, 4)`.
+- **A map owner must hold its record from `_ready`.** The Farm writes its
+  plots on `_exit_tree`; it used to look its record up again there, which
+  after a `reset()` or a load *created* a fresh record and wrote the old farm
+  into the new game. It now keeps `_record` from `_ready`, like the Player
+  (`_hoed`, `_broken`) and the trees (`_state`) always did; `reset()` drops the
+  records from `_worlds` rather than emptying them, so an exiting scene's
+  writes land nowhere.
+- **Anything new that only writes its state on exit** must join the
+  `saves_world` group with a `write_world()`, or a save taken while it is on
+  screen misses its latest.
+- **Do not re-run `setup_interior_tiles.py` as it stands.** It deletes every
+  `custom_data_layer` line and writes back only the first four (interact,
+  frames, step, frame), so it would drop `breakable` and `drop` — the axe's
+  data. Add tiles the way `setup_farm_props.py` does: text edits that only
+  add or replace their own pieces (no `ResourceSaver`, so no uid loss), run
+  twice to prove they are idempotent, and keep Godot's blank line between
+  `.tres` sections.
+- **A 2×2 tile on the 16px grid is placed like the house chest's 1×2 one:**
+  drawn centred on its cell, so `texture_origin = (0, 8)` stands a bottom-
+  aligned 32px frame on the cell's floor. Measured for the bin (art spans
+  x 192–208, y 98–112 on cell (12, 6)), not assumed.
 - **Never use a font's `outline_size` on the 5×5 face.** Godot strokes the
   glyph's vector shape: at 1 it is half a pixel a side and breaks into dots,
   at 2 it chips the corners, at 3 it fills the one-pixel gaps between letters
@@ -218,9 +270,13 @@ screenshot suites crashed headless on `save_png`. Now:
   to screen pixels on its own. Where the piece behind a hole ended exactly at
   the hole's edge, a one-pixel line of background showed (the clock's
   thermometer, window and dial; 443 pixels across 8 scales). Whole-number
-  renders never show it, which is why it got past every test. Give anything
-  seen through a hole a pixel of spare art under the rim (bleed), and check
-  at a fractional `content_scale_factor` — `test_clock_seams.gd` does.
+  renders never show it, which is why it got past every test. It happens
+  between **separate nodes**, each rounding its own position. Two cures: give
+  anything seen through a hole a pixel of spare art under the rim (bleed —
+  the clock), or draw the touching pieces from **one node in one `_draw`**,
+  where a shared edge goes through the same transform and lands on the same
+  pixel (the status sign: its posts needed no bleed). Either way, check at a
+  fractional `content_scale_factor` — `test_clock_seams.gd` does.
 - **The hotbar slots are scaled by the selection pop** (0.88 shrunk, 1.25
   held), so what is drawn in them lands on 1.76 or 2.5 screen pixels per
   source pixel — strokes come out a little uneven there, unlike the panels'

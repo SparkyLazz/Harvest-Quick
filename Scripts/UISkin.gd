@@ -23,6 +23,13 @@ const RULE_COLOR := Color("c9a376")
 ## their own, so whoever builds a scroll area has to say this.
 const SCROLLBAR_WIDTH := 11
 
+## The UI pack's coins. COIN is the small one with its white rim, for the
+## purse; COIN_TINY the smallest, for a price under a shop slot. Both are the
+## coin's own pixels, measured off the sheet, with no empty margin round them.
+const COINS := preload("res://Assets/UI/Coins.png")
+const COIN := Rect2(20, 3, 7, 9)
+const COIN_TINY := Rect2(5, 4, 5, 7)
+
 ## Every cut-out handed out by `atlas`, keyed by [sheet, region].
 static var _atlases := {}
 

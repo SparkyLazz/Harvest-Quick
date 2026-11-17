@@ -353,41 +353,64 @@ func _try_interact(input: Vector2) -> bool:
 	var data := _props.get_cell_tile_data(cell)
 	if data == null:
 		return false
+	# The cell is a painted prop's identity -- there is no node to name -- so a
+	# chest's window comes back to the same contents every time it is opened.
+	var key := PlayerState.storage_key(get_tree().current_scene, cell)
 	match str(data.get_custom_data("interact")):
 		"chest":
-			# Opens a shut lid and shuts an open one. Which it is comes off the
-			# tile, so a chest left open stays open until someone closes it.
-			if _prop_anim == null:
-				return false
-			# Read which way the lid is about to go before moving it: the window
-			# follows the lid, so a chest being shut takes its window with it.
-			var opening := not _prop_anim.is_open(_props, cell)
-			if not _prop_anim.toggle(_props, cell):
-				return false
-			if opening:
-				_open_storage(cell)
-			else:
-				_close_storage()
-			return true
+			return _use_lidded(cell, key, "CHEST")
+		"ship":
+			# The shipping bin is a chest whose contents are sold overnight.
+			# There is one bin however many are painted, so they share a key.
+			return _use_lidded(cell, PlayerState.SHIPPING_KEY, "SHIPPING BIN")
 		"wardrobe":
 			# A dresser has the one frame, so there is nothing to animate --
 			# using it is the window opening and nothing else.
-			return _open_storage(cell)
+			return _open_storage(cell, key, "WARDROBE")
+		"shop":
+			return _open_shop()
 		"bed":
 			return _sleep()
 	return false
 
 
-## Puts the storage window up on the furniture at `cell`. The cell is the
-## furniture's identity -- painted props have no node to name -- so the window
-## comes back to the same contents every time that one is opened.
-func _open_storage(cell: Vector2i) -> bool:
+## Opens a shut lid and shuts an open one, and the window goes with it. Which
+## it is comes off the tile, so a chest left open stays open until someone
+## closes it.
+func _use_lidded(cell: Vector2i, key: String, heading: String) -> bool:
+	if _prop_anim == null:
+		return false
+	# Read which way the lid is about to go before moving it: the window
+	# follows the lid, so a chest being shut takes its window with it.
+	var opening := not _prop_anim.is_open(_props, cell)
+	if not _prop_anim.toggle(_props, cell):
+		return false
+	if opening:
+		_open_storage(cell, key, heading)
+	else:
+		_close_storage()
+	return true
+
+
+## Puts the storage window up on `key`'s contents, with `heading` over them.
+## `cell` is remembered so the furniture can be shut when the window goes.
+func _open_storage(cell: Vector2i, key: String, heading: String) -> bool:
 	if _hud == null:
 		return false
 	_play("idle")
 	velocity = Vector2.ZERO
 	_open_prop = cell
-	_hud.open_storage(PlayerState.storage_key(get_tree().current_scene, cell))
+	_hud.open_storage(key, heading)
+	return true
+
+
+## The seed shop's window, opened from its sign.
+func _open_shop() -> bool:
+	if _hud == null:
+		return false
+	_play("idle")
+	velocity = Vector2.ZERO
+	_hud.open_shop()
 	return true
 
 
@@ -521,7 +544,7 @@ func _try_plant(seed_item: String, input: Vector2) -> bool:
 		_facing = _facing_for(input)
 	var crop: String = ItemDB.info(seed_item)["crop"]
 	var cell := facing_cell()
-	if not _farm.is_tilled(cell) or _farm.has_crop(cell):
+	if not _farm.is_tilled(cell) or _farm.has_crop(cell) or not _in_season(crop):
 		return false
 	if not _pay(plant_cost):
 		return false
@@ -530,6 +553,12 @@ func _try_plant(seed_item: String, input: Vector2) -> bool:
 	_hud.inventory.remove_from_slot(_hud.selected_slot, 1)
 	_play("idle")
 	return true
+
+
+## Seeds only go in during a season their crop grows in; out of season the use
+## key answers with a "?" and the cursor shows red.
+func _in_season(crop: String) -> bool:
+	return CropDB.grows_in(crop, Calendar.season_index(PlayerState.day))
 
 
 func _try_harvest(input: Vector2) -> bool:
@@ -610,7 +639,7 @@ func can_use_at(cell: Vector2i) -> bool:
 		return _can_axe(cell) and stamina >= axe_cost
 	if ItemDB.is_seed(item):
 		return _farm != null and _farm.is_tilled(cell) and not _farm.has_crop(cell) \
-				and stamina >= plant_cost
+				and _in_season(ItemDB.info(item)["crop"]) and stamina >= plant_cost
 	if ItemDB.is_tree_seed(item):
 		return can_plant_tree(cell, item) and stamina >= plant_cost
 	return false
