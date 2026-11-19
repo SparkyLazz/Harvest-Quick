@@ -5,6 +5,17 @@
 [ext_resource type="PackedScene" uid="uid://beges25kbhi3x" path="res://Scenes/HUD.tscn" id="4_dyenl"]
 [ext_resource type="Script" uid="uid://cc65ixscwoj05" path="res://Scripts/Farm.gd" id="5_farm"]
 [ext_resource type="PackedScene" path="res://Scenes/Door.tscn" id="6_door"]
+[ext_resource type="Script" uid="uid://cgtdlqk0tnqpu" path="res://Scripts/Rain.gd" id="7_rain"]
+[ext_resource type="Script" uid="uid://2xpek0dbyfq1" path="res://Scripts/Collector.gd" id="8_collector"]
+[ext_resource type="Script" uid="uid://6gf8bvk1ymf2" path="res://Scripts/Mailbox.gd" id="9_mailbox"]
+[ext_resource type="Texture2D" uid="uid://c4yoafwrf5mu1" path="res://Assets/Objects/Boats.png" id="10_boats"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_boat"]
+atlas = ExtResource("10_boats")
+region = Rect2(0, 0, 48, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ferry"]
+size = Vector2(14, 40)
 
 [node name="Maps" type="Node2D" unique_id=1874760819]
 y_sort_enabled = true
@@ -47,6 +58,34 @@ script = ExtResource("5_farm")
 
 [node name="Player" parent="." unique_id=622995182 instance=ExtResource("2_player")]
 position = Vector2(160, 128)
+
+[node name="FromTown" type="Marker2D" parent="."]
+position = Vector2(392, 136)
+
+[node name="Ferry" type="Node2D" parent="."]
+position = Vector2(424, 136)
+
+[node name="Boat" type="Sprite2D" parent="Ferry"]
+texture_filter = 1
+texture = SubResource("AtlasTexture_boat")
+
+[node name="Door" parent="Ferry" instance=ExtResource("6_door")]
+target_scene = "res://Scenes/City.tscn"
+spawn_point = &"FromFarm"
+
+[node name="CollisionShape2D" parent="Ferry/Door" index="0"]
+shape = SubResource("RectangleShape2D_ferry")
+
+[node name="Mailbox" type="Node2D" parent="."]
+position = Vector2(136, 136)
+script = ExtResource("9_mailbox")
+
+[node name="Collector" type="Node2D" parent="."]
+position = Vector2(168, 184)
+script = ExtResource("8_collector")
+
+[node name="Rain" type="CanvasLayer" parent="."]
+script = ExtResource("7_rain")
 
 [node name="HUD" parent="." unique_id=422025384 instance=ExtResource("4_dyenl")]
 

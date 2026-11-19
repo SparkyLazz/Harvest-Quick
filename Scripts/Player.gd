@@ -318,12 +318,45 @@ func _dispatch_use(input: Vector2) -> bool:
 ## What using the tile ahead would do, by name, or "" for nothing. The prompt
 ## sign reads this too, so what it offers and what the key does cannot drift.
 func interaction_ahead() -> String:
-	if _props == null or not _action.is_empty():
+	if not _action.is_empty():
 		return ""
 	if _hud != null and _hud.is_inventory_open():
 		return ""
+	# People first, and before the props layer is even looked for: someone
+	# standing in front of the shipping bin is who you mean rather than the bin
+	# behind him, and a map with nothing painted on its props layer -- or no
+	# props layer at all -- can still have people standing in it.
+	var who := _interactable_in_reach()
+	if who != null:
+		return str(who.interact_verb())
+	if _props == null:
+		return ""
 	var data := _props.get_cell_tile_data(prop_in_reach())
 	return str(data.get_custom_data("interact")) if data != null else ""
+
+
+## A node that can be used the way painted furniture can -- a person, not a
+## tile. Furniture is painted and has no node to name, so everything until now
+## read its verb off the tile; the collector is the first thing in the world
+## that is a node, and NPCs after him will be too.
+##
+## Reach is deliberately loose, as it is for furniture: anyone on or beside the
+## cell you are standing on counts, so walking up to someone is enough and you
+## do not have to line the facing up with them.
+func _interactable_in_reach() -> Node:
+	var layer := _grid()
+	if layer == null:
+		return null
+	var standing := layer.local_to_map(layer.to_local(global_position))
+	for node in get_tree().get_nodes_in_group(Collector.GROUP):
+		if not node.has_method("interact_cell") or not node.has_method("interact"):
+			continue
+		if str(node.interact_verb()).is_empty():
+			continue
+		var cell: Vector2i = node.interact_cell()
+		if absi(cell.x - standing.x) <= 1 and absi(cell.y - standing.y) <= 1:
+			return node
+	return null
 
 
 ## The prop this player can use.
@@ -345,10 +378,18 @@ func prop_in_reach() -> Vector2i:
 
 
 func _try_interact(input: Vector2) -> bool:
-	if _props == null:
-		return false
 	if input != Vector2.ZERO:
 		_facing = _facing_for(input)
+	# People before furniture, the same order `interaction_ahead` reports, and
+	# before the props layer is required at all.
+	var who := _interactable_in_reach()
+	if who != null:
+		_play("idle")
+		velocity = Vector2.ZERO
+		if who.interact(self):
+			return true
+	if _props == null:
+		return false
 	var cell := prop_in_reach()
 	var data := _props.get_cell_tile_data(cell)
 	if data == null:
@@ -835,6 +876,11 @@ func _land_hoe_hit() -> void:
 	_hit_landed = true
 	if _grass_layer == null:
 		push_warning("Player: no grass layer at '%s', nothing to hoe." % grass_layer_path)
+		return
+	if _farm == null:
+		# The hoe is for farmland. Without a Farm there is nothing to till for,
+		# and digging would just be a way to vandalise the town square.
+		_react("question")
 		return
 	var cell := facing_cell()
 	var data := _grass_layer.get_cell_tile_data(cell)

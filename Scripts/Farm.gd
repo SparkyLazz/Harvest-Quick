@@ -21,6 +21,12 @@ extends Node2D
 ## Crops keep to their seasons (CropDB): the morning a new season starts,
 ## anything that does not grow in it dies and is gone, leaving the soil tilled.
 ## A farm that was not loaded at the turn catches that up too.
+##
+## On a wet day (Weather) the sky does the watering: every tilled cell is wet
+## from the morning on, and soil hoed while it rains comes up wet too, so a
+## rainy day costs no stamina at the can. The night that follows grows the crops
+## exactly as a hand-watered one would -- rain is not a shortcut through the
+## growth, only through the chore.
 
 signal crop_planted(cell: Vector2i, crop: String)
 signal cell_watered(cell: Vector2i)
@@ -83,6 +89,9 @@ func _ready() -> void:
 	if player and player.has_signal("untilled"):
 		player.connect("untilled", _on_untilled)
 	PlayerState.day_changed.connect(_on_day_changed)
+	# A sky that turns wet mid-day (the debug toggle, or a forced kind in a
+	# test) soaks the plots there and then, rather than waiting for morning.
+	Weather.changed.connect(_on_weather_changed)
 	_record = PlayerState.world_for(get_parent())["farm"]
 	# A save taken while the farm is on screen asks it to write first.
 	add_to_group(&"saves_world")
@@ -135,6 +144,9 @@ func _restore(record: Dictionary) -> void:
 	# A season that turned while the farm was away still kills what it should.
 	if _season_number(PlayerState.day) != _season_number(record["day"]):
 		_wither_out_of_season()
+	# Walking back onto a farm on a rainy day finds it already watered, whether
+	# the rain started while you were out or you only ever saw it from indoors.
+	_soak()
 	for cell: Vector2i in _crops:
 		_refresh_sprite(cell)
 
@@ -236,8 +248,27 @@ func _on_day_changed(day: int) -> void:
 	_pass_night(true)
 	if _season_number(day) != _season_number(day - 1):
 		_wither_out_of_season()
+	# After the night, not before: _pass_night dries the soil out for the new
+	# day, and today's rain is what wets it again.
+	_soak()
 	for cell: Vector2i in _crops:
 		_refresh_sprite(cell)
+
+
+func _on_weather_changed(_kind: int) -> void:
+	_soak()
+	for cell: Vector2i in _crops:
+		_refresh_sprite(cell)
+
+
+## Wets every tilled cell, if today is a wet one. Does nothing on a clear day:
+## soil that is already dry stays dry, and soil watered by hand stays watered --
+## the sky never takes water away.
+func _soak() -> void:
+	if not Weather.is_wet_today():
+		return
+	for cell: Vector2i in _tilled:
+		_wet[cell] = true
 
 
 ## Pulls up every crop that does not grow in today's season.
@@ -384,6 +415,10 @@ func float_icon(cell: Vector2i, item: String, amount: int, order: int = 0) -> vo
 
 func _on_tilled(cell: Vector2i) -> void:
 	_tilled[cell] = true
+	# Soil opened in the rain is wet the moment it is opened.
+	if Weather.is_wet_today():
+		_wet[cell] = true
+		_refresh_sprite(cell)
 
 
 ## Grass has grown back over the cell, so it is no longer a plot.

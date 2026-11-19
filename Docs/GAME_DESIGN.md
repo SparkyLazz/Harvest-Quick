@@ -31,6 +31,33 @@ mother from ever using his name again.
 5. Do story quests in town to gather **evidence** for the lawyer.
 6. Save up the lawyer's fee. With fee + evidence → good ending.
 
+## 2a. The world: zones, not one big map (decided 2026-11-18)
+
+The world is built the way Harvest Moon and Stardew build theirs: **a set of
+separate maps joined by doors and paths**, each its own scene, with a short
+fade between them. It is **not an open world** — there is no single continuous
+landscape streamed in as you walk, and you cannot see the town from the farm.
+
+This was settled after it was asked directly. What the player gets is
+*open-ended*, not open-world: free to spend each day however they like, no
+forced path through the story. That is the freedom the game wants, and zones
+give it without the cost of one huge map.
+
+It is also what the code already does, so nothing had to change:
+`SceneTransition.go_to()` fades to black, swaps the scene and stands the
+player on a named `Marker2D`; `Door.gd` carries the target scene and spawn
+point. Adding a zone is adding a scene and a door.
+
+| Zone | Scene | Status |
+|---|---|---|
+| The farm | `Scenes/Dev.tscn` | **Built.** The only outdoor map, so the only one that carries the rain layer (§9a). |
+| Player house | `Scenes/PlayerHouse.tscn` | **Built.** Bed, wardrobes, chests. |
+| The city | — | Step 5. Village-house art is in the Sorry pack, not imported yet. The seed-shop sign on the farm stands in for the seller until then (§13). |
+| Interiors in the city (shop, lawyer's office, neighbour's house) | — | Step 5 and after, one scene each, as Stardew does. |
+
+**Open:** whether the city is one zone or several; whether there is anything
+between the farm and the city (a path screen) or the door leads straight in.
+
 ## 3. Time and calendar (built)
 
 Stardew's calendar:
@@ -63,7 +90,7 @@ Stardew's calendar:
   anything that does not grow in it dies (the soil stays tilled). **Winter
   has no crops**; winter income comes from animals and fishing.
 
-## 4. The debt (designed, not built yet)
+## 4. The debt (built — see §4a for what the player does)
 
 Starting debt **1000**. It must grow slowly, and be mathematically fair.
 Numbers tuned with `Tools/econ_sim.py` (run it to re-check).
@@ -76,6 +103,12 @@ Numbers tuned with `Tools/econ_sim.py` (run it to re-check).
 | Mom's letters | every **2 weeks**, **(80 + 30 × week) ± 25%** | wk 2: ~140, wk 16: ~560 |
 | Missed payment | **+10%** of the missed minimum added as a late fee, and **1 strike** | 3 strikes → bad ending |
 | Lawyer | **10,000** + evidence; evidence can't be complete before **week 12** | voids Mom's debt, stops her letters |
+
+Everything in that table is built. `Debt.gd` holds the rules; its constants are
+`econ_sim.py`'s, name for name, so the two cannot drift apart unnoticed. The
+one difference is rounding: the game owes whole coins and rounds the balance
+every week, while the simulator carries the fraction, so a long run ends a coin
+or two apart.
 
 Most of the growth comes from Mom's letters, not interest — the player can see
 who is to blame.
@@ -107,10 +140,127 @@ reaches the collector's third strike.
   exactly (casual week 23, good 17, expert 12, struggling never). Animals and
   fishing are still a guess until they are built.
 
+## 4a. The collector (built) — what the player does
+
+- **He comes on Sundays**, the last day of each week, and stands at the farm
+  below the house. He waits all day and is gone by Monday. A Sunday spent
+  indoors is how a payment gets missed.
+- **Walking up to him and using him opens the bill**: the week, what is OWED,
+  what THIS WEEK wants, the strikes so far, and three buttons — pay the
+  minimum, pay 100 towards the debt, or pay it off whole. Buttons grey out
+  when the purse cannot cover them. He does not speak: the dialogue system is
+  step 5, and the bill speaks for him until then.
+- **The week is settled the night it turns**, as you sleep from Sunday into
+  Monday: minimum met or missed, then the late fee and the strike if missed,
+  then interest on what is left. Paying *something* still counts as a miss —
+  it comes off the debt, but it does not buy off the strike, which is how
+  `econ_sim` plays it.
+- **Paying ahead is a real choice** (§4): it slows the interest, at the cost of
+  the lawyer's fee coming later.
+- **Three strikes ends the game** — a full-screen ending over the black of the
+  night you lost on, with the week and what you still owed, and one way out:
+  a new game. A lost save stays lost: loading it brings the ending straight
+  back.
+- **Open:** he has no dialogue, no arrival warning (a letter, a knock, an
+  emote), and no reaction to being paid or missed. All of that wants step 5.
+  His sprite is the pack's *basic* character tinted cold — a stand-in, not art.
+
+## 4b. The post (built) — Mom's letters
+
+The mailbox stands beside the house and waves a letter whenever something is
+unread; using it opens the post, the letters down the left and the one you
+picked on the right. The story is told here, day to day (§7).
+
+- **Mom writes every 2 weeks**, on the Monday that opens weeks 2, 4, 6…, for
+  **(80 + 30 × week) ± 25%** — econ_sim's rule, and the biggest share of the
+  debt's growth. Four letters of hers rotate; she never quite apologises and
+  the money is always already gone.
+- **Her money lands when the letter does, not when it is read.** The post does
+  not wait for you to open it, and leaving the box shut is not a way to dodge
+  her. The letter says in red what it cost, so the player can see where the
+  debt came from.
+- **The week is settled before she is added to it** — the collector takes
+  Sunday's account on the night the week turns, then Monday's letter arrives.
+  Same order as econ_sim.
+- **An opening letter** is in the box on day 1: the farm is yours, so is the
+  rest of it, the man comes on Sundays.
+- **The neighbour writes once a year**, on the Monday that opens the last week
+  of Fall, warning that nothing grows in winter and to put money by. §4 asks
+  for exactly this warning; winter is where a run is won or lost.
+- **Nothing is rolled at runtime.** A week's figure comes out of a mixer fed
+  the week number, like the weather, so it is the same figure every time it is
+  asked for. The inbox itself is saved, because which letters you have read is
+  real state.
+- **Open:** letters cannot be thrown away, there is no sound or notification
+  when one lands, and the neighbour has nothing else to say. Mom's four bodies
+  repeat once a year has gone by.
+
+## 4c. The town and talking (built)
+
+The town is the second outdoor zone (2a), across the water from the farm.
+
+- **Getting there**: a rowing boat on the farm's east shore. Walk into it and
+  you are in town; the boat on the town's west shore brings you back. The farm
+  is an island, so there is no road -- the ferry is the crossing.
+- **The town** holds three people: the **seed seller**, the **neighbour** and
+  the **lawyer**. Its **layout is drawn by hand in the editor** (decided
+  2026-11-19) -- a generated one was tried first and read as generated. What
+  the code needs from the scene is a short list, written down in
+  `Docs/TECH_NOTES.md` 5b and checked by the tests; the map itself is free.
+  **Open:** the map is a blank patch of grass with the three of them stood in
+  a row on it, waiting to be drawn.
+- **Talking** is the same gesture as using a chest: walk up, press use. A line
+  types itself out; pressing on finishes a line that is still typing, and
+  turns a finished one. The pack's own click-to-continue chevron says when it
+  is waiting on you. Esc walks away.
+- **What people say depends on the game**, not on a tree: the neighbour has a
+  different word for a clear day, a rainy one, late Fall, one strike and two;
+  the seller sells the season and has nothing for you in Winter; the lawyer
+  states his price (ten thousand and proof she signed as you) and says the
+  proof is not ready. Choosing happens before the conversation starts, so
+  there are no branches inside one.
+- **The collector talks too** now, before he hands the bill over, with a line
+  for a first week, a missed one, a last warning and a week already paid.
+- **The seed shop has moved into the conversation**: talk to the seller and
+  his stall opens when he has finished. The sign on the farm still works and
+  still sells the same stock -- retiring it is a decision for when the town is
+  somewhere the player has a reason to be every week.
+- **Open:** nobody walks, nobody has their own art (they are the pack's basic
+  character in three tints), there are no interiors in town, no choices in a
+  conversation, and the lawyer cannot yet be hired -- that is step 6.
+
+## 4d. The lawyer and the good ending (built)
+
+The way out of the debt, and the only way to win.
+
+- **Four pieces of evidence**, one from each of §7's sources and then one more:
+  **her own letters** (three of Mom's letters arriving is the exhibit -- nobody
+  has to be asked), **the neighbour's word**, **the seller's ledger**, and
+  **the collector's own copy** of the signed form. He hands it over without a
+  fight: by then you have been paying him for months and he has no reason to
+  keep it back. It is the turn of the knife -- the man collecting the debt
+  gives you the paper that undoes it.
+- **They come in that order.** Each waits on the one before it, so the case is
+  gathered rather than scrambled.
+- **The case cannot be whole before week 12** (§4). That is not a check laid
+  on top: the collector's copy *is* the last piece and he will not part with it
+  before week 12, so there is no order of play that finishes early.
+- **The fee is 10,000.** A whole case is not enough on its own, and the fee is
+  not enough on its own.
+- **Hiring him wins the game.** The debt goes **void**, not paid -- the point
+  of him is that it was never your debt. Mom stops writing, because the name
+  she was signing with is no longer one a court will accept. The strikes stay
+  on the record and have nothing left to count towards.
+- **The lawyer is also the quest log**: he says how many pieces he holds and
+  names what is still wanting, because there is no screen that does.
+- **Open:** no quest log of its own, no scene when the case completes, and the
+  evidence cannot be looked at anywhere but in his mouth.
+
 ## 5. Endings
 
-- **Bad ending**: 3 missed payments → you lose the farm.
-- **Good ending**: lawyer hired (fee + evidence) → Mom can't use your name.
+- **Bad ending** (built): 3 missed payments → you lose the farm (§4a).
+- **Good ending** (built): lawyer hired (fee + evidence) → Mom can't use
+  your name (§4d).
 - **Open:** what happens if you survive 2 years without the lawyer? Suggested:
   a neutral ending — "still trapped, but survived".
 
@@ -128,11 +278,11 @@ reaches the collector's third strike.
 
 ## 7. Story delivery
 
-- **Day to day:** mailbox letters and talking to NPCs.
+- **Day to day:** mailbox letters (built — §4b) and talking to NPCs.
 - **Big moments:** short scripted scenes — the first collector visit, meeting
-  the lawyer, the endings.
-- **Evidence** comes through quests: Mom's letters and IOUs, plus what
-  townspeople tell you.
+  the lawyer, the endings. The dialogue system they need is built (4c).
+- **Evidence** comes through quests: Mom's letters, what townspeople tell
+  you, and the collector's own copy of the form (built -- §4d).
 
 ## 8. Income sources
 
@@ -152,17 +302,47 @@ reaches the collector's third strike.
 | — | **Save game**: one slot, saved every night, wake in bed; New Game in Settings (§15) | **Done** |
 | 1 | **Day clock and sleep**: calendar, time, overnight growth, sleep, passing out, clock UI | **Done** |
 | 2 | **Coins, shipping bin / market, seed shop** — first income (and crop seasons) | **Done** |
-| 3 | **Weekly debt collector + bad ending** — after this the game is playable end to end (small) | **Next** |
-| 4 | **Mailbox and Mom's letters** — new debt + story | Planned |
-| 5 | **Dialogue system + the city scene** (dialogue boxes, portrait frames from the UI pack) | Planned |
-| 6 | **Lawyer evidence quests + good ending** | Planned |
-| 7 | **Animals** | Planned |
+| 3 | **Weekly debt collector + bad ending** — the game is now playable end to end | **Done** |
+| 4 | **Mailbox and Mom's letters** — new debt + story | **Done** |
+| 5 | **Dialogue system + the city scene** (dialogue boxes, portrait frames from the UI pack) | **Done** |
+| 6 | **Lawyer evidence quests + good ending** | **Done** |
+| 7 | **Animals** | **Next** |
 | 8 | **Fishing** | Planned |
 
 **Open / not done yet:**
 - No evening darkening of the screen.
-- No rain / weather (the clock already has the weather icons ready).
 - Neutral ending (§5).
+
+## 9a. Weather (built)
+
+Three skies: **clear**, **rain** and **storm**. Which one a day gets is not
+stored anywhere — it is worked out from the day number, so every scene, the
+clock and a save reloaded a week later all agree without anything on disk.
+Ask for any day, past or future, and the answer is the same one.
+
+- **Chance of rain** per season: Spring 28%, Summer 16%, Fall 24%, Winter 0%.
+  Of the rainy days, some come down as storms instead: Spring 10%, Summer 35%,
+  Fall 15% — summer's few rains are the violent ones.
+- **Winter is dry.** The icon sheet has snow, but nothing in the game knows
+  what snow does yet, so winter stays clear rather than pretending. **Open:**
+  what snow should do when winter gets its own pass.
+- **Day 1 is always clear.** The first morning on the farm should not be spent
+  indoors.
+- **Rain waters the farm.** Every tilled cell is wet from the morning on, and
+  soil hoed while it rains comes up wet too, so a rainy day is a day off from
+  the watering can — which is the whole point of it. The night that follows
+  grows crops exactly as a hand-watered one would. The sky clearing does not
+  dry what it already wet.
+- **What the player sees**: two sheets of falling streaks (near and far), an
+  overcast wash over the world, and in a storm a darker sky with lightning
+  every 7–18 seconds. There is no rain art in either pack, so a drop is a few
+  pixels made in code. Indoors there is no rain — only the outdoor map carries
+  the rain layer.
+- **The clock's window** shows the sky: a rain cloud instead of the sun or
+  moon, a dark cloud or lightning in a storm. The sheet has no orange storm
+  cloud, so dawn and dusk show the plain rain picture for both.
+- **Open:** no rain sound; no puddles or wet-ground tiles; rain does not stop
+  or start mid-day (a day is one sky all through).
 
 ## 10. The clock (built) — what the player sees
 
@@ -170,8 +350,9 @@ Top-left corner of the screen, built from the UI pack's weather frame:
 
 - **Window picture** shows the part of the day: dawn 6:00 (orange sunrise),
   day 8:00 (green sun), dusk 17:00 (orange sunset), night 20:00 (blue moon),
-  late 24:00 (moon with stars). Changes play a cute "set and rise": the old
-  picture sinks, the sky colour cross-fades, the new one bounces up.
+  late 24:00 (moon with stars). On a wet day it shows the weather instead —
+  see §9a. Changes play a cute "set and rise": the old picture sinks, the sky
+  colour cross-fades, the new one bounces up.
 - **Dial and arrow**: the arrow is the time — up at the sun at 6:00, level at
   18:00, down at the moon by 2:00 (5 drawn steps, each with a springy pop).
   There is **no written time** on purpose.

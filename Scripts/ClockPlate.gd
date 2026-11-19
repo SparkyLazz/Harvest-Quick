@@ -76,16 +76,27 @@ const ICON_INSET := 7
 ## The icon sheet's row of pictures without their backdrop. (The bare
 ## backdrops behind them come from the atlas now, bled -- see SKY_ORIGIN.)
 const PICTURE_ROW := 3
+## The sheet's rows come in two halves: 0-2 carry their own backdrop, 3-5 are
+## the same pictures bare. Row 3 is the sun-and-moon row used above; row 5 is
+## the wet one -- rain clouds, a storm cloud and lightning. Same columns, so a
+## phase's rainy picture is its own column read out of this row.
+const RAIN_ROW := 5
 
 ## The parts of the day, latest start last. `icon` is the picture's column on the
 ## sheet, `sky` the backdrop it sits on in the atlas: 0 green day, 1 orange
 ## dusk, 2 blue night.
+##
+## `rain` and `storm` are the columns to show instead when the sky is wet
+## (Weather). The sheet's rainy pictures come in the same three palettes, so a
+## wet dusk still reads orange; it has no orange storm cloud, so dawn and dusk
+## borrow the rain one and only the daylight and night hours get the dark cloud
+## and the lightning.
 const PHASES: Array[Dictionary] = [
-	{"name": "dawn", "from": 6 * 60, "icon": 6, "sky": 1},
-	{"name": "day", "from": 8 * 60, "icon": 0, "sky": 0},
-	{"name": "dusk", "from": 17 * 60, "icon": 4, "sky": 1},
-	{"name": "night", "from": 20 * 60, "icon": 8, "sky": 2},
-	{"name": "late", "from": 24 * 60, "icon": 9, "sky": 2},
+	{"name": "dawn", "from": 6 * 60, "icon": 6, "sky": 1, "rain": 5, "storm": 5},
+	{"name": "day", "from": 8 * 60, "icon": 0, "sky": 0, "rain": 2, "storm": 3},
+	{"name": "dusk", "from": 17 * 60, "icon": 4, "sky": 1, "rain": 5, "storm": 5},
+	{"name": "night", "from": 20 * 60, "icon": 8, "sky": 2, "rain": 8, "storm": 9},
+	{"name": "late", "from": 24 * 60, "icon": 9, "sky": 2, "rain": 8, "storm": 9},
 ]
 
 ## How warm each season runs, as a thermometer level: 0 is the hottest fill.
@@ -115,6 +126,9 @@ var _date: Label
 var _season: Label
 
 var _phase := -1
+## The weather the window is currently showing, so a sky that closes over
+## mid-afternoon swaps the picture even though the phase has not changed.
+var _weather := -1
 var _arrow_frame := -1
 var _heat := -1
 var _breath := 0.0
@@ -205,6 +219,7 @@ func _ready() -> void:
 
 	PlayerState.time_changed.connect(_on_clock)
 	PlayerState.day_changed.connect(_on_clock)
+	Weather.changed.connect(_on_clock)
 	refresh(false)
 	_place()
 
@@ -231,8 +246,9 @@ func refresh(animate: bool = true) -> void:
 	_season.text = Calendar.season(day)
 
 	var phase := phase_at(minutes)
-	if phase != _phase:
-		_show_phase(phase, animate and _phase >= 0)
+	var weather := Weather.today()
+	if phase != _phase or weather != _weather:
+		_show_phase(phase, weather, animate and _phase >= 0)
 	var frame := arrow_frame_at(minutes)
 	if frame != _arrow_frame:
 		_arrow_frame = frame
@@ -259,11 +275,20 @@ func phase_name() -> String:
 	return PHASES[_phase]["name"] if _phase >= 0 else ""
 
 
-func _show_phase(phase: int, animate: bool) -> void:
+func _show_phase(phase: int, weather: int, animate: bool) -> void:
 	var entry: Dictionary = PHASES[phase]
-	var picture := _icon_region(PICTURE_ROW, entry["icon"])
+	var row := PICTURE_ROW
+	var column: int = entry["icon"]
+	if weather == Weather.STORM:
+		row = RAIN_ROW
+		column = entry["storm"]
+	elif weather == Weather.RAIN:
+		row = RAIN_ROW
+		column = entry["rain"]
+	var picture := _icon_region(row, column)
 	var sky := _sky_region(entry["sky"])
 	_phase = phase
+	_weather = weather
 	if _swap != null:
 		_swap.kill()
 	if not animate:

@@ -18,8 +18,14 @@ config/icon="res://icon.svg"
 [autoload]
 
 MouseCursor="*res://Scripts/MouseCursor.gd"
+Debt="*res://Scripts/Debt.gd"
+Mail="*res://Scripts/Mail.gd"
+Lawyer="*res://Scripts/Lawyer.gd"
 PlayerState="*res://Scripts/PlayerState.gd"
+Weather="*res://Scripts/Weather.gd"
+Dialogue="*res://Scripts/Dialogue.gd"
 SceneTransition="*res://Scripts/SceneTransition.gd"
+EndingScreen="*res://Scripts/EndingScreen.gd"
 
 [display]
 

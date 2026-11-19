@@ -23,11 +23,12 @@ Last updated: 2026-11-06.
 |---|---|
 | WASD / arrows | Move |
 | Shift | Run |
-| Space / left mouse | Use the held item, or interact (bed, chest, wardrobe, shipping bin, seed-shop sign) |
+| Space / left mouse | Use the held item, or interact (bed, chest, wardrobe, shipping bin, seed-shop sign, the debt collector, the mailbox, **the townsfolk**); turns the page in a conversation |
 | Click / Shift-click in the seed shop | Buy one packet / five |
 | 1–9, mouse wheel | Pick hotbar slot |
 | E | Profile screen (inventory, crafting, settings) |
 | Esc | Close the open window |
+| F9 (debug builds) | Step the sky: calendar → clear → rain → storm → calendar (§5a) |
 
 ## 3. Scripts
 
@@ -36,6 +37,19 @@ Last updated: 2026-11-06.
 | `PlayerState.gd` | **Autoload, and the save game** (`save_game`/`load_game`/`new_game`, §4). What survives scene changes: inventory, stamina, **coins** (`earn`/`spend`, `coins_changed`), day, clock minutes, storage contents (the **shipping bin** too, under `SHIPPING_KEY`), each map's changes. Sleep, pass-out and the overnight sale (`_ship`) live here. |
 | `SceneTransition.gd` | **Autoload.** Fade-to-black scene changes (`go_to`, `fade_through`). Pauses the tree during the fade; places the player on `SceneTree.scene_changed` (built in since 4.5), not after a guessed number of frames. |
 | `MouseCursor.gd` | **Autoload.** Cursor icon by context: arrow, paw over usable furniture (never over an open window), closed paw while a panel carries a stack. |
+| `Weather.gd` | **Autoload.** What the sky is doing, worked out from the day number and stored nowhere (§5a). `today()`, `kind_for(day)`, `is_wet_today()`, the pure `rolled_for(day)`, the `forced` override and the `changed(kind)` signal. |
+| `Rain.gd` | The rain you see: two GPUParticles2D sheets, an overcast wash and lightning, on a CanvasLayer at layer 5 — over the world, under the HUD (§5a). Only the outdoor scene carries one. |
+| `Debt.gd` | **Autoload, and the first one registered** (see §4b). Mom's debt: balance, weekly minimum, interest, late fees, strikes, and the `lost` signal the ending listens for. Rules only — it never touches the screen. |
+| `Mail.gd` | **Autoload**, registered after `Debt` and before `PlayerState` (see §4c). The post: what arrives on which day, what Mom's letters cost, and the inbox. Puts her money on the debt the moment a letter lands. |
+| `Mailbox.gd` | The box beside the house. Waves two frames of the pack's letter animation while anything is unread, plain otherwise. Another `interactable` node. |
+| `MailPanel.gd` | The post window: letters down the left (newest first, `!` for unread), the picked one on the right with what it cost in red. |
+| `EndingScreen.gd` | **Autoload.** The bad ending, drawn above the fade (layer 200) and ignoring the pause, because it lands while the player is asleep behind a scene change. |
+| `Lawyer.gd` | **Autoload.** The case against Mom: the four pieces of evidence and what each one waits on, the fee, and `hire()` -- which voids the debt and ends the game well (5c). |
+| `Dialogue.gd` | **Autoload.** Who is talking and what is left to say: `say(who, lines, face, tint)`, `advance()`, `stop()`. A flat list of lines and no branching -- the choosing happens before a conversation starts. |
+| `DialogueBox.gd` | The speech box: the pack's **premade** plate drawn whole, with the name, the line and the click-to-continue chevron placed at measured spots inside it (5b). |
+| `Townsfolk.gd` | The people in town -- one script, a `person` id picks the name, the tint and the lines. Another `interactable` node. |
+| `Collector.gd` | The debt collector standing at the farm gate on Sundays. The first thing in the world that is a node rather than a painted tile, so the first user of the `interactable` group (§4b). |
+| `DebtPanel.gd` | His bill: the figures and the three pay buttons. Same chrome as the storage window, its own `BASE_SIZE`, whole-number zoom. |
 | `Calendar.gd` | Day number → season, weekday, week, date text; clock constants (`DAY_START`, `PASS_OUT`, `SECONDS_PER_MINUTE`). |
 | `ClockPlate.gd` | The top-left clock UI (see §6). |
 | `StatusSign.gd` | The top-right sign: hearts on a nine-sliced plate, the purse on a smaller one hung under it on two posts (art: `Assets/UI/Status.png`, cut by `Tools/cut_status.py`). One node, everything in one `_draw`; hops the coin when the amount changes. `StatusSign.heart_for(i, health)` is the one full/half/empty rule — the profile book draws its hearts with it too. |
@@ -58,7 +72,14 @@ Last updated: 2026-11-06.
   and typed arrays survive as they are) to `user://save.dat` — on Windows
   `%APPDATA%\Godot\app_userdata\Harvest Quick\save.dat`. Shape: `{version,
   day, minutes, coins, stamina, max_stamina, started, inventory: {items,
-  counts}, stores: {key: {items, counts}}, worlds}`.
+  counts}, stores: {key: {items, counts}}, worlds, debt, mail, lawyer}`. The
+  last three are whatever `Debt`, `Mail` and `Lawyer` hand over from their
+  own `to_record()`.
+  - **`SAVE_VERSION` is 4.** 1 → 2 added the debt, 2 → 3 the post, 3 → 4 the
+    lawyer's case. A save of another version is
+    refused outright and the game starts new; there is no migration, by design
+    (`_readable`). The weather, by contrast, added no field at all — it is
+    worked out from the day number (§5a), which is why it needed no bump.
   - **When:** the end of `sleep()`, after `day_changed` (crops grown, bin sold)
     — bed and passing out alike. It first calls the group **`saves_world`**
     (`write_world()`), so map state held only in memory (the Farm's plots,
@@ -86,6 +107,66 @@ Last updated: 2026-11-06.
   (`_ship`) after the day turns but **before** `day_changed`, so anything
   that wakes on it already sees the coins; `shipped(earned)` is emitted then.
 
+## 4b. The debt, the collector and the ending (`Debt.gd` and friends)
+
+- **Rules in `Debt.gd`, nothing else.** Its constants are `econ_sim.py`'s,
+  spelled the same, so the simulation's claim about fairness is a claim about
+  this code. The game rounds the balance to whole coins every week; the
+  simulator does not, so they drift by a coin or two over a run.
+- **The week is the unit.** `paid_this_week` piles up, and `_settle()` runs
+  once per week turn on `day_changed`: minimum met or missed → late fee and a
+  strike → interest on what is left. A part payment comes off the debt but is
+  still a miss. Three strikes emits `lost`.
+- **Autoload order matters, and `Debt` is first.** `PlayerState` reads the
+  save in its own `_ready` and calls `Debt.from_record` while doing it, so
+  `Debt` has to be a node by then. That in turn means `Debt` cannot connect to
+  `PlayerState.day_changed` in its own `_ready` — nothing else exists yet — so
+  it defers the connection by a frame (`_bind.call_deferred`). `EndingScreen`
+  defers for the mirror reason: it is registered last, so a game that was
+  *already* lost when the save loaded is noticed a frame later.
+- **Nodes you can use, not just tiles.** Furniture is painted and has no node,
+  so `Player._try_interact` reads a verb off the tile. The collector is a
+  node, so `Player._interactable_in_reach()` checks the `interactable` group
+  first (`Collector.GROUP`) and people win over furniture behind them. Reach is
+  loose on purpose, as it is for furniture: anyone on or beside your own cell
+  counts, facing or not.
+- **The collector finds the HUD through a group** (`HUD.GROUP`, `&"hud"`),
+  since he lives in the map and the windows live in the HUD.
+- **The ending is above everything.** Layer 200 (the fade is 128),
+  `PROCESS_MODE_ALWAYS`, and it pauses the tree — but only *after*
+  `SceneTransition.is_busy()` goes false, because the fade unpauses the tree
+  when it finishes and would undo an earlier pause.
+- **His sprite origin was measured, not guessed.** The art fills x 17..31,
+  y 16..32 of the basic sheet's 48px cell, so `FEET` is (24, 32). Guessed at
+  40 first, which floated him eight pixels off the ground: every test passed
+  and the render showed it at once.
+
+## 4c. The post (`Mail.gd`, `Mailbox.gd`, `MailPanel.gd`)
+
+- **Delivery is by day, and idempotent.** `deliver_due(day)` is called on every
+  `day_changed` and once at bind; each letter has an id (`mom-w4`,
+  `winter-y1`, `opening`) and `_delivered` remembers it, so nothing can arrive
+  twice however the days are walked -- a load, a catch-up, a debug jump.
+- **Mom's figure is not rolled, it is mixed.** `mom_amount(week)` runs the week
+  number through the same kind of mixer `Weather` uses, so week 30's letter is
+  always week 30's letter. The inbox *is* saved, because read/unread is real
+  state that no formula can recover.
+- **Her money goes on the debt at delivery, not at reading.** `Mail._deliver`
+  calls `Debt.add`. Reading only clears the dot.
+- **Autoload order, again** (§4b has the first half): `Debt`, then `Mail`, then
+  `PlayerState`. Both of the first two must be nodes before `PlayerState`
+  reads a save, and both defer their signal hook-ups; because deferred calls
+  run in the order they were queued, and `Debt` is registered first, the week
+  is settled before Mom is added to it on the morning a week turns. That is
+  `econ_sim`'s order, and `test_mail` pins it with a figure that differs by
+  one coin if the two ever swap (1127 against 1128).
+- **`Mail.delivering`** turns delivery off. `test_debt` sets it false so its
+  figures are about the debt's rules alone; nothing in the game touches it.
+- **The box's frames were measured.** The sheet is 32x48 cells, five across,
+  seven down; the post stands on y 41, centred on x 12, in every frame used.
+  Frame (0,4) is the plain box, (0,2) and (1,2) the letter up -- those two
+  alternate to make the wave.
+
 ## 5. Time, sleep and growth
 
 - `PlayerState.minutes` = minutes since midnight of the current day; it runs
@@ -108,6 +189,135 @@ Last updated: 2026-11-06.
   was not loaded catches up on load from its record's `day`: one night grows
   what was wet, later nights find dry soil and change nothing.
 - **Saplings** grow one stage per night (no real-time growth any more).
+
+## 5b. Dialogue and the town (step 5)
+
+- **The box is the pack's premade plate, drawn whole.** The portrait window,
+  its wooden rails, the bubble and the tail pointing back at the speaker are
+  one image; the box never stretches it, only scales it by a whole number, and
+  everything on it is a measured rect *inside* it (`RECESS`, `BUBBLE`,
+  `NAME_AT`, `LINE_AT`, `MORE_AT`). The first attempt nine-sliced the bubble
+  and placed a cut-out tail beside a separate portrait frame -- the join never
+  sat right, and there was no reason for it: the asset already is the layout.
+- **One line, and it has to fit.** The bubble is as tall as it is drawn, so a
+  line does not wrap. `DialogueBox.fits()` measures a line against
+  `LINE_WIDTH`, and `test_town` runs every written line of every character
+  through it in every state -- 240 of them -- so writing too long for the art
+  fails a test instead of being cut off in play.
+- **Branching lives with the writer, not in the system.** `Dialogue` runs a
+  flat list; `Townsfolk._lines_for()` and `Collector._lines()` read the debt,
+  the calendar and the weather and pick one. Nothing in a conversation can
+  change its mind halfway.
+- **A window that is not a window.** The box does not wash the world out --
+  you are standing in front of whoever is talking -- but `HUD.is_inventory_open`
+  counts it, so the clock stops and the player stands still. The HUD takes the
+  use key while it is up, so `Player` never sees it; and the box ignores a
+  press on the frame it opened, so the press that started the conversation
+  cannot also turn its first page.
+- **The town's layout is painted by hand, in the editor** (decided
+  2026-11-19). It was generated by a script first and it looked generated:
+  houses standing on grass with their doors opening onto nothing, a road
+  stabbing into an empty yard. That script is gone.
+- **`Tools/new_city_scene.gd` writes a blank one** -- the six layers, a 14x10
+  patch of grass over soil to stand on, water round it, the ferry, the three
+  people in a row, the player and the HUD. A frame, not a town: everything it
+  draws is meant to be painted over or rubbed out. It **refuses to run while
+  `Scenes/City.tscn` exists**, so it can never take a drawn map with it.
+  A headless save strips every `uid://`, so **run
+  `python -I Tools/fix_city_uids.py` straight after** -- it puts them back
+  from each file's own `.uid`, `.import` or header. `Scenes/Player.tscn` and
+  `Scenes/Door.tscn` have no uid of their own and are referenced by path, as
+  `Dev.tscn` already does.
+- **What the code needs from the town scene**, whatever it is painted to look
+  like. `Tools/test_town.gd` checks exactly this list and measures nothing
+  else -- no size, no house count, no named cell -- so the map can be redrawn
+  freely without a test going red over it. **While there is no
+  `Scenes/City.tscn` at all** -- one is being drawn from scratch -- the suite
+  says `SKIP` for the handful of checks that need it and runs everything else
+  on the farm, with the three people stood in it by hand:
+
+  | Node | Why |
+  |---|---|
+  | `Grass Layer` (TileMapLayer, painted) | The grid every cell lookup comes off: `Player.grass_layer_path`, and the `ground_layer_path` of each person standing in it. |
+  | `FromFarm` (Marker2D) | Where the farm's ferry puts the player down. |
+  | `Ferry/Door` (the `Door` scene) | `target_scene` the farm, `spawn_point` `FromTown`. The farm's own `Ferry/Door` points back here with `FromFarm`. |
+  | `Player`, `HUD` | As every other map has them. |
+  | A `Townsfolk` node per person | `person` set to `seller`, `lawyer` or `neighbour`. They find the HUD through its group, so they can sit anywhere in the tree. |
+  | **No** `Farm` node | Which is what stops the hoe digging the town up. |
+
+  `Props`, `Decorations`, `Buildings`, `Soil Layer` and `Water Layer` are the
+  farm's names and worth keeping for consistency, but nothing requires them:
+  people are reachable without a props layer (§5b, "People before props").
+- **Ground under grass makes the path.** The town paints soil over the whole
+  rectangle and grass over everything but the square and the road, so a path
+  is grass taken away. The first version used the stone tileset and read as a
+  car park; earth is the same palette as the rest of the game.
+- **People before props.** `Player._interactable_in_reach()` is checked before
+  the props layer is even looked for, so someone standing in front of the
+  shipping bin is who you mean -- and a map with no props layer can still have
+  people in it.
+- **The hoe needs a farm.** `_land_hoe_hit` gives up with a shrug when there is
+  no `Farm` node, which is what stops the town square being dug up.
+
+## 5a. Weather (`Weather.gd`, `Rain.gd`)
+
+- **Nothing is stored.** `Weather.rolled_for(day)` is a pure function of the
+  day number: a 31-bit integer mix (multiply, fold the high bits down, mix
+  again) turned into two rolls — one against the season's chance of rain, one
+  against its share of storms. So the farm, the clock and a save reloaded a
+  week later all agree with no new save field and no `SAVE_VERSION` bump.
+  Chances live in `RAIN_CHANCE` / `STORM_SHARE`; day 1 is always clear.
+- `Weather.forced` pins the sky (`-1` follows the calendar). **Anything run
+  with `--script` is pinned to clear on `_ready`** — without that, a suite
+  that sleeps through a dozen days passes or fails on which of them happened
+  to be rainy; `test_clock`'s "comes back dry" did exactly that. `test_weather`
+  and `shoot_rain` set `forced` themselves.
+- `changed(kind)` is emitted when the sky actually changes — on `day_changed`
+  and when `forced` is set, not every morning.
+- **Farm.** `Farm._soak()` wets every tilled cell on a wet day; it is called
+  after `_pass_night` (which dries the soil for the new day), on restore, and
+  on `Weather.changed`. `_on_tilled` wets soil hoed in the rain. A clearing
+  sky never takes water back, so yesterday's rain still grows tonight's crop.
+- **Rain.gd.** Screen-space `CanvasLayer` at layer 5, so it needs no camera
+  chasing and sits under the HUD (10) and the fade (128). Drops are made in
+  code (`_streak()`: a 1×6 bar, brightest at the head) — there is no rain art
+  in either pack. `particle_flag_align_y` turns each drop along its own
+  velocity, so the lean and the art never disagree. Two sheets (near: bigger,
+  faster, brighter; far: smaller, slower, fainter). Counts scale with window
+  area; `preprocess` means the first frame is already a skyful. `_resize`
+  follows `size_changed`.
+- The overcast wash must be **darker than the art it lies over**. The first
+  try was a mid blue-grey, and at a strength you could see at all the farm
+  went pale rather than overcast.
+- **The clock** picks its picture from row 5 of the icon sheet on a wet day
+  (`ClockPlate.RAIN_ROW`, same columns as the dry row). The sheet has no
+  orange storm cloud, so dawn and dusk show the plain rain picture for both.
+
+## 5c. The lawyer (`Lawyer.gd`)
+
+- **Four pieces, gathered in order**, each with its own condition in
+  `can_take`. `letters` needs three of Mom's letters and takes itself when
+  they arrive; `word` needs `letters`; `ledger` needs `word`; `paper` needs
+  `ledger` **and** week 12.
+- **Week 12 is structural, not a guard.** The rule in §4 is that the case
+  cannot be complete before week 12, and it is true here because the last
+  piece is the one with the calendar on it. There is no separate check that
+  could be forgotten, and no route round it.
+- **A piece is taken once and then kept.** The condition is checked when the
+  piece is offered and never again, so what survives a save is the piece, not
+  the circumstance that allowed it.
+- **`Debt.void_debt()` is the lawyer's and nobody else's.** The balance does
+  not go to zero by being settled; it stops existing. Strikes are left alone.
+- **Who hands what over lives in the people, not here.** `Townsfolk.interact`
+  and `Collector.interact` ask `Lawyer.piece_from(person)` and take it before
+  the conversation starts, so the lines they then choose describe the state
+  the player is actually in.
+- **The ending screen has two faces** and is otherwise one screen: same plate,
+  same button, different words. A game already won or lost when the save
+  loaded ends again at once, winning checked first.
+- **Autoload order**: `Debt`, `Mail`, `Lawyer`, then `PlayerState` -- all
+  three must be nodes before a save is read, and all three defer their signal
+  hook-ups by a frame for the same reason (§4b, §4c).
 
 ## 6. The clock UI (`ClockPlate.gd`)
 
@@ -167,6 +377,17 @@ under the season. To give headings their own face again, change `title()`.
 | `test_regressions.gd` | Bugs from the 2026-11-05 review, pinned: hotbar icon surviving an empty-and-refill in one frame, closing with a full bag, crafting while carrying, grab cursor, per-frame allocations, read-only item info, failed scene loads. |
 | `test_clock.gd` | Calendar, clock ticking/pausing, clock face rules and swap, plate fit for every day, overnight growth, catch-up, passing out. |
 | `test_clock_seams.gd` | **Windowed** (SKIP headless): draws the clock over magenta at 8 window scales × 3 skies and counts any background showing through its openings (fails on the pre-bleed clock); then the status sign's posts and plates at the same 8 scales (fails on a deliberate 1px gap). |
+| `test_debt.gd` | The debt: the minimum (both branches, clamped), the collector's day, paying, a week met and a week missed and a week half paid, three strikes and the ending, the save round trip, and the bill's buttons. Checks the numbers against §4 by hand, so a constant changed by accident fails here. |
+| `shoot_debt.gd` | **Windowed.** The collector at the gate, his bill, and the bad ending (`Tools/shot_collector.png`, `shot_debt_bill.png`, `shot_debt_ending.png`). |
+| `test_mail.gd` | The post: what Mom costs and that it is steady, the opening letter, delivery on even weeks only, the settle-then-deliver order, nothing arriving twice, the neighbour's Fall warning, reading, the save round trip, and the box and window. |
+| `shoot_mail.gd` | **Windowed.** The box waving, the post window, and one of Mom's letters with what it cost (`Tools/shot_mailbox.png`, `shot_mail_panel.png`, `shot_mail_mom.png`). |
+| `test_lawyer.gd` | Step 6: the four pieces and their order, that no route finishes the case before week 12, the fee, the debt going void, Mom falling silent, the good ending, the save, and what he says at each stage. |
+| `shoot_endings.gd` | **Windowed.** Both endings (`Tools/shot_ending_won.png`, `shot_ending_lost.png`). |
+| `test_town.gd` | Step 5: the dialogue system on its own, what each person says in which state, that every written line fits the bubble, the town map, the ferry both ways, the hoe refusing the town square, and the collector talking before he bills. |
+| `shoot_city.gd` | **Windowed.** The town square and a conversation in it (`Tools/shot_city.png`, `shot_dialogue.png`). |
+| `new_city_scene.gd`, `fix_city_uids.py` | Write a **blank** `Scenes/City.tscn` and put its uids back (5b). The town is painted by hand; this only makes the frame. |
+| `test_weather.gd` | The weather: the roll repeating, each season's rain, the `forced` override, rain watering the farm and growing what it waters (and a dry night growing nothing), the clock's window per sky, and the rain layer emitting/washing/flashing. |
+| `shoot_rain.gd` | **Windowed.** Renders the farm under clear, rain and storm, plus a storm caught mid-flash (`Tools/shot_sky_*.png`). |
 | `test_axe.gd` | Axe, trees, saplings (grown by sleeping), grass regrowth, persistence. |
 | `test_props`, `test_autotile`, `test_interior`, `test_door`, `test_cursor`, `test_storage`, `test_storage_moves`, `test_craft_card`, `test_panel` | Older suites. |
 | `shoot_clock.gd` | Renders the clock at each part of the day + a winter night + a swap animation strip (Mon 15 Summer, the widest date). |
@@ -181,7 +402,7 @@ under the season. To give headings their own face again, change `title()`.
 | `strip_halo.py` | Makes plain inventory icons from outlined drop icons. |
 | `sweep.py` | Measures a tile's true draw position by diffing two renders. |
 
-**All fifteen suites pass headless** (as of 2026-11-06) and exit non-zero on
+**All twenty suites pass headless** (as of 2026-11-19) and exit non-zero on
 a failure, so they can be run in a loop. The old "known failures" were stale
 tests, not game bugs: the house was redrawn (two chests, no dresser, the exit
 moved down the hall) and three suites still pointed at the old cells; the
@@ -198,7 +419,15 @@ screenshot suites crashed headless on `save_png`. Now:
 
 - **Verify visuals by rendering.** Tests prove logic, not placement. Render
   a frame and measure pixels; a tile's `texture_origin` was got wrong three
-  times by reasoning about it.
+  times by reasoning about it, and the collector's `FEET` a fourth (§4b) --
+  every test passed while he floated eight pixels off the ground.
+- **Autoloads that talk to each other: order is the contract.** An autoload
+  can only reach another one *as a node* if that one is registered earlier, so
+  anything it does in `_ready` has to be deferred when it is the earlier one.
+  `Debt` is registered before `PlayerState` (the save reads it) and defers its
+  own signal hook-up; `EndingScreen` is last and defers its check of an
+  already-lost save. Getting this wrong fails only when a save exists, which
+  tools and tests never have.
 - **Test scripts can't name `class_name` scripts that use autoloads.** A
   `--script` test compiles before autoloads exist, so writing
   `ClockPlate.phase_at(...)` in a test breaks `ClockPlate` for the whole run.

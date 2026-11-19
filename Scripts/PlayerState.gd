@@ -44,7 +44,10 @@ const BED_SPOT := &"Bed"
 const PASS_OUT_STAMINA := 0.5
 ## Bumped whenever what is saved changes shape; a save from another version is
 ## not read (the game starts new instead of half-loading it).
-const SAVE_VERSION := 1
+##   1 -> 2: the debt (step 3). Saves from 1 are refused and start a new game.
+##   2 -> 3: the post (step 4). Same again.
+##   3 -> 4: the lawyer's case (step 6). Same again.
+const SAVE_VERSION := 4
 
 ## Where the game is kept. Tests point this somewhere of their own.
 var save_path := "user://save.dat"
@@ -115,6 +118,12 @@ func save_game() -> bool:
 		"inventory": _pack(inventory) if inventory != null else {},
 		"stores": stores,
 		"worlds": _worlds,
+		# The debt and the post keep their own state; both hand over plain data
+		# to go in here. Both autoloads are registered before this one so they
+		# are nodes by the time a save is read, below.
+		"debt": Debt.to_record(),
+		"mail": Mail.to_record(),
+		"lawyer": Lawyer.to_record(),
 	}
 	var tmp := save_path + ".tmp"
 	var file := FileAccess.open(tmp, FileAccess.WRITE)
@@ -170,6 +179,9 @@ func load_game() -> bool:
 	for key: String in data["stores"]:
 		_fill(storage_for(key), data["stores"][key])
 	_worlds = data["worlds"]
+	Debt.from_record(data["debt"])
+	Mail.from_record(data["mail"])
+	Lawyer.from_record(data["lawyer"])
 	coins_changed.emit(coins)
 	time_changed.emit(minutes)
 	return true
@@ -198,7 +210,7 @@ static func _readable(data: Variant) -> bool:
 	for key in ["day", "minutes", "coins"]:
 		if typeof(data.get(key)) != TYPE_INT:
 			return false
-	for key in ["inventory", "stores", "worlds"]:
+	for key in ["inventory", "stores", "worlds", "debt", "mail", "lawyer"]:
 		if typeof(data.get(key)) != TYPE_DICTIONARY:
 			return false
 	return typeof(data.get("stamina")) in [TYPE_FLOAT, TYPE_INT] \
@@ -393,3 +405,8 @@ func reset() -> void:
 	_stores.clear()
 	_worlds.clear()
 	_started = false
+	Debt.reset()
+	Lawyer.reset()
+	# After Debt, and after `day` is back to 1: the post puts the opening
+	# letter in the box for the new game, and it is addressed to day one.
+	Mail.reset()

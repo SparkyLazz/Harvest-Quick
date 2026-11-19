@@ -16,6 +16,11 @@ signal storage_closed(key: String)
 ## Fires whenever what the player is holding changes, by id ("" when empty).
 signal held_item_changed(item: String)
 
+## The HUD puts itself in this group so anything in the world that needs a
+## window can find it. The collector, who is a node in the map rather than a
+## child of the HUD, opens his bill through it.
+const GROUP := &"hud"
+
 # Slots and hearts are cut from this one sheet. It carries two palettes side by
 # side: the x=1 column of plates is the lighter pair, the x=113 column is the
 # warmer one the pack's own example composite uses, so that is the one taken
@@ -108,11 +113,17 @@ var _ready_done := false
 var _pop_tween: Tween
 var _panel: ProfilePanel
 var _storage: StoragePanel
+var _debt: DebtPanel
+var _mail: MailPanel
+var _dialogue: DialogueBox
 var _clock: ClockPlate
 var _sign: StatusSign
 
 func _ready() -> void:
 	_ready_done = true
+	# Named, so anything in the world that needs a window -- the collector and
+	# his bill -- can find the one HUD without being handed it.
+	add_to_group(GROUP)
 	_clock = ClockPlate.new()
 	_clock.name = "Clock"
 	$Screen.add_child(_clock)
@@ -130,6 +141,18 @@ func _ready() -> void:
 	add_child(_storage)
 	_storage.bind(self)
 	_storage.closed.connect(storage_closed.emit)
+	_debt = DebtPanel.new()
+	_debt.name = "DebtPanel"
+	add_child(_debt)
+	_debt.bind(self)
+	_mail = MailPanel.new()
+	_mail.name = "MailPanel"
+	add_child(_mail)
+	_mail.bind(self)
+	_dialogue = DialogueBox.new()
+	_dialogue.name = "DialogueBox"
+	add_child(_dialogue)
+	_dialogue.bind(self)
 	get_viewport().size_changed.connect(_reposition)
 	rebuild()
 
@@ -149,6 +172,57 @@ func is_profile_open() -> bool:
 ## True while a wardrobe or chest window is on screen.
 func is_storage_open() -> bool:
 	return _storage != null and _storage.is_open()
+
+
+## True while the collector's bill is on screen.
+func is_debt_open() -> bool:
+	return _debt != null and _debt.is_open()
+
+
+## Opens the collector's bill. The other windows step aside: they are all
+## full-screen, so only one of them can be the one you are in.
+func open_debt() -> void:
+	if _debt == null:
+		return
+	if _panel != null and _panel.is_open():
+		_panel.close()
+	if is_storage_open():
+		close_storage()
+	_debt.open()
+
+
+func close_debt() -> void:
+	if _debt != null:
+		_debt.close()
+
+
+## True while the post is on screen.
+func is_mail_open() -> bool:
+	return _mail != null and _mail.is_open()
+
+
+## Opens the post. The other windows step aside, as they do for the bill.
+func open_mail() -> void:
+	if _mail == null:
+		return
+	if _panel != null and _panel.is_open():
+		_panel.close()
+	if is_storage_open():
+		close_storage()
+	close_debt()
+	_mail.open()
+
+
+func close_mail() -> void:
+	if _mail != null:
+		_mail.close()
+
+
+## True while somebody is talking. It is not a full-screen window -- you can
+## still see the farm behind it -- but it counts as one: the clock stops and
+## the player stands still until the conversation is over.
+func is_dialogue_open() -> bool:
+	return _dialogue != null and _dialogue.is_open()
 
 
 ## Opens the storage window on one piece of furniture, named as
@@ -187,29 +261,48 @@ func close_storage() -> void:
 ## window being up means the same thing to the player -- stand still, and let
 ## the keys belong to the window.
 func is_inventory_open() -> bool:
-	return is_profile_open() or is_storage_open()
+	return is_profile_open() or is_storage_open() or is_debt_open() \
+			or is_mail_open() or is_dialogue_open()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _ready_done:
 		return
+	# A conversation owns the keyboard while it is up: the use key turns the
+	# page and Esc walks away from it. Nothing else in the HUD opens.
+	if is_dialogue_open():
+		if event.is_action_pressed("use"):
+			_dialogue.press()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("ui_cancel"):
+			Dialogue.stop()
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("inventory"):
 		# With a chest open the key shuts it rather than stacking the profile
 		# screen on top: one window at a time, and the nearest one first.
-		if is_storage_open():
+		if is_mail_open():
+			close_mail()
+		elif is_debt_open():
+			close_debt()
+		elif is_storage_open():
 			close_storage()
 		else:
 			_panel.toggle()
 		get_viewport().set_input_as_handled()
 		return
-	if event.is_action_pressed("ui_cancel") and (is_storage_open() or _panel.is_open()):
-		if is_storage_open():
+	if event.is_action_pressed("ui_cancel") and is_inventory_open():
+		if is_mail_open():
+			close_mail()
+		elif is_debt_open():
+			close_debt()
+		elif is_storage_open():
 			close_storage()
 		else:
 			_panel.close()
 		get_viewport().set_input_as_handled()
 		return
-	if not selection_input or _panel.is_open() or is_storage_open():
+	if not selection_input or is_inventory_open():
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		var digit := (event as InputEventKey).keycode - KEY_1
